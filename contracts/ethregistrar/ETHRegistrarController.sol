@@ -26,9 +26,7 @@ error Unauthorised(bytes32 node);
 error MaxCommitmentAgeTooLow();
 error MaxCommitmentAgeTooHigh();
 
-/**
- * @dev A registrar controller for registering and renewing names at fixed cost.
- */
+/// @dev A registrar controller for registering and renewing names at fixed cost.
 contract ETHRegistrarController is
     Ownable,
     IETHRegistrarController,
@@ -95,7 +93,7 @@ contract ETHRegistrarController is
     function rentPrice(
         string memory name,
         uint256 duration
-    ) public view override returns (IPriceOracle.Price memory price) {
+    ) public view override virtual returns (IPriceOracle.Price memory price) {
         bytes32 label = keccak256(bytes(name));
         price = prices.price(name, base.nameExpires(uint256(label)), duration);
     }
@@ -285,7 +283,7 @@ contract ETHRegistrarController is
             msg.sender,
             owner,
             resolver,
-            string.concat(name, ".eth")
+            string.concat(name, ".cre8or")
         );
     }
 }
