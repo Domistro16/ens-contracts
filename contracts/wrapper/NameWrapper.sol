@@ -46,10 +46,10 @@ contract NameWrapper is
     string public constant name = "NameWrapper";
 
     uint64 private constant GRACE_PERIOD = 90 days;
-    bytes32 private constant ETH_NODE =
-        0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae;
-    bytes32 private constant ETH_LABELHASH =
-        0x4f5b812789fc606be1b3b16908db13fc7a9adf7ca72641f84d75b47069d3d7f0;
+    bytes32 private constant CRE8OR_NODE =
+        keccak256(ROOT_NODE, CRE8OR_LABELHASH);
+    bytes32 private constant CRE8OR_LABELHASH =
+        keccak256("cre8or");
     bytes32 private constant ROOT_NODE =
         0x0000000000000000000000000000000000000000000000000000000000000000;
 
@@ -65,10 +65,10 @@ contract NameWrapper is
         registrar = _registrar;
         metadataService = _metadataService;
 
-        /* Burn PARENT_CANNOT_CONTROL and CANNOT_UNWRAP fuses for ROOT_NODE and ETH_NODE and set expiry to max */
+        /* Burn PARENT_CANNOT_CONTROL and CANNOT_UNWRAP fuses for ROOT_NODE and CRE8OR_NODE and set expiry to max */
 
         _setData(
-            uint256(ETH_NODE),
+            uint256(CRE8OR_NODE),
             address(0),
             uint32(PARENT_CANNOT_CONTROL | CANNOT_UNWRAP),
             MAX_EXPIRY
@@ -80,7 +80,7 @@ contract NameWrapper is
             MAX_EXPIRY
         );
         names[ROOT_NODE] = "\x00";
-        names[ETH_NODE] = "\x03eth\x00";
+        names[CRE8OR_NODE] = "\x06cre8or\x00";
     }
 
     function supportsInterface(
@@ -94,24 +94,18 @@ contract NameWrapper is
 
     /* ERC1155 Fuse */
 
-    /**
-     * @notice Gets the owner of a name
-     * @param id Label as a string of the .eth domain to wrap
-     * @return owner The owner of the name
-     */
-
+    /// @notice Gets the owner of a name
+    /// @param id Label as a string of the .eth domain to wrap
+    /// @return owner The owner of the name
     function ownerOf(
         uint256 id
     ) public view override(ERC1155Fuse, INameWrapper) returns (address owner) {
         return super.ownerOf(id);
     }
 
-    /**
-     * @notice Gets the owner of a name
-     * @param id Namehash of the name
-     * @return operator Approved operator of a name
-     */
-
+    /// @notice Gets the owner of a name
+    /// @param id Namehash of the name
+    /// @return operator Approved operator of a name
     function getApproved(
         uint256 id
     )
@@ -127,12 +121,9 @@ contract NameWrapper is
         return super.getApproved(id);
     }
 
-    /**
-     * @notice Approves an address for a name
-     * @param to address to approve
-     * @param tokenId name to approve
-     */
-
+    /// @notice Approves an address for a name
+    /// @param to address to approve
+    /// @param tokenId name to approve
     function approve(
         address to,
         uint256 tokenId
@@ -144,14 +135,11 @@ contract NameWrapper is
         super.approve(to, tokenId);
     }
 
-    /**
-     * @notice Gets the data for a name
-     * @param id Namehash of the name
-     * @return owner Owner of the name
-     * @return fuses Fuses of the name
-     * @return expiry Expiry of the name
-     */
-
+    /// @notice Gets the data for a name
+    /// @param id Namehash of the name
+    /// @return owner Owner of the name
+    /// @return fuses Fuses of the name
+    /// @return expiry Expiry of the name
     function getData(
         uint256 id
     )
@@ -167,23 +155,17 @@ contract NameWrapper is
 
     /* Metadata service */
 
-    /**
-     * @notice Set the metadata service. Only the owner can do this
-     * @param _metadataService The new metadata service
-     */
-
+    /// @notice Set the metadata service. Only the owner can do this
+    /// @param _metadataService The new metadata service
     function setMetadataService(
         IMetadataService _metadataService
     ) public onlyOwner {
         metadataService = _metadataService;
     }
 
-    /**
-     * @notice Get the metadata uri
-     * @param tokenId The id of the token
-     * @return string uri of the metadata service
-     */
-
+    /// @notice Get the metadata uri
+    /// @param tokenId The id of the token
+    /// @return string uri of the metadata service
     function uri(
         uint256 tokenId
     )
@@ -195,13 +177,10 @@ contract NameWrapper is
         return metadataService.uri(tokenId);
     }
 
-    /**
-     * @notice Set the address of the upgradeContract of the contract. only admin can do this
-     * @dev The default value of upgradeContract is the 0 address. Use the 0 address at any time
-     * to make the contract not upgradable.
-     * @param _upgradeAddress address of an upgraded contract
-     */
-
+    /// @notice Set the address of the upgradeContract of the contract. only admin can do this
+    /// @dev The default value of upgradeContract is the 0 address. Use the 0 address at any time
+    /// to make the contract not upgradable.
+    /// @param _upgradeAddress address of an upgraded contract
     function setUpgradeContract(
         INameWrapperUpgrade _upgradeAddress
     ) public onlyOwner {
@@ -218,11 +197,8 @@ contract NameWrapper is
         }
     }
 
-    /**
-     * @notice Checks if msg.sender is the owner or operator of the owner of a name
-     * @param node namehash of the name to check
-     */
-
+    /// @notice Checks if msg.sender is the owner or operator of the owner of a name
+    /// @param node namehash of the name to check
     modifier onlyTokenOwner(bytes32 node) {
         if (!canModifyName(node, msg.sender)) {
             revert Unauthorised(node, msg.sender);
@@ -231,13 +207,10 @@ contract NameWrapper is
         _;
     }
 
-    /**
-     * @notice Checks if owner or operator of the owner
-     * @param node namehash of the name to check
-     * @param addr which address to check permissions for
-     * @return whether or not is owner or operator
-     */
-
+    /// @notice Checks if owner or operator of the owner
+    /// @param node namehash of the name to check
+    /// @param addr which address to check permissions for
+    /// @return whether or not is owner or operator
     function canModifyName(
         bytes32 node,
         address addr
@@ -248,13 +221,10 @@ contract NameWrapper is
             !_isETH2LDInGracePeriod(fuses, expiry);
     }
 
-    /**
-     * @notice Checks if owner/operator or approved by owner
-     * @param node namehash of the name to check
-     * @param addr which address to check permissions for
-     * @return whether or not is owner/operator or approved
-     */
-
+    /// @notice Checks if owner/operator or approved by owner
+    /// @param node namehash of the name to check
+    /// @param addr which address to check permissions for
+    /// @return whether or not is owner/operator or approved
     function canExtendSubnames(
         bytes32 node,
         address addr
@@ -267,15 +237,12 @@ contract NameWrapper is
             !_isETH2LDInGracePeriod(fuses, expiry);
     }
 
-    /**
-     * @notice Wraps a .eth domain, creating a new token and sending the original ERC721 token to this contract
-     * @dev Can be called by the owner of the name on the .eth registrar or an authorised caller on the registrar
-     * @param label Label as a string of the .eth domain to wrap
-     * @param wrappedOwner Owner of the name in this contract
-     * @param ownerControlledFuses Initial owner-controlled fuses to set
-     * @param resolver Resolver contract address
-     */
-
+    /// @notice Wraps a .eth domain, creating a new token and sending the original ERC721 token to this contract
+    /// @dev Can be called by the owner of the name on the .eth registrar or an authorised caller on the registrar
+    /// @param label Label as a string of the .eth domain to wrap
+    /// @param wrappedOwner Owner of the name in this contract
+    /// @param ownerControlledFuses Initial owner-controlled fuses to set
+    /// @param resolver Resolver contract address
     function wrapETH2LD(
         string calldata label,
         address wrappedOwner,
@@ -289,7 +256,7 @@ contract NameWrapper is
             !registrar.isApprovedForAll(registrant, msg.sender)
         ) {
             revert Unauthorised(
-                _makeNode(ETH_NODE, bytes32(tokenId)),
+                _makeNode(CRE8OR_NODE, bytes32(tokenId)),
                 msg.sender
             );
         }
@@ -311,17 +278,14 @@ contract NameWrapper is
         );
     }
 
-    /**
-     * @dev Registers a new .eth second-level domain and wraps it.
-     *      Only callable by authorised controllers.
-     * @param label The label to register (Eg, 'foo' for 'foo.eth').
-     * @param wrappedOwner The owner of the wrapped name.
-     * @param duration The duration, in seconds, to register the name for.
-     * @param resolver The resolver address to set on the ENS registry (optional).
-     * @param ownerControlledFuses Initial owner-controlled fuses to set
-     * @return registrarExpiry The expiry date of the new name on the .eth registrar, in seconds since the Unix epoch.
-     */
-
+    /// @dev Registers a new .eth second-level domain and wraps it.
+    ///      Only callable by authorised controllers.
+    /// @param label The label to register (Eg, 'foo' for 'foo.eth').
+    /// @param wrappedOwner The owner of the wrapped name.
+    /// @param duration The duration, in seconds, to register the name for.
+    /// @param resolver The resolver address to set on the ENS registry (optional).
+    /// @param ownerControlledFuses Initial owner-controlled fuses to set
+    /// @return registrarExpiry The expiry date of the new name on the .eth registrar, in seconds since the Unix epoch.
     function registerAndWrapETH2LD(
         string calldata label,
         address wrappedOwner,
@@ -340,19 +304,16 @@ contract NameWrapper is
         );
     }
 
-    /**
-     * @notice Renews a .eth second-level domain.
-     * @dev Only callable by authorised controllers.
-     * @param tokenId The hash of the label to register (eg, `keccak256('foo')`, for 'foo.eth').
-     * @param duration The number of seconds to renew the name for.
-     * @return expires The expiry date of the name on the .eth registrar, in seconds since the Unix epoch.
-     */
-
+    /// @notice Renews a .eth second-level domain.
+    /// @dev Only callable by authorised controllers.
+    /// @param tokenId The hash of the label to register (eg, `keccak256('foo')`, for 'foo.eth').
+    /// @param duration The number of seconds to renew the name for.
+    /// @return expires The expiry date of the name on the .eth registrar, in seconds since the Unix epoch.
     function renew(
         uint256 tokenId,
         uint256 duration
     ) external onlyController returns (uint256 expires) {
-        bytes32 node = _makeNode(ETH_NODE, bytes32(tokenId));
+        bytes32 node = _makeNode(CRE8OR_NODE, bytes32(tokenId));
 
         uint256 registrarExpiry = registrar.renew(tokenId, duration);
 
@@ -378,14 +339,11 @@ contract NameWrapper is
         return registrarExpiry;
     }
 
-    /**
-     * @notice Wraps a non .eth domain, of any kind. Could be a DNSSEC name vitalik.xyz or a subdomain
-     * @dev Can be called by the owner in the registry or an authorised caller in the registry
-     * @param name The name to wrap, in DNS format
-     * @param wrappedOwner Owner of the name in this contract
-     * @param resolver Resolver contract
-     */
-
+    /// @notice Wraps a non .eth domain, of any kind. Could be a DNSSEC name vitalik.xyz or a subdomain
+    /// @dev Can be called by the owner in the registry or an authorised caller in the registry
+    /// @param name The name to wrap, in DNS format
+    /// @param wrappedOwner Owner of the name in this contract
+    /// @param resolver Resolver contract
     function wrap(
         bytes calldata name,
         address wrappedOwner,
@@ -397,7 +355,7 @@ contract NameWrapper is
 
         names[node] = name;
 
-        if (parentNode == ETH_NODE) {
+        if (parentNode == CRE8OR_NODE) {
             revert IncompatibleParent();
         }
 
@@ -416,23 +374,20 @@ contract NameWrapper is
         _wrap(node, name, wrappedOwner, 0, 0);
     }
 
-    /**
-     * @notice Unwraps a .eth domain. e.g. vitalik.eth
-     * @dev Can be called by the owner in the wrapper or an authorised caller in the wrapper
-     * @param labelhash Labelhash of the .eth domain
-     * @param registrant Sets the owner in the .eth registrar to this address
-     * @param controller Sets the owner in the registry to this address
-     */
-
+    /// @notice Unwraps a .eth domain. e.g. vitalik.eth
+    /// @dev Can be called by the owner in the wrapper or an authorised caller in the wrapper
+    /// @param labelhash Labelhash of the .eth domain
+    /// @param registrant Sets the owner in the .eth registrar to this address
+    /// @param controller Sets the owner in the registry to this address
     function unwrapETH2LD(
         bytes32 labelhash,
         address registrant,
         address controller
-    ) public onlyTokenOwner(_makeNode(ETH_NODE, labelhash)) {
+    ) public onlyTokenOwner(_makeNode(CRE8OR_NODE, labelhash)) {
         if (registrant == address(this)) {
             revert IncorrectTargetOwner(registrant);
         }
-        _unwrap(_makeNode(ETH_NODE, labelhash), controller);
+        _unwrap(_makeNode(CRE8OR_NODE, labelhash), controller);
         registrar.safeTransferFrom(
             address(this),
             registrant,
@@ -440,20 +395,17 @@ contract NameWrapper is
         );
     }
 
-    /**
-     * @notice Unwraps a non .eth domain, of any kind. Could be a DNSSEC name vitalik.xyz or a subdomain
-     * @dev Can be called by the owner in the wrapper or an authorised caller in the wrapper
-     * @param parentNode Parent namehash of the name e.g. vitalik.xyz would be namehash('xyz')
-     * @param labelhash Labelhash of the name, e.g. vitalik.xyz would be keccak256('vitalik')
-     * @param controller Sets the owner in the registry to this address
-     */
-
+    /// @notice Unwraps a non .eth domain, of any kind. Could be a DNSSEC name vitalik.xyz or a subdomain
+    /// @dev Can be called by the owner in the wrapper or an authorised caller in the wrapper
+    /// @param parentNode Parent namehash of the name e.g. vitalik.xyz would be namehash('xyz')
+    /// @param labelhash Labelhash of the name, e.g. vitalik.xyz would be keccak256('vitalik')
+    /// @param controller Sets the owner in the registry to this address
     function unwrap(
         bytes32 parentNode,
         bytes32 labelhash,
         address controller
     ) public onlyTokenOwner(_makeNode(parentNode, labelhash)) {
-        if (parentNode == ETH_NODE) {
+        if (parentNode == CRE8OR_NODE) {
             revert IncompatibleParent();
         }
         if (controller == address(0x0) || controller == address(this)) {
@@ -462,13 +414,10 @@ contract NameWrapper is
         _unwrap(_makeNode(parentNode, labelhash), controller);
     }
 
-    /**
-     * @notice Sets fuses of a name
-     * @param node Namehash of the name
-     * @param ownerControlledFuses Owner-controlled fuses to burn
-     * @return Old fuses
-     */
-
+    /// @notice Sets fuses of a name
+    /// @param node Namehash of the name
+    /// @param ownerControlledFuses Owner-controlled fuses to burn
+    /// @return Old fuses
     function setFuses(
         bytes32 node,
         uint16 ownerControlledFuses
@@ -486,14 +435,11 @@ contract NameWrapper is
         return oldFuses;
     }
 
-    /**
-     * @notice Extends expiry for a name
-     * @param parentNode Parent namehash of the name e.g. vitalik.xyz would be namehash('xyz')
-     * @param labelhash Labelhash of the name, e.g. vitalik.xyz would be keccak256('vitalik')
-     * @param expiry When the name will expire in seconds since the Unix epoch
-     * @return New expiry
-     */
-
+    /// @notice Extends expiry for a name
+    /// @param parentNode Parent namehash of the name e.g. vitalik.xyz would be namehash('xyz')
+    /// @param labelhash Labelhash of the name, e.g. vitalik.xyz would be keccak256('vitalik')
+    /// @param expiry When the name will expire in seconds since the Unix epoch
+    /// @return New expiry
     function extendExpiry(
         bytes32 parentNode,
         bytes32 labelhash,
@@ -530,13 +476,10 @@ contract NameWrapper is
         return expiry;
     }
 
-    /**
-     * @notice Upgrades a domain of any kind. Could be a .eth name vitalik.eth, a DNSSEC name vitalik.xyz, or a subdomain
-     * @dev Can be called by the owner or an authorised caller
-     * @param name The name to upgrade, in DNS format
-     * @param extraData Extra data to pass to the upgrade contract
-     */
-
+    /// @notice Upgrades a domain of any kind. Could be a .eth name vitalik.eth, a DNSSEC name vitalik.xyz, or a subdomain
+    /// @dev Can be called by the owner or an authorised caller
+    /// @param name The name to upgrade, in DNS format
+    /// @param extraData Extra data to pass to the upgrade contract
     function upgrade(bytes calldata name, bytes calldata extraData) public {
         bytes32 node = name.namehash(0);
 
@@ -566,14 +509,11 @@ contract NameWrapper is
         );
     }
 
-    /** 
-    /* @notice Sets fuses of a name that you own the parent of
-     * @param parentNode Parent namehash of the name e.g. vitalik.xyz would be namehash('xyz')
-     * @param labelhash Labelhash of the name, e.g. vitalik.xyz would be keccak256('vitalik')
-     * @param fuses Fuses to burn
-     * @param expiry When the name will expire in seconds since the Unix epoch
-     */
-
+    ///     /* @notice Sets fuses of a name that you own the parent of
+    /// @param parentNode Parent namehash of the name e.g. vitalik.xyz would be namehash('xyz')
+    /// @param labelhash Labelhash of the name, e.g. vitalik.xyz would be keccak256('vitalik')
+    /// @param fuses Fuses to burn
+    /// @param expiry When the name will expire in seconds since the Unix epoch
     function setChildFuses(
         bytes32 parentNode,
         bytes32 labelhash,
@@ -615,16 +555,13 @@ contract NameWrapper is
         _setFuses(node, owner, fuses, oldExpiry, expiry);
     }
 
-    /**
-     * @notice Sets the subdomain owner in the registry and then wraps the subdomain
-     * @param parentNode Parent namehash of the subdomain
-     * @param label Label of the subdomain as a string
-     * @param owner New owner in the wrapper
-     * @param fuses Initial fuses for the wrapped subdomain
-     * @param expiry When the name will expire in seconds since the Unix epoch
-     * @return node Namehash of the subdomain
-     */
-
+    /// @notice Sets the subdomain owner in the registry and then wraps the subdomain
+    /// @param parentNode Parent namehash of the subdomain
+    /// @param label Label of the subdomain as a string
+    /// @param owner New owner in the wrapper
+    /// @param fuses Initial fuses for the wrapped subdomain
+    /// @param expiry When the name will expire in seconds since the Unix epoch
+    /// @return node Namehash of the subdomain
     function setSubnodeOwner(
         bytes32 parentNode,
         string calldata label,
@@ -647,18 +584,15 @@ contract NameWrapper is
         }
     }
 
-    /**
-     * @notice Sets the subdomain owner in the registry with records and then wraps the subdomain
-     * @param parentNode parent namehash of the subdomain
-     * @param label label of the subdomain as a string
-     * @param owner new owner in the wrapper
-     * @param resolver resolver contract in the registry
-     * @param ttl ttl in the registry
-     * @param fuses initial fuses for the wrapped subdomain
-     * @param expiry When the name will expire in seconds since the Unix epoch
-     * @return node Namehash of the subdomain
-     */
-
+    /// @notice Sets the subdomain owner in the registry with records and then wraps the subdomain
+    /// @param parentNode parent namehash of the subdomain
+    /// @param label label of the subdomain as a string
+    /// @param owner new owner in the wrapper
+    /// @param resolver resolver contract in the registry
+    /// @param ttl ttl in the registry
+    /// @param fuses initial fuses for the wrapped subdomain
+    /// @param expiry When the name will expire in seconds since the Unix epoch
+    /// @return node Namehash of the subdomain
     function setSubnodeRecord(
         bytes32 parentNode,
         string memory label,
@@ -695,14 +629,11 @@ contract NameWrapper is
         }
     }
 
-    /**
-     * @notice Sets records for the name in the ENS Registry
-     * @param node Namehash of the name to set a record for
-     * @param owner New owner in the registry
-     * @param resolver Resolver contract
-     * @param ttl Time to live in the registry
-     */
-
+    /// @notice Sets records for the name in the ENS Registry
+    /// @param node Namehash of the name to set a record for
+    /// @param owner New owner in the registry
+    /// @param resolver Resolver contract
+    /// @param ttl Time to live in the registry
     function setRecord(
         bytes32 node,
         address owner,
@@ -719,7 +650,7 @@ contract NameWrapper is
         ens.setRecord(node, address(this), resolver, ttl);
         if (owner == address(0)) {
             (, uint32 fuses, ) = getData(uint256(node));
-            if (fuses & IS_DOT_ETH == IS_DOT_ETH) {
+            if (fuses & IS_DOT_CRE8OR == IS_DOT_CRE8OR) {
                 revert IncorrectTargetOwner(owner);
             }
             _unwrap(node, address(0));
@@ -729,12 +660,9 @@ contract NameWrapper is
         }
     }
 
-    /**
-     * @notice Sets resolver contract in the registry
-     * @param node namehash of the name
-     * @param resolver the resolver contract
-     */
-
+    /// @notice Sets resolver contract in the registry
+    /// @param node namehash of the name
+    /// @param resolver the resolver contract
     function setResolver(
         bytes32 node,
         address resolver
@@ -742,12 +670,9 @@ contract NameWrapper is
         ens.setResolver(node, resolver);
     }
 
-    /**
-     * @notice Sets TTL in the registry
-     * @param node Namehash of the name
-     * @param ttl TTL in the registry
-     */
-
+    /// @notice Sets TTL in the registry
+    /// @param node Namehash of the name
+    /// @param ttl TTL in the registry
     function setTTL(
         bytes32 node,
         uint64 ttl
@@ -755,12 +680,9 @@ contract NameWrapper is
         ens.setTTL(node, ttl);
     }
 
-    /**
-     * @dev Allows an operation only if none of the specified fuses are burned.
-     * @param node The namehash of the name to check fuses on.
-     * @param fuseMask A bitmask of fuses that must not be burned.
-     */
-
+    /// @dev Allows an operation only if none of the specified fuses are burned.
+    /// @param node The namehash of the name to check fuses on.
+    /// @param fuseMask A bitmask of fuses that must not be burned.
     modifier operationAllowed(bytes32 node, uint32 fuseMask) {
         (, uint32 fuses, ) = getData(uint256(node));
         if (fuses & fuseMask != 0) {
@@ -769,16 +691,13 @@ contract NameWrapper is
         _;
     }
 
-    /**
-     * @notice Check whether a name can call setSubnodeOwner/setSubnodeRecord
-     * @dev Checks both CANNOT_CREATE_SUBDOMAIN and PARENT_CANNOT_CONTROL and whether not they have been burnt
-     *      and checks whether the owner of the subdomain is 0x0 for creating or already exists for
-     *      replacing a subdomain. If either conditions are true, then it is possible to call
-     *      setSubnodeOwner
-     * @param parentNode Namehash of the parent name to check
-     * @param subnode Namehash of the subname to check
-     */
-
+    /// @notice Check whether a name can call setSubnodeOwner/setSubnodeRecord
+    /// @dev Checks both CANNOT_CREATE_SUBDOMAIN and PARENT_CANNOT_CONTROL and whether not they have been burnt
+    ///      and checks whether the owner of the subdomain is 0x0 for creating or already exists for
+    ///      replacing a subdomain. If either conditions are true, then it is possible to call
+    ///      setSubnodeOwner
+    /// @param parentNode Namehash of the parent name to check
+    /// @param subnode Namehash of the subname to check
     function _checkCanCallSetSubnodeOwner(
         bytes32 parentNode,
         bytes32 subnode
@@ -811,13 +730,10 @@ contract NameWrapper is
         }
     }
 
-    /**
-     * @notice Checks all Fuses in the mask are burned for the node
-     * @param node Namehash of the name
-     * @param fuseMask The fuses you want to check
-     * @return Boolean of whether or not all the selected fuses are burned
-     */
-
+    /// @notice Checks all Fuses in the mask are burned for the node
+    /// @param node Namehash of the name
+    /// @param fuseMask The fuses you want to check
+    /// @return Boolean of whether or not all the selected fuses are burned
     function allFusesBurned(
         bytes32 node,
         uint32 fuseMask
@@ -826,12 +742,9 @@ contract NameWrapper is
         return fuses & fuseMask == fuseMask;
     }
 
-    /**
-     * @notice Checks if a name is wrapped
-     * @param node Namehash of the name
-     * @return Boolean of whether or not the name is wrapped
-     */
-
+    /// @notice Checks if a name is wrapped
+    /// @param node Namehash of the name
+    /// @return Boolean of whether or not the name is wrapped
     function isWrapped(bytes32 node) public view returns (bool) {
         bytes memory name = names[node];
         if (name.length == 0) {
@@ -842,20 +755,17 @@ contract NameWrapper is
         return isWrapped(parentNode, labelhash);
     }
 
-    /**
-     * @notice Checks if a name is wrapped in a more gas efficient way
-     * @param parentNode Namehash of the name
-     * @param labelhash Namehash of the name
-     * @return Boolean of whether or not the name is wrapped
-     */
-
+    /// @notice Checks if a name is wrapped in a more gas efficient way
+    /// @param parentNode Namehash of the name
+    /// @param labelhash Namehash of the name
+    /// @return Boolean of whether or not the name is wrapped
     function isWrapped(
         bytes32 parentNode,
         bytes32 labelhash
     ) public view returns (bool) {
         bytes32 node = _makeNode(parentNode, labelhash);
         bool wrapped = _isWrapped(node);
-        if (parentNode != ETH_NODE) {
+        if (parentNode != CRE8OR_NODE) {
             return wrapped;
         }
         try registrar.ownerOf(uint256(labelhash)) returns (address owner) {
@@ -1091,7 +1001,7 @@ contract NameWrapper is
         address resolver
     ) private {
         bytes32 labelhash = keccak256(bytes(label));
-        bytes32 node = _makeNode(ETH_NODE, labelhash);
+        bytes32 node = _makeNode(CRE8OR_NODE, labelhash);
         // hardcode dns-encoded eth string for gas savings
         bytes memory name = _addLabel(label, "\x03eth\x00");
         names[node] = name;
