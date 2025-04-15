@@ -3,7 +3,7 @@ pragma solidity ~0.8.17;
 
 import {ERC1155Fuse, IERC165, IERC1155MetadataURI} from "./ERC1155Fuse.sol";
 import {Controllable} from "./Controllable.sol";
-import {INameWrapper, CANNOT_UNWRAP, CANNOT_BURN_FUSES, CANNOT_TRANSFER, CANNOT_SET_RESOLVER, CANNOT_SET_TTL, CANNOT_CREATE_SUBDOMAIN, CANNOT_APPROVE, PARENT_CANNOT_CONTROL, CAN_DO_EVERYTHING, IS_DOT_ETH, CAN_EXTEND_EXPIRY, PARENT_CONTROLLED_FUSES, USER_SETTABLE_FUSES} from "./INameWrapper.sol";
+import {INameWrapper, CANNOT_UNWRAP, CANNOT_BURN_FUSES, CANNOT_TRANSFER, CANNOT_SET_RESOLVER, CANNOT_SET_TTL, CANNOT_CREATE_SUBDOMAIN, CANNOT_APPROVE, PARENT_CANNOT_CONTROL, CAN_DO_EVERYTHING, IS_DOT_CRE8OR, CAN_EXTEND_EXPIRY, PARENT_CONTROLLED_FUSES, USER_SETTABLE_FUSES} from "./INameWrapper.sol";
 import {INameWrapperUpgrade} from "./INameWrapperUpgrade.sol";
 import {IMetadataService} from "./IMetadataService.sol";
 import {ENS} from "../registry/ENS.sol";
@@ -46,8 +46,7 @@ contract NameWrapper is
     string public constant name = "NameWrapper";
 
     uint64 private constant GRACE_PERIOD = 90 days;
-    bytes32 private constant CRE8OR_NODE =
-        keccak256(ROOT_NODE, CRE8OR_LABELHASH);
+    bytes32 private constant CRE8OR_NODE = keccak256(abi.encodePacked(ROOT_NODE, CRE8OR_LABELHASH));
     bytes32 private constant CRE8OR_LABELHASH =
         keccak256("cre8or");
     bytes32 private constant ROOT_NODE =
@@ -818,7 +817,7 @@ contract NameWrapper is
         uint64 expiry
     ) internal override {
         // For this check, treat .eth 2LDs as expiring at the start of the grace period.
-        if (fuses & IS_DOT_ETH == IS_DOT_ETH) {
+        if (fuses & IS_DOT_CRE8OR == IS_DOT_CRE8OR) {
             expiry -= GRACE_PERIOD;
         }
 
@@ -1010,7 +1009,7 @@ contract NameWrapper is
             node,
             name,
             wrappedOwner,
-            fuses | PARENT_CANNOT_CONTROL | IS_DOT_ETH,
+            fuses | PARENT_CANNOT_CONTROL | IS_DOT_CRE8OR,
             expiry
         );
 
@@ -1084,7 +1083,7 @@ contract NameWrapper is
         uint64 expiry
     ) internal view returns (bool) {
         return
-            fuses & IS_DOT_ETH == IS_DOT_ETH &&
+            fuses & IS_DOT_CRE8OR == IS_DOT_CRE8OR &&
             expiry - GRACE_PERIOD < block.timestamp;
     }
 }
