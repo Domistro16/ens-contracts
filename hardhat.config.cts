@@ -39,7 +39,7 @@ const config = {
     hardhat: {
       saveDeployments: false,
       tags: ['test', 'legacy', 'use_root'],
-      allowUnlimitedContractSize: false,
+      allowUnlimitedContractSize: true,
     },
     localhost: {
       url: 'http://127.0.0.1:8545/',
@@ -70,16 +70,16 @@ const config = {
       chainId: 11155111,
       accounts: real_accounts,
     },
-    holesky: {
-      url: `https://holesky-rpc.nocturnode.tech`,
+    testnet: {
+      url: `https://bsc-testnet.public.blastapi.io`,
       tags: ['test', 'legacy', 'use_root'],
-      chainId: 17000,
+      chainId: 97,
       accounts: real_accounts,
     },
     mainnet: {
-      url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
+      url: `https://bsc-dataseed1.binance.org/`,
       tags: ['legacy', 'use_root'],
-      chainId: 1,
+      chainId: 56,
       accounts: real_accounts,
     },
   },
@@ -94,18 +94,33 @@ const config = {
             runs: 1200,
           },
         },
+        
       },
       // for DummyOldResolver contract
       {
         version: '0.4.11',
         settings: {
+          viaIR: true,
           optimizer: {
             enabled: true,
-            runs: 200,
+            runs: 1200,
           },
         },
       },
+      
     ],
+    overrides: {
+      "contracts/wrapper/NameWrapper.sol": {
+        version: "0.8.17",
+        settings: {
+          viaIR: true, // ONLY enable viaIR for this contract
+          optimizer: {
+            enabled: true,
+            runs: 1200,
+          },
+        },
+      },
+    },
   },
   abiExporter: {
     path: './build/contracts',
@@ -130,7 +145,7 @@ const config = {
     },
     owner: {
       default: 1,
-      1: '0xFe89cc7aBB2C4183683ab71653C4cdc9B02D44b7',
+      56: '0x04A1ceEBdEB45E055772e1cbAd48bb738E7414Fa',
     },
   },
   external: {

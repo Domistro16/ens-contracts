@@ -7,6 +7,7 @@ import {INameWrapper, CANNOT_UNWRAP, CANNOT_BURN_FUSES, CANNOT_TRANSFER, CANNOT_
 import {INameWrapperUpgrade} from "./INameWrapperUpgrade.sol";
 import {IMetadataService} from "./IMetadataService.sol";
 import {ENS} from "../registry/ENS.sol";
+import {Resolver} from "../resolvers/Resolver.sol";
 import {IReverseRegistrar} from "../reverseRegistrar/IReverseRegistrar.sol";
 import {ReverseClaimer} from "../reverseRegistrar/ReverseClaimer.sol";
 import {IBaseRegistrar} from "../ethregistrar/IBaseRegistrar.sol";
@@ -46,9 +47,9 @@ contract NameWrapper is
     string public constant name = "NameWrapper";
 
     uint64 private constant GRACE_PERIOD = 90 days;
-    bytes32 private constant CRE8OR_NODE = keccak256(abi.encodePacked(ROOT_NODE, CRE8OR_LABELHASH));
-    bytes32 private constant CRE8OR_LABELHASH =
-        keccak256("cre8or");
+    bytes32 private constant CRE8OR_NODE = 0xdb16739af6cfc75c90f34d005d9cd5bf924767f495f495a3ff96537a5bde11e6;
+
+    bytes32 private constant CRE8OR_LABELHASH = 0x86408eecbc7fe2fc0b6b2d6e68a72d0291b2b535b4dfd500f6147d401e91fd9c;
     bytes32 private constant ROOT_NODE =
         0x0000000000000000000000000000000000000000000000000000000000000000;
 
@@ -66,7 +67,7 @@ contract NameWrapper is
 
         /* Burn PARENT_CANNOT_CONTROL and CANNOT_UNWRAP fuses for ROOT_NODE and CRE8OR_NODE and set expiry to max */
 
-        _setData(
+         _setData(
             uint256(CRE8OR_NODE),
             address(0),
             uint32(PARENT_CANNOT_CONTROL | CANNOT_UNWRAP),
@@ -77,7 +78,7 @@ contract NameWrapper is
             address(0),
             uint32(PARENT_CANNOT_CONTROL | CANNOT_UNWRAP),
             MAX_EXPIRY
-        );
+        ); 
         names[ROOT_NODE] = "\x00";
         names[CRE8OR_NODE] = "\x06cre8or\x00";
     }
@@ -628,6 +629,7 @@ contract NameWrapper is
         }
     }
 
+
     /// @notice Sets records for the name in the ENS Registry
     /// @param node Namehash of the name to set a record for
     /// @param owner New owner in the registry
@@ -1002,7 +1004,7 @@ contract NameWrapper is
         bytes32 labelhash = keccak256(bytes(label));
         bytes32 node = _makeNode(CRE8OR_NODE, labelhash);
         // hardcode dns-encoded eth string for gas savings
-        bytes memory name = _addLabel(label, "\x03eth\x00");
+        bytes memory name = _addLabel(label, "\x06cre8or\x00");
         names[node] = name;
 
         _wrap(

@@ -38,8 +38,7 @@ contract ETHRegistrarController is
     using Address for address;
 
     uint256 public constant MIN_REGISTRATION_DURATION = 28 days;
-    bytes32 private constant ETH_NODE =
-        0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae;
+    bytes32 private constant ETH_NODE = 0xdb16739af6cfc75c90f34d005d9cd5bf924767f495f495a3ff96537a5bde11e6;
     uint64 private constant MAX_EXPIRY = type(uint64).max;
     BaseRegistrarImplementation immutable base;
     IPriceOracle public immutable prices;
@@ -94,6 +93,7 @@ contract ETHRegistrarController is
         string memory name,
         uint256 duration
     ) public view override virtual returns (IPriceOracle.Price memory price) {
+        require(duration == 0 || duration >= MIN_REGISTRATION_DURATION, "Invalid duration");
         bytes32 label = keccak256(bytes(name));
         price = prices.price(name, base.nameExpires(uint256(label)), duration);
     }
@@ -258,7 +258,7 @@ contract ETHRegistrarController is
 
         delete (commitments[commitment]);
 
-        if (duration < MIN_REGISTRATION_DURATION) {
+        if (duration != 0 && duration < MIN_REGISTRATION_DURATION ) {
             revert DurationTooShort(duration);
         }
     }

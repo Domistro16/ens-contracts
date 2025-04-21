@@ -28,30 +28,30 @@ const func: DeployFunction = async function (hre) {
   )
   await viem.waitForTransactionSuccess(reverseRegistrarSetDefaultResolverHash)
 
-  const resolverEthOwner = await registry.read.owner([namehash('resolver.eth')])
+  const resolverEthOwner = await registry.read.owner([namehash('resolver.cre8or')])
 
   if (resolverEthOwner === owner.address) {
     const publicResolver = await viem.getContract('PublicResolver', owner)
     const setResolverHash = await registry.write.setResolver([
-      namehash('resolver.eth'),
+      namehash('resolver.cre8or'),
       publicResolver.address,
     ])
     console.log(
-      `Setting resolver for resolver.eth to PublicResolver (tx: ${setResolverHash})...`,
+      `Setting resolver for resolver.cre8or to PublicResolver (tx: ${setResolverHash})...`,
     )
     await viem.waitForTransactionSuccess(setResolverHash)
 
     const setAddrHash = await publicResolver.write.setAddr([
-      namehash('resolver.eth'),
-      publicResolver.address,
+      namehash('resolver.cre8or'),
+      publicResolver.address, 
     ])
     console.log(
-      `Setting address for resolver.eth to PublicResolver (tx: ${setAddrHash})...`,
+      `Setting address for resolver.cre8or to PublicResolver (tx: ${setAddrHash})...`,
     )
     await viem.waitForTransactionSuccess(setAddrHash)
   } else {
     console.log(
-      'resolver.eth is not owned by the owner address, not setting resolver',
+      'resolver.cre8or is not owned by the owner address, not setting resolver',
     )
   }
 }

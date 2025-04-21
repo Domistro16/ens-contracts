@@ -15,6 +15,7 @@ contract BaseRegistrarImplementation is ERC721, IBaseRegistrar, Ownable {
     // A map of addresses that are authorised to register and renew names.
     mapping(address => bool) public controllers;
     uint256 public constant GRACE_PERIOD = 90 days;
+    uint256 public constant LIFETIME = type(uint256).max;
     bytes4 private constant INTERFACE_META_ID =
         bytes4(keccak256("supportsInterface(bytes4)"));
     bytes4 private constant ERC721_ID =
@@ -140,7 +141,18 @@ contract BaseRegistrarImplementation is ERC721, IBaseRegistrar, Ownable {
                 block.timestamp + GRACE_PERIOD
         ); // Prevent future overflow
 
-        expiries[id] = block.timestamp + duration;
+
+         uint256 expiration;
+
+        if (duration == 0) {
+            // Lifetime registration
+            expiration = LIFETIME;
+        } else {
+            // Annual registration
+            expiration = block.timestamp + duration;
+        }
+
+        expiries[id] = expiration;
         if (_exists(id)) {
             // Name was previously owned, and expired
             _burn(id);
@@ -160,6 +172,7 @@ contract BaseRegistrarImplementation is ERC721, IBaseRegistrar, Ownable {
         uint256 duration
     ) external override virtual live onlyController returns (uint256) {
         require(expiries[id] + GRACE_PERIOD >= block.timestamp); // Name must be registered here or in grace period
+        require(expiries[id] != LIFETIME, "Lifetime names cannot be renewed");
         require(
             expiries[id] + duration + GRACE_PERIOD > duration + GRACE_PERIOD
         ); // Prevent future overflow

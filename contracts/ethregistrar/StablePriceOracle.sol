@@ -5,14 +5,14 @@ import "./IPriceOracle.sol";
 import "../utils/StringUtils.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 
-interface AggregatorInterface {
-    function latestAnswer() external view returns (int256);
-}
+
 
 // StablePriceOracle sets a price in USD, based on an oracle.
 contract StablePriceOracle is IPriceOracle {
     using StringUtils for *;
+    AggregatorV3Interface internal usdOracle;
 
     // Rent in base price units by length
     uint256 public immutable price1Letter;
@@ -20,13 +20,13 @@ contract StablePriceOracle is IPriceOracle {
     uint256 public immutable price3Letter;
     uint256 public immutable price4Letter;
     uint256 public immutable price5Letter;
+    uint256 public constant LIFETIME_MULTIPLIER = 10;
 
     // Oracle address
-    AggregatorInterface public immutable usdOracle;
 
     event RentPriceChanged(uint256[] prices);
 
-    constructor(AggregatorInterface _usdOracle, uint256[] memory _rentPrices) {
+    constructor(AggregatorV3Interface _usdOracle, uint256[] memory _rentPrices) {
         usdOracle = _usdOracle;
         price1Letter = _rentPrices[0];
         price2Letter = _rentPrices[1];
@@ -55,9 +55,14 @@ contract StablePriceOracle is IPriceOracle {
             basePrice = price1Letter * duration;
         }
 
+
+            uint256 totalPrice = duration == 0 
+           ? basePrice * LIFETIME_MULTIPLIER 
+           : basePrice;  
+
         return
             IPriceOracle.Price({
-                base: attoUSDToWei(basePrice),
+                base: attoUSDToWei(totalPrice),
                 premium: attoUSDToWei(_premium(name, expires, duration))
             });
     }
@@ -84,14 +89,14 @@ contract StablePriceOracle is IPriceOracle {
         return 0;
     }
 
-    function attoUSDToWei(uint256 amount) internal view returns (uint256) {
-        uint256 ethPrice = uint256(usdOracle.latestAnswer());
-        return (amount * 1e8) / ethPrice;
+     function attoUSDToWei(uint256 amount) internal view returns (uint256) {
+        (, int256 ethPrice,,,) = usdOracle.latestRoundData();
+        return (amount * 1e18) / uint256(ethPrice);
     }
 
     function weiToAttoUSD(uint256 amount) internal view returns (uint256) {
-        uint256 ethPrice = uint256(usdOracle.latestAnswer());
-        return (amount * ethPrice) / 1e8;
+        (, int256 ethPrice,,,) = usdOracle.latestRoundData();
+        return (amount * uint256(ethPrice)) / 1e8;
     }
 
     function supportsInterface(
