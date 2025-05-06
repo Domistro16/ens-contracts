@@ -47,9 +47,9 @@ contract NameWrapper is
     string public constant name = "NameWrapper";
 
     uint64 private constant GRACE_PERIOD = 90 days;
-    bytes32 private constant CRE8OR_NODE = 0xdb16739af6cfc75c90f34d005d9cd5bf924767f495f495a3ff96537a5bde11e6;
+    bytes32 private constant CRE8OR_NODE = 0x4f2c0fc83d175c423d55ddf2fef3b9b38af479fac3adb42afb02778397a27454;
 
-    bytes32 private constant CRE8OR_LABELHASH = 0x86408eecbc7fe2fc0b6b2d6e68a72d0291b2b535b4dfd500f6147d401e91fd9c;
+    bytes32 private constant CRE8OR_LABELHASH = 0x0d1f301a4d55e328cfe2f78743e489a98cedaf66d744b3ab1bb877ff82930b0b;
     bytes32 private constant ROOT_NODE =
         0x0000000000000000000000000000000000000000000000000000000000000000;
 

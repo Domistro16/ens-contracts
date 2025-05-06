@@ -20,7 +20,6 @@ contract StablePriceOracle is IPriceOracle {
     uint256 public immutable price3Letter;
     uint256 public immutable price4Letter;
     uint256 public immutable price5Letter;
-    uint256 public constant LIFETIME_MULTIPLIER = 10;
 
     // Oracle address
 
@@ -56,13 +55,10 @@ contract StablePriceOracle is IPriceOracle {
         }
 
 
-            uint256 totalPrice = duration == 0 
-           ? basePrice * LIFETIME_MULTIPLIER 
-           : basePrice;  
-
+       
         return
             IPriceOracle.Price({
-                base: attoUSDToWei(totalPrice),
+                base: attoUSDToWei(basePrice),
                 premium: attoUSDToWei(_premium(name, expires, duration))
             });
     }

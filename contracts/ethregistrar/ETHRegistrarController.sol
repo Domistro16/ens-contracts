@@ -38,7 +38,7 @@ contract ETHRegistrarController is
     using Address for address;
 
     uint256 public constant MIN_REGISTRATION_DURATION = 28 days;
-    bytes32 private constant ETH_NODE = 0xdb16739af6cfc75c90f34d005d9cd5bf924767f495f495a3ff96537a5bde11e6;
+    bytes32 private constant ETH_NODE = 0x4f2c0fc83d175c423d55ddf2fef3b9b38af479fac3adb42afb02778397a27454;
     uint64 private constant MAX_EXPIRY = type(uint64).max;
     BaseRegistrarImplementation immutable base;
     IPriceOracle public immutable prices;
@@ -283,7 +283,7 @@ contract ETHRegistrarController is
             msg.sender,
             owner,
             resolver,
-            string.concat(name, ".cre8or")
+            string.concat(name, ".creator")
         );
     }
 }

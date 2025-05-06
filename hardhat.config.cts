@@ -71,7 +71,7 @@ const config = {
       accounts: real_accounts,
     },
     testnet: {
-      url: `https://bsc-testnet.public.blastapi.io`,
+      url: `https://bsc-testnet-rpc.publicnode.com`,
       tags: ['test', 'legacy', 'use_root'],
       chainId: 97,
       accounts: real_accounts,
@@ -146,6 +146,7 @@ const config = {
     owner: {
       default: 1,
       56: '0x04A1ceEBdEB45E055772e1cbAd48bb738E7414Fa',
+      97: '0x2A0D7311fA7e9aC2890CFd8219b2dEf0c206E79B'
     },
   },
   external: {
