@@ -2,8 +2,6 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import {useState, useEffect, useRef} from 'react'
 import { useReadContract } from "wagmi";
 import { useNavigate } from "react-router-dom";
-import Nav from './nav'
-
 const abi = [
   {
     "inputs": [
@@ -30,11 +28,11 @@ export default function Home() {
   const navigate = useNavigate()
   const [available, setAvailable] = useState('')
   const [search, setSearch] = useState('')
-  const {data, isPending, error} = useReadContract({
-    address: '0xe14736Ae0e5b50766F897b0D88d07C7d19b80945',
+  const { data, isPending, error } = useReadContract({
+    address: '0x98e9FdF05313A49D95A44ff3563EA3ba05Ce551E',
     functionName: 'available',
     abi: abi,
-    args: [search]
+    args: [search],
   })
 
   const [showBox, setShowBox] = useState(false);
@@ -90,7 +88,13 @@ export default function Home() {
     return (
       <div className="min-h-screen  text-white flex flex-col items-center ">
         {/* Header */}
-          <Nav />
+        <header className="w-full flex justify-between items-center px-10">
+          <div className="text-xl font-bold text-blue-500">ens</div>
+          <div className="flex items-center space-x-6">
+            <span className="text-gray-300">My Names</span>
+           <ConnectButton />
+          </div>
+    </header>
   
         {/* Hero Section */}
         <main className="text-center mt-20">

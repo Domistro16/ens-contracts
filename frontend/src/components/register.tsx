@@ -21,39 +21,39 @@ import Modal from 'react-modal'
 import { buildTextRecords } from '../hooks/setText'
 
 const PriceAbi = [
-    {
-        "inputs": [],
-        "name": "latestRoundData",
-        "outputs": [
-          {
-            "internalType": "uint80",
-            "name": "roundId",
-            "type": "uint80"
-          },
-          {
-            "internalType": "int256",
-            "name": "answer",
-            "type": "int256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "startedAt",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "updatedAt",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint80",
-            "name": "answeredInRound",
-            "type": "uint80"
-          }
-        ],
-        "stateMutability": "view",
-        "type": "function"
+  {
+    inputs: [],
+    name: 'latestRoundData',
+    outputs: [
+      {
+        internalType: 'uint80',
+        name: 'roundId',
+        type: 'uint80',
       },
+      {
+        internalType: 'int256',
+        name: 'answer',
+        type: 'int256',
+      },
+      {
+        internalType: 'uint256',
+        name: 'startedAt',
+        type: 'uint256',
+      },
+      {
+        internalType: 'uint256',
+        name: 'updatedAt',
+        type: 'uint256',
+      },
+      {
+        internalType: 'uint80',
+        name: 'answeredInRound',
+        type: 'uint80',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
 ]
 
 const publicResolverSetTextSnippet = [
@@ -101,7 +101,7 @@ const addrResolver = [
 ]
 
 const Register = () => {
-const navigate = useNavigate()
+  const navigate = useNavigate()
   const { label } = useParams<string>()
   const [years, setYears] = useState(1)
   const [currency, setCurrency] = useState<'BNB' | 'USD'>('BNB')
@@ -119,6 +119,7 @@ const navigate = useNavigate()
     isPending: commitPending,
     writeContractAsync,
   } = useWriteContract()
+
   const {
     data: registerhash,
     error: registerError,
@@ -156,9 +157,8 @@ const navigate = useNavigate()
   const [wait, setWait] = useState(60)
   const [done, setDone] = useState(false)
 
- 
   const { data: latest, isPending: loading } = useReadContract({
-    address: '0xe14736Ae0e5b50766F897b0D88d07C7d19b80945', // Replace with actual contract address
+    address: '0x98e9FdF05313A49D95A44ff3563EA3ba05Ce551E', // Replace with actual contract address
     abi: Controller.abi as any, // Replace with actual ABI
     functionName: 'rentPrice',
     args: [label as string, seconds],
@@ -277,27 +277,41 @@ const navigate = useNavigate()
           duration.days
         } day${duration.days > 1 ? 's' : ''}`
       : '')
-      const [secret, setSecret] = useState<`0x${string}`>('0x');
-      const [commitData, setCommitData] = useState<`0x${string}`[]>([])
+  const [secret, setSecret] = useState<`0x${string}`>('0x')
+  const [commitData, setCommitData] = useState<`0x${string}`[]>([])
+  const [newRecords, setNewRecords] = useState<
+    { key: string; value: string }[]
+  >([])
 
   const commit = async () => {
+    const secretBytes = crypto.getRandomValues(new Uint8Array(32))
+    const secretGenerated = bytesToHex(secretBytes) as `0x${string}`
+    setSecret(secretGenerated)
+  
+
     const textRecords = [
-      { key: "description", value: description },
-      { key: "avatar", value: avatar },
-      { key: "com.twitter", value: twitter },
-      { key: "com.github", value: github },
-      { key: "com.discord", value: discord },
-      { key: "email", value: email },
-      { key: "url", value: website },
-      { key: "phone", value: phone },
-    ];
-    const secretBytes = crypto.getRandomValues(new Uint8Array(32));
-    const secretGenerated = bytesToHex(secretBytes) as `0x${string}`;
-    setSecret(secretGenerated);
+      { key: 'description', value: description },
+      { key: 'avatar', value: avatar },
+      { key: 'com.twitter', value: twitter },
+      { key: 'com.github', value: github },
+      { key: 'com.discord', value: discord },
+      { key: 'email', value: email },
+      { key: 'url', value: website },
+      { key: 'phone', value: phone },
+    ]
 
+    const complete = [...textRecords, ...newRecords]
 
-   
-    const builtData = buildTextRecords(textRecords, namehash(`${label as string}.creator`))
+    const validTextRecords = complete.filter(
+      (r) => r.key.trim() !== '' && r.value.trim() !== '',
+    )
+
+      console.log(validTextRecords)
+
+    const builtData = buildTextRecords(
+      validTextRecords,
+      namehash(`${label as string}.creator`),
+    )
     const addrEncoded = encodeFunctionData({
       abi: addrResolver,
       functionName: 'setAddr',
@@ -305,7 +319,7 @@ const navigate = useNavigate()
     })
     const fullData = [...builtData, addrEncoded]
     setCommitData(fullData)
-    const resolver = '0x432B0521988e427D9DE88c91D0D121497Afc799e'
+    const resolver = '0xF90F11ddD972e661170836e9E3970BBE398988D8'
     try {
       const labelHash = keccak256(toBytes(label || ''))
       const encoded = encodeAbiParameters(
@@ -333,7 +347,7 @@ const navigate = useNavigate()
       const commitment = keccak256(encoded)
       setMessage('Committing Registration')
       await writeContractAsync({
-        address: '0xe14736Ae0e5b50766F897b0D88d07C7d19b80945',
+        address: '0x98e9FdF05313A49D95A44ff3563EA3ba05Ce551E',
         account: address,
         abi: Controller.abi,
         functionName: 'commit',
@@ -350,21 +364,11 @@ const navigate = useNavigate()
 
   const register = async () => {
     setIsLoading(true)
-    const textRecords = [
-      { key: "description", value: description },
-      { key: "avatar", value: avatar },
-      { key: "com.twitter", value: twitter },
-      { key: "com.github", value: github },
-      { key: "com.discord", value: discord },
-      { key: "email", value: email },
-      { key: "url", value: website },
-      { key: "phone", value: phone },
-    ];
-    const resolver = '0x432B0521988e427D9DE88c91D0D121497Afc799e'
+    const resolver = '0xF90F11ddD972e661170836e9E3970BBE398988D8'
     try {
       const { base, premium } = latest as { base: bigint; premium: bigint }
       await registerContract({
-        address: '0xe14736Ae0e5b50766F897b0D88d07C7d19b80945',
+        address: '0x98e9FdF05313A49D95A44ff3563EA3ba05Ce551E',
         account: address,
         abi: Controller.abi,
         functionName: 'register',
@@ -391,20 +395,20 @@ const navigate = useNavigate()
   }
 
   const { data: available } = useReadContract({
-    address: '0xe14736Ae0e5b50766F897b0D88d07C7d19b80945',
+    address: '0x98e9FdF05313A49D95A44ff3563EA3ba05Ce551E',
     abi: Controller.abi as any,
     functionName: 'available',
     args: [label as string],
-  });
-  
+  })
+
   useEffect(() => {
     if (available === false) {
-      navigate('/');
+      navigate('/')
       console.log(available)
     } else if (available === true) {
-      setNext(0);
+      setNext(0)
     }
-  }, [available, navigate]);
+  }, [available, navigate])
 
   console.log(isPrimary)
   return (
@@ -686,6 +690,8 @@ const navigate = useNavigate()
               setPhone={setPhone}
               setAvatar={setAvatar}
               setNext={setNext}
+              textRecords={newRecords}
+              setTextRecords={setNewRecords}
             />
           ) : next == 2 ? (
             <div className="rounded-xl bg-neutral-800 px-10 py-5 mt-5 border-[0.5px] border-gray-400">
@@ -980,9 +986,7 @@ const navigate = useNavigate()
 
                     <div className="bg-gray-100 rounded-xl p-4 mb-6 text-sm text-left space-y-3">
                       <div className="flex justify-between">
-                        <span className="text-gray-500">
-                          {durationString}
-                        </span>
+                        <span className="text-gray-500">{durationString}</span>
                         <span className="font-medium">
                           {price.bnb} BNB{' '}
                           <span className="text-gray-400">{`($${price.usd})`}</span>
@@ -991,11 +995,13 @@ const navigate = useNavigate()
                       <div className="flex justify-between">
                         <span className="text-gray-500">Name expires</span>
                         <div className="flex flex-col items-end">
-                          <span className="font-medium">{dateText?.toLocaleDateString('en-US', {
-  month: 'long',
-  day: 'numeric',
-  year: 'numeric',
-})}</span>
+                          <span className="font-medium">
+                            {dateText?.toLocaleDateString('en-US', {
+                              month: 'long',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })}
+                          </span>
                           <button className="text-blue-500 text-xs hover:underline mt-1">
                             Set reminder
                           </button>
@@ -1051,6 +1057,10 @@ type SetupProps = {
   setPhone: React.Dispatch<React.SetStateAction<string>>
   setAvatar: React.Dispatch<React.SetStateAction<string>>
   setNext: React.Dispatch<React.SetStateAction<number>>
+  textRecords: { key: string; value: string }[]
+  setTextRecords: React.Dispatch<
+    React.SetStateAction<{ key: string; value: string }[]>
+  >
 }
 const SetupModal = ({
   owner,
@@ -1064,6 +1074,8 @@ const SetupModal = ({
   setWebsite,
   setAvatar,
   setNext,
+  textRecords,
+  setTextRecords,
 }: SetupProps) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault()
@@ -1157,6 +1169,51 @@ const SetupModal = ({
               className="w-full mb-10 p-3 bg-neutral-700 rounded-lg focus:outline-none"
               placeholder="Your website URL"
             />
+            {textRecords.map((record, index) => (
+              <div key={index} className="flex space-x-2 mb-3">
+                <input
+                  type="text"
+                  placeholder="Key (Format: com.youtube and not youtube.com)"
+                  className="w-1/2 p-3 bg-neutral-700 rounded-lg text-sm focus:outline-none"
+                  value={record.key}
+                  onChange={(e) => {
+                    const updated = [...textRecords]
+                    updated[index].key = e.target.value
+                    setTextRecords(updated)
+                  }}
+                />
+                <input
+                  type="text"
+                  placeholder="Value"
+                  className="w-1/2 p-3 bg-neutral-700 rounded-lg focus:outline-none"
+                  value={record.value}
+                  onChange={(e) => {
+                    const updated = [...textRecords]
+                    updated[index].value = e.target.value
+                    setTextRecords(updated)
+                  }}
+                />
+                <button
+                  className="text-red-500 hover:text-red-700 text-sm font-semibold"
+                  onClick={() => {
+                    const updated = [...textRecords]
+                    updated.splice(index, 1)
+                    setTextRecords(updated)
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+
+            <button
+              className="px-4 py-2 bg-[#FFF700] text-black rounded-lg font-semibold hover:bg-[#B3AE00] mt-4"
+              onClick={() =>
+                setTextRecords([...textRecords, { key: '', value: '' }])
+              }
+            >
+              + Add Record
+            </button>
           </div>
         )}
 

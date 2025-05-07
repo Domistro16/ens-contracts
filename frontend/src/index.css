@@ -3,3 +3,40 @@
 body{
   @apply bg-neutral-900 text-white px-2 py-8
 }
+
+/* Overlay (background) */
+.modal-overlay {
+  background-color: rgba(0, 0, 0, 0.7);
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 300ms ease-in-out;
+}
+
+.modal-overlay.ReactModal__Overlay--after-open {
+  opacity: 1;
+}
+
+.modal-overlay.ReactModal__Overlay--before-close {
+  opacity: 0;
+}
+
+/* Content (popup box) */
+.modal-content {
+  opacity: 0;
+  transform: scale(0.95);
+  transition: all 300ms ease-in-out;
+}
+
+.modal-content.ReactModal__Content--after-open {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.modal-content.ReactModal__Content--before-close {
+  opacity: 0;
+  transform: scale(0.95);
+}
