@@ -22,7 +22,7 @@ const config = getDefaultConfig({
   projectId: 'YOUR_PROJECT_ID',
   chains: [bscTestnet],
   ssr: true, // If your dApp uses server side rendering (SSR)
-});
+}); 
 
 
 const queryClient = new QueryClient()

@@ -1,10 +1,51 @@
-import ResolverJSON from '../../../artifacts/contracts/resolvers/PublicResolver.sol/PublicResolver.json'
-import ReverseJSON from '../../../artifacts/contracts/reverseRegistrar/ReverseRegistrar.sol/ReverseRegistrar.json'
 import { useReadContract } from 'wagmi'
 
 interface UseENSNameProps {
   owner: `0x${string}`
 }
+
+const nodeAbi = [
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: 'addr',
+        type: 'address',
+      },
+    ],
+    name: 'node',
+    outputs: [
+      {
+        internalType: 'bytes32',
+        name: '',
+        type: 'bytes32',
+      },
+    ],
+    stateMutability: 'pure',
+    type: 'function',
+  },
+]
+const nameAbi = [
+  {
+    inputs: [
+      {
+        internalType: 'bytes32',
+        name: 'node',
+        type: 'bytes32',
+      },
+    ],
+    name: 'name',
+    outputs: [
+      {
+        internalType: 'string',
+        name: '',
+        type: 'string',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+]
 
 export function useENSName({ owner }: UseENSNameProps) {
   // 1️⃣ Fetch owner address, explicitly on our client
@@ -15,7 +56,7 @@ export function useENSName({ owner }: UseENSNameProps) {
     error: nodeError,
   } = useReadContract({
     address: '0x078E09a9584c3Ec7DF706db42685D4eedf456FC9',
-    abi: ReverseJSON.abi as any,
+    abi: nodeAbi as any,
     functionName: 'node',
     args: owner ? [owner] : undefined,
   })
@@ -27,7 +68,7 @@ export function useENSName({ owner }: UseENSNameProps) {
     error: nameError,
   } = useReadContract({
     address: '0xF90F11ddD972e661170836e9E3970BBE398988D8',
-    abi: ResolverJSON.abi as any,
+    abi: nameAbi as any,
     functionName: 'name',
     args: node ? [node] : undefined,
   })
