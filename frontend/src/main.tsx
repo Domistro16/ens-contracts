@@ -15,7 +15,7 @@ import './index.css'
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { bscTestnet } from 'viem/chains'
 
-globalThis.Buffer = Buffer
+;(globalThis as any).Buffer = Buffer
 
 const config = getDefaultConfig({
   appName: 'My RainbowKit App',
