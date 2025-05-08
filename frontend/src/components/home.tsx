@@ -28,7 +28,7 @@ export default function Home() {
   const navigate = useNavigate()
   const [available, setAvailable] = useState('')
   const [search, setSearch] = useState('')
-  const { data, isPending, error } = useReadContract({
+  const { data, isPending} = useReadContract({
     address: '0x98e9FdF05313A49D95A44ff3563EA3ba05Ce551E',
     functionName: 'available',
     abi: abi,
@@ -68,7 +68,7 @@ export default function Home() {
       setAvailable("");  // or whatever default you like
     }
   }, [search, isPending, data]);
-  const handleChange = (e) => {
+  const handleChange = (e: any) => {
     e.preventDefault();
     setSearch(e.target.value);
     if(e.target.value.length > 0){

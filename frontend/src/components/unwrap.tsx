@@ -10,26 +10,6 @@ interface UpdateProps {
 }
 
 Modal.setAppElement('#root')
-const addrResolver = [
-  {
-    inputs: [
-      {
-        internalType: 'bytes32',
-        name: 'node',
-        type: 'bytes32',
-      },
-      {
-        internalType: 'address',
-        name: 'a',
-        type: 'address',
-      },
-    ],
-    name: 'setAddr',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-]
 
 const unwrapETH2LD = [
    {

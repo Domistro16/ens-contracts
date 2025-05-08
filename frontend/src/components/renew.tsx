@@ -1,12 +1,9 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
-import { namehash, encodeFunctionData, keccak256 } from 'viem'
-import { buildTextRecords } from '../hooks/setText'
 import { useWriteContract, useReadContract } from 'wagmi'
-import { add, intervalToDuration, previousDay, set, startOfDay } from 'date-fns'
+import { intervalToDuration, startOfDay } from 'date-fns'
 import Modal from 'react-modal'
 import Controller from '../../../deployments/testnet/ETHRegistrarController.json'
 import DatePicker from 'react-datepicker'
-import { Check, Star } from 'lucide-react'
 
 interface RenewProps {
   expires: bigint
@@ -87,8 +84,6 @@ const Renew = ({
     writeContractAsync: renewContract,
   } = useWriteContract()
 
-  const [address, setOwner] = useState('')
-
   function onRequestClose(): void {
     setIsOpen(false)
   }
@@ -112,10 +107,6 @@ const Renew = ({
     return d
   }, [now])
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.preventDefault()
-    setOwner(e.target.value as `0x${string}`)
-  }
   const [input, setInput] = useState(true)
   const [next, setNext] = useState(number)
   const [date, setDate] = useState(true)
@@ -125,6 +116,8 @@ const Renew = ({
   const [seconds, setSeconds] = useState(0)
   const [currency, setCurrency] = useState<'BNB' | 'USD'>('BNB')
   const [bnb, setBnb] = useState(true) 
+
+  
 
   const { data: latest, isPending: loading } = useReadContract({
     address: '0x98e9FdF05313A49D95A44ff3563EA3ba05Ce551E', // Replace with actual contract address
@@ -242,7 +235,9 @@ const Renew = ({
       console.log(renewError)
     }
   }
-
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setYears(Number(event.target.value))
+  }
   return (
     <Modal
       isOpen={isOpen}

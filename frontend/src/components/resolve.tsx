@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, SetStateAction } from 'react'
+import { useEffect, useState, useMemo} from 'react'
 import Nav from './nav'
 import { useParams } from 'react-router-dom'
 import { keccak256, namehash, toBytes } from 'viem'
@@ -222,7 +222,7 @@ const Resolve = () => {
     name: `${label}.creator`,
     keys: accountKeys,
   })
-  const { records: texts, isLoading: textsLoading } = useTextRecords({
+  const { records: texts,  } = useTextRecords({
     resolverAddress: '0xF90F11ddD972e661170836e9E3970BBE398988D8',
     name: `${label}.creator`,
     keys: textKeys,
@@ -232,7 +232,6 @@ const Resolve = () => {
   const {
     data: address,
     isPending,
-    error: addressError,
   } = useReadContract({
     abi: addr,
     functionName: 'addr',
@@ -241,8 +240,6 @@ const Resolve = () => {
   })
   const {
     data: wrapped,
-    isPending: wrappedLoading,
-    error: wrappedError,
   } = useReadContract({
     abi: isWrapped,
     functionName: 'isWrapped',
@@ -253,7 +250,6 @@ const Resolve = () => {
   const {
     data,
     isPending: wLoading,
-    error: wError,
   } = useReadContract({
     abi: getData,
     functionName: 'getData',
@@ -262,8 +258,6 @@ const Resolve = () => {
   })
   const {
     data: expires,
-    isPending: expiresLoading,
-    error: eError,
   } = useReadContract({
     abi: expiresAbi,
     functionName: 'nameExpires',
@@ -272,8 +266,6 @@ const Resolve = () => {
   })
   const {
     data: gexpires,
-    isPending: gexpiresLoading,
-    error: gError,
   } = useReadContract({
     abi: gExpiresAbi,
     functionName: 'nameExpires',
@@ -282,8 +274,7 @@ const Resolve = () => {
   })
   const {
     data: owner,
-    isPending: ownerLoading,
-    error: oError,
+    isPending: ownerLoading
   } = useReadContract({
     abi: ownerOf,
     functionName: 'ownerOf',
@@ -294,7 +285,6 @@ const Resolve = () => {
   const {
     data: manager,
     isPending: managerLoading,
-    error: mError,
   } = useReadContract({
     abi: ensOwner,
     functionName: 'owner',
@@ -568,7 +558,7 @@ const Resolve = () => {
                       Accounts
                     </div>
                     <div className="flex flex-wrap gap-2 ">
-                      {accounts.map((item, index) => (
+                      {accounts.map((item) => (
                         <div
                           key={item.key}
                           className="bg-gray-900 inline-block px-3 py-1 mt-2 text-sm rounded-full"
@@ -590,7 +580,7 @@ const Resolve = () => {
                       Other Records
                     </div>
                     <div className="flex flex-wrap gap-2 ">
-                      {others.map((item, index) => (
+                      {others.map((item) => (
                         <div
                           key={item.key}
                           className="bg-gray-900 inline-block px-3 py-1 mt-2 text-sm rounded-full"
@@ -673,7 +663,7 @@ const Resolve = () => {
                     </span>
                   </div>
                   <div className="flex flex-col gap-2">
-                    {texts.map((item, index) => (
+                    {texts.map((item) => (
                       <div
                         key={item.key}
                         className="bg-gray-900 px-3 py-1 mt-2 text-sm rounded-full flex"

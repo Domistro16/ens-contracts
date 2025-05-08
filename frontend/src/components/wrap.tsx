@@ -83,8 +83,6 @@ const {address: owner} = useAccount()
   } = useWriteContract()
    const {
      data: approveHash,
-     error: approveError,
-     isPending: approvePending,
      writeContractAsync: approveContract,
    } = useWriteContract()
 
@@ -96,9 +94,7 @@ const {address: owner} = useAccount()
     setNext((prev) => prev - 1)
   }
 
-  const [resolver, setResolver] = useState(
-    `0xF90F11ddD972e661170836e9E3970BBE398988D8`,
-  )
+  const resolver = `0xF90F11ddD972e661170836e9E3970BBE398988D8`
 
 const [info, setInfo] = useState('')
 const [hash, setHash] = useState('')

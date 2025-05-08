@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { keccak256, namehash, toBytes } from 'viem'
-import { useAccount, useWriteContract } from 'wagmi'
+import { namehash } from 'viem'
+import { useWriteContract } from 'wagmi'
 import Modal from 'react-modal'
 
 interface ResolverProps {
@@ -11,26 +11,6 @@ interface ResolverProps {
 }
 
 Modal.setAppElement('#root')
-const addrResolver = [
-  {
-    inputs: [
-      {
-        internalType: 'bytes32',
-        name: 'node',
-        type: 'bytes32',
-      },
-      {
-        internalType: 'address',
-        name: 'a',
-        type: 'address',
-      },
-    ],
-    name: 'setAddr',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-]
 
 const setResolverAbi = [
   {
@@ -59,7 +39,6 @@ const ChangeResolver = ({
   setIsOpen,
   isOpen,
 }: ResolverProps) => {
-  const { address: owner } = useAccount()
   const {
     data: setResolverHash,
     error: setResolverError,

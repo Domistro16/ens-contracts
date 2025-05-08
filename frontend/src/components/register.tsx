@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef, useMemo } from 'react'
 import Nav from './nav'
 import DatePicker from 'react-datepicker'
-import { Check, Star } from 'lucide-react'
-import { add, intervalToDuration, previousDay, set, startOfDay } from 'date-fns'
+import { Check } from 'lucide-react'
+import { intervalToDuration, startOfDay } from 'date-fns'
 import Controller from '../../../deployments/testnet/ETHRegistrarController.json'
 import { useAccount } from 'wagmi'
 import { useWriteContract, useReadContract } from 'wagmi'
@@ -11,7 +11,6 @@ import {
   encodeFunctionData,
   namehash,
   encodeAbiParameters,
-  parseEther,
   keccak256,
   toBytes,
 } from 'viem'
@@ -56,29 +55,6 @@ const PriceAbi = [
   },
 ]
 
-const publicResolverSetTextSnippet = [
-  {
-    inputs: [
-      {
-        name: 'node',
-        type: 'bytes32',
-      },
-      {
-        name: 'key',
-        type: 'string',
-      },
-      {
-        name: 'value',
-        type: 'string',
-      },
-    ],
-    name: 'setText',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-]
-
 const addrResolver = [
   {
     inputs: [
@@ -115,8 +91,6 @@ const Register = () => {
   const [isOpen, setIsOpen] = useState(true)
   const {
     data: commithash,
-    error: commitError,
-    isPending: commitPending,
     writeContractAsync,
   } = useWriteContract()
 
@@ -1072,7 +1046,6 @@ const SetupModal = ({
   setPhone,
   setTwitter,
   setWebsite,
-  setAvatar,
   setNext,
   textRecords,
   setTextRecords,
