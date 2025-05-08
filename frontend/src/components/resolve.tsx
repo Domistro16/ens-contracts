@@ -1,11 +1,14 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, SetStateAction } from 'react'
 import Nav from './nav'
 import { useParams } from 'react-router-dom'
 import { keccak256, namehash } from 'viem'
 import { useReadContract } from 'wagmi'
 import { useTextRecords } from '../hooks/getTextRecords'
 import { useENSName } from '../hooks/getPrimaryName'
-import { useENSRegistrationTime } from '../hooks/getRegistration'
+import { Switch } from '@headlessui/react'
+import { useAccount } from 'wagmi'
+import Update from './updateTextRecords'
+import Renew from './renew'
 
 const ensOwner = [
   {
@@ -50,6 +53,28 @@ const ownerOf = [
   },
 ]
 const expiresAbi = [
+  {
+    inputs: [
+      {
+        internalType: 'uint256',
+        name: 'id',
+        type: 'uint256',
+      },
+    ],
+    name: 'nameExpires',
+    outputs: [
+      {
+        internalType: 'uint256',
+        name: '',
+        type: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+]
+
+const gExpiresAbi = [
   {
     inputs: [
       {
@@ -152,7 +177,12 @@ const Resolve = () => {
   const { label } = useParams<string>()
   const [expiry, setExpiry] = useState('')
   const [expiryTime, setExpiryTime] = useState('')
+  const [graceExpiry, setGraceExpiry] = useState('')
+  const [graceExpiryTime, setGraceExpiryTime] = useState('')
   const [tab, setTab] = useState('profile')
+  const [allowed, setAllowed] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
+  const { address: walletAddress } = useAccount()
   const accountKeys = [
     'com.twitter',
     'com.reddit',
@@ -180,9 +210,6 @@ const Resolve = () => {
     'com.snapchat',
     'com.tiktok',
   ]
-  const date  = useENSRegistrationTime(label as string)
-  console.log(date)
-
   const { records: others } = useTextRecords({
     resolverAddress: '0xF90F11ddD972e661170836e9E3970BBE398988D8',
     name: `${label}.creator`,
@@ -242,9 +269,19 @@ const Resolve = () => {
     args: [id],
   })
   const {
-    data: manager,
-    isPending: managerLoading,
-    error: mError,
+    data: gexpires,
+    isPending: gexpiresLoading,
+    error: gError,
+  } = useReadContract({
+    abi: gExpiresAbi,
+    functionName: 'nameExpires',
+    address: '0xB4C95f28F762E7B42dCd6E108BB8C7fCf90Cb413',
+    args: [id],
+  })
+  const {
+    data: owner,
+    isPending: ownerLoading,
+    error: oError,
   } = useReadContract({
     abi: ownerOf,
     functionName: 'ownerOf',
@@ -253,9 +290,9 @@ const Resolve = () => {
   })
 
   const {
-    data: owner,
-    isPending: ownerLoading,
-    error: oError,
+    data: manager,
+    isPending: managerLoading,
+    error: mError,
   } = useReadContract({
     abi: ensOwner,
     functionName: 'owner',
@@ -265,7 +302,7 @@ const Resolve = () => {
 
   useEffect(() => {
     console.log(expires)
-    if (expires) {
+    if (expires && gexpires) {
       const tsSeconds = Number(expires)
       const date = new Date(tsSeconds * 1000)
       setExpiry(
@@ -276,14 +313,31 @@ const Resolve = () => {
         }),
       )
       setExpiryTime(
-        date.toLocaleDateString('en-US', {
+        date.toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: 'numeric',
+          second: 'numeric',
+        }),
+      )
+      const tseSeconds = Number(gexpires)
+      const gdate = new Date(tseSeconds * 1000)
+      gdate.setDate(gdate.getDate() + 90)
+      setGraceExpiry(
+        gdate.toLocaleDateString('en-US', {
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric',
+        }),
+      )
+      setGraceExpiryTime(
+        gdate.toLocaleTimeString('en-US', {
           hour: 'numeric',
           minute: 'numeric',
           second: 'numeric',
         }),
       )
     }
-  }, [expires])
+  }, [expires, gexpires])
 
   const wrappedOwner = useMemo(() => {
     const wrappedData = data as [string, string, bigint] | undefined
@@ -309,7 +363,7 @@ const Resolve = () => {
     owner: owner as `0x${string}`,
   })
   const oname = useMemo(() => {
-    if (ownerName != undefined ) {
+    if (ownerName != undefined) {
       return ownerName as string
     } else {
       return owner as string
@@ -319,13 +373,100 @@ const Resolve = () => {
     owner: manager as `0x${string}`,
   })
   const manname = useMemo(() => {
-    if (managerName != undefined ) {
+    if (managerName != undefined) {
       return managerName as string
     } else {
       return manager as string
     }
   }, [managerName, manager])
 
+  const fuseMask = useMemo(() => {
+    const wrappedData = data as [string, bigint, bigint] | undefined
+    if (wrappedData) {
+      const [, fuses] = wrappedData || []
+      return fuses as bigint
+    }
+    return 0n // optional for clarity
+  }, [data])
+
+  // 1. Define the new constants
+  const FUSES = {
+    CANNOT_UNWRAP: 1 << 0, // 1
+    CANNOT_BURN_FUSES: 1 << 1, // 2
+    CANNOT_TRANSFER: 1 << 2, // 4
+    CANNOT_SET_RESOLVER: 1 << 3, // 8
+    CANNOT_SET_TTL: 1 << 4, // 16
+    CANNOT_CREATE_SUBDOMAIN: 1 << 5, // 32
+    CANNOT_APPROVE: 1 << 6, // 64
+  } as const
+
+  // 2. After fetching `fuseMask` from NameWrapper.getFuses(node):
+  const mask = Number(fuseMask)
+
+  const perms = {
+    canUnwrap: !(mask & FUSES.CANNOT_UNWRAP),
+    canBurnFuses: !(mask & FUSES.CANNOT_BURN_FUSES),
+    canTransfer: !(mask & FUSES.CANNOT_TRANSFER),
+    canSetResolver: !(mask & FUSES.CANNOT_SET_RESOLVER),
+    canSetTTL: !(mask & FUSES.CANNOT_SET_TTL),
+    canCreateSubdomain: !(mask & FUSES.CANNOT_CREATE_SUBDOMAIN),
+    canApprove: !(mask & FUSES.CANNOT_APPROVE),
+  }
+
+  const permissionItems = [
+    {
+      key: 'unwrap',
+      label: 'Unwrap name',
+      description: 'Revert from wrapped to registry state',
+      allowed: perms.canUnwrap,
+    },
+    {
+      key: 'transfer',
+      label: 'Transfer domain',
+      description: 'Send your ENS name to another address',
+      allowed: perms.canTransfer,
+    },
+    {
+      key: 'approve',
+      label: 'Approve operator',
+      description:
+        'The owner of this name can change the manager approved to renew subnames',
+      allowed: perms.canApprove,
+    },
+    {
+      key: 'setResolver',
+      label: 'Change resolver',
+      description: 'Point your name to a different resolver contract',
+      allowed: perms.canSetResolver,
+    },
+    {
+      key: 'setTTL',
+      label: 'Set TTL',
+      description: 'Change the time-to-live for DNS caches',
+      allowed: perms.canSetTTL,
+    },
+    {
+      key: 'createSubdomain',
+      label: 'Create subdomain',
+      description: 'Generate a new subdomain under this name',
+      allowed: perms.canCreateSubdomain,
+    },
+    {
+      key: 'burnFuses',
+      label: 'Burn fuses',
+      description: 'Permanently revoke additional permissions',
+      allowed: perms.canBurnFuses,
+    },
+  ]
+  const [next, setNext] = useState(1)
+  const handleRenewal = () => {
+    if(walletAddress != wrappedOwner || owner) {
+      setNext(0)
+    } else {
+      setNext(1);
+    }
+     setIsOpen(true)
+  }
   return (
     <div>
       <Nav />
@@ -339,40 +480,42 @@ const Resolve = () => {
           <div className="flex space-x-6 text-gray-400 text-xl mt-4 pb-2">
             <button
               className={`${
-                tab == 'profile' ? 'text-blue-500' : ''
-              } font-semibold`}
+                tab == 'profile' ? 'text-[#FFB000]' : ''
+              } font-semibold hover:text-[#FFB000] focus:text-[#FFB00] cursor-pointer`}
               onClick={() => setTab('profile')}
             >
               Profile
             </button>
             <button
               className={`${
-                tab == 'records' ? 'text-blue-500' : ''
-              } font-semibold`}
+                tab == 'records' ? 'text-[#FFB000]' : ''
+              } font-semibold hover:text-[#FFB000] focus:text-[#FFB00] cursor-pointer`}
               onClick={() => setTab('records')}
             >
               Records
             </button>
             <button
               className={`${
-                tab == 'ownership' ? 'text-blue-500' : ''
-              } font-semibold`}
+                tab == 'ownership' ? 'text-[#FFB000]' : ''
+              } font-semibold hover:text-[#FFB000] focus:text-[#FFB00] cursor-pointer`}
               onClick={() => setTab('ownership')}
             >
               Ownership
             </button>
+            {wrapped == true && (
+              <button
+                className={`${
+                  tab == 'permissions' ? 'text-[#FFB000]' : ''
+                } font-semibold hover:text-[#FFB000] focus:text-[#FFB00] cursor-pointer`}
+                onClick={() => setTab('permissions')}
+              >
+                Permissions
+              </button>
+            )}
             <button
               className={`${
-                tab == 'subnames' ? 'text-blue-500' : ''
-              } font-semibold`}
-              onClick={() => setTab('more')}
-            >
-              Subnames
-            </button>
-            <button
-              className={`${
-                tab == 'more' ? 'text-blue-500' : ''
-              } font-semibold`}
+                tab == 'more' ? 'text-[#FFB000]' : ''
+              } font-semibold hover:text-[#FFB000] focus:text-[#FFB00] cursor-pointer`}
               onClick={() => setTab('more')}
             >
               More
@@ -382,7 +525,7 @@ const Resolve = () => {
           {/* Profile Card */}
           {tab == 'profile' ? (
             <div>
-              <div className="rounded-xl bg-neutral-800 px-10 py-5 mt-5 border-[0.5px] border-gray-400 relative flex items-center">
+              <div className="rounded-xl bg-neutral-800 px-10 py-5 mt-5 border-[0.5px] border-gray-500 relative flex items-center">
                 <div className="w-24 h-24 bg-white rounded-full border-4 border-black mr-2" />
                 <div className="ml-5 flex items-center w-[80%]">
                   <div className="text-2xl font-bold grow-1">
@@ -395,14 +538,14 @@ const Resolve = () => {
                         </div>
                       ))}
                   </div>
-                  <button className="bg-blue-800 px-4 py-2 rounded-lg mt-2 text-sm">
+                  <button className="bg-[#FF7000] px-4 py-2 rounded-lg mt-2 text-sm cursor-pointer font-bold" onClick={handleRenewal}>
                     ▶️ Extend
                   </button>
                 </div>
               </div>
 
               {/* Metadata Card */}
-              <div className="bg-neutral-800 rounded-b-xl p-6 mt-6 space-y-3">
+              <div className="bg-neutral-800 rounded-xl p-6 mt-6 space-y-3 border-[0.5px] border-neutral-500">
                 {accounts.length > 0 ? (
                   <div>
                     <div className="font-semibold text-gray-300 ml-1">
@@ -494,12 +637,13 @@ const Resolve = () => {
                   </div>
                 )}
               </div>
+              <Renew label={label as string} expires={expires as bigint} setIsOpen={setIsOpen} isOpen={isOpen} number={next} />
             </div>
           ) : tab == 'records' ? (
-            <div className="rounded-xl bg-neutral-800 p-3 mt-5 border-[0.5px] border-gray-400 ">
+            <div className="rounded-xl bg-neutral-800 p-3 mt-5 border-[0.5px] border-gray-500 ">
               {texts.length > 0 ? (
                 <div>
-                  <div className="font-semibold text-gray-300 ml-2 text-sm">
+                  <div className="font-semibold text-gray-300 ml-2 text-md">
                     Text{' '}
                     <span className="font-normal text-sm ml-3">
                       {' '}
@@ -528,7 +672,7 @@ const Resolve = () => {
 
               {address != '' ? (
                 <div className="mt-5">
-                  <div className="font-semibold text-gray-300 ml-2 text-sm">
+                  <div className="font-semibold text-gray-300 ml-2 text-md">
                     Address{' '}
                   </div>
                   <div className="flex flex-col gap-2">
@@ -540,69 +684,199 @@ const Resolve = () => {
                 </div>
               ) : (
                 <div className="font-semibold text-gray-300 ml-2 text-sm">
-                  No Text Records
+                  No Address
                 </div>
               )}
-            </div>
-          ) : tab == 'ownership' ? (
-            <div className="rounded-xl bg-neutral-800 mt-5 border-[0.5px] border-neutral-500 p-4 pb-20">
-              <div className="px-2 py-4 text-3xl font-bold text-white border-b-1 border-neutral-500">
-                Roles
-              </div>
-              {wrapped == true ? (
-                <div>
-                  <div className="px-2 py-4 text-xl font-bold text-white border-b-1 border-neutral-500 flex items-center">
-                    <div>Owner: </div>
-                    <div className="text-sm font-semibold ml-5 flex items-center">
-                      {woname as string}
-                      {woname.startsWith('0x') ? (
-                        ''
-                      ) : (
-                        <div className="text-[10px] truncate max-w-30 ml-3 text-gray-400 mt-[1.5px]">
-                          {`   (${shortenAddress(wrappedOwner as string)})`}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="px-2 py-4 text-xl font-bold text-white border-b-1 border-neutral-500 flex items-center">
-                    <div>BSC Record:</div>
-                    <div className="text-sm font-semibold ml-5">
-                      {address as string}
-                    </div>
-                  </div>
-                </div>
-              ) : wrapped == false ? (
-                <div>
-                  <div className="px-2 py-4 text-3xl font-bold text-white border-b-1 border-neutral-500">
-                    <div>Owner: </div>
-                    <div className="text-sm font-semibold ml-5">
-                      {oname as string}
-                      {oname.startsWith('0x') ? (
-                        ''
-                      ) : (
-                        <div className="text-[10px] truncate max-w-30 ml-3 text-gray-400 mt-[1.5px]">
-                          {`   (${shortenAddress(owner as string)})`}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="px-2 py-4 text-3xl font-bold text-white border-b-1 border-neutral-500">
-                    <div>Manager: </div>
-                    <div className="text-sm font-semibold ml-5 flex">
-                      {manname as string}
-                      {manname.startsWith('0x') ? (
-                        ''
-                      ) : (
-                        <div className="text-[10px] truncate max-w-30 ml-3 text-gray-400 mt-[1.5px]">
-                          {`   (${shortenAddress(manager as string)})`}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+
+              <Update
+                texts={texts}
+                label={label as string}
+                owner={address as `0x${string}`}
+                resolverAddress={'0xF90F11ddD972e661170836e9E3970BBE398988D8'}
+                setIsOpen={setIsOpen}
+                isOpen={isOpen}
+              />
+              {wrappedOwner == walletAddress || owner == walletAddress ? (
+                <button className="px-3 py-2 mt-5 bg-[#FF7000] text-sm rounded-xl font-bold cursor-pointer" onClick={() => setIsOpen(true)}>
+                  Edit Records
+                </button>
               ) : (
                 ''
               )}
+            </div>
+          ) : tab == 'ownership' ? (
+            <div>
+              <div className="rounded-xl bg-neutral-800 mt-5 border-[0.5px] border-neutral-500 p-4 pb-20">
+                <div className="px-2 py-4 text-3xl font-bold text-white border-b-1 border-neutral-500">
+                  Roles
+                </div>
+                {wrapped == true ? (
+                  <div>
+                    <div className="px-2 py-4 text-xl font-bold text-white border-b-1 border-neutral-500 flex items-center">
+                      <div>Owner: </div>
+                      <div className="text-sm font-semibold ml-5 flex items-center">
+                        {woname as string}
+                        {woname.startsWith('0x') ? (
+                          ''
+                        ) : (
+                          <div className="text-[10px] truncate max-w-30 ml-3 text-gray-400 mt-[1.5px]">
+                            {`   (${shortenAddress(wrappedOwner as string)})`}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="px-2 py-4 text-xl font-bold text-white border-b-1 border-neutral-500 flex items-center">
+                      <div>BSC Record:</div>
+                      <div className="text-sm font-semibold ml-5">
+                        {address as string}
+                      </div>
+                    </div>
+                  </div>
+                ) : wrapped == false ? (
+                  <div>
+                    <div className="px-2 py-4 text-3xl font-bold text-white border-b-1 border-neutral-500">
+                      <div>Owner: </div>
+                      <div className="text-sm font-semibold ml-5">
+                        {oname as string}
+                        {oname.startsWith('0x') ? (
+                          ''
+                        ) : (
+                          <div className="text-[10px] truncate max-w-30 ml-3 text-gray-400 mt-[1.5px]">
+                            {`   (${shortenAddress(owner as string)})`}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="px-2 py-4 text-3xl font-bold text-white border-b-1 border-neutral-500">
+                      <div>Manager: </div>
+                      <div className="text-sm font-semibold ml-5 flex">
+                        {manname as string}
+                        {manname.startsWith('0x') ? (
+                          ''
+                        ) : (
+                          <div className="text-[10px] truncate max-w-30 ml-3 text-gray-400 mt-[1.5px]">
+                            {`   (${shortenAddress(manager as string)})`}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  ''
+                )}
+              </div>
+              <div className="rounded-xl bg-neutral-800 mt-5 border-[0.5px] border-neutral-500 p-4 flex justify-center">
+                <div className="grid grid-cols-2">
+                  <div className="text-left px-6 border-r-1 border-neutral-500">
+                    <div className="font-bold text-lg">Name Expires</div>
+                    <div className="text-[13px] font-semibold">
+                      {expiry}
+                      <span className="text-gray-400 ml-2 font-normal">
+                        {expiryTime}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="px-6">
+                    <div className="font-bold text-lg">
+                      Grace Period Expires
+                    </div>
+                    <div className="text-[13px] font-semibold">
+                      {graceExpiry}
+                      <span className="text-gray-400 ml-2 font-normal">
+                        {graceExpiryTime}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : tab == 'permissions' ? (
+            <section className="rounded-xl bg-neutral-800 p-8 mt-5 border-[0.5px] border-gray-400 w-full">
+              <h2 className="text-xl font-semibold text-white">Permissions</h2>
+              {permissionItems.map(({ key, label, description, allowed }) => (
+                <div
+                  key={key}
+                  className="flex items-center justify-between p-4 mt-3 bg-neutral-700 rounded-lg"
+                >
+                  <div>
+                    <div className="font-medium text-white">{label}</div>
+                    <div className="text-sm text-neutral-400">
+                      {description}
+                    </div>
+                  </div>
+                  <Switch
+                    checked={allowed}
+                    onChange={setAllowed}
+                    disabled
+                    className={`
+        ${allowed ? 'bg-blue-600' : 'bg-gray-200'}
+        relative inline-flex h-6 w-11 items-center rounded-full transition-colors
+        disabled:opacity-50 disabled:cursor-not-allowed
+      `}
+                  />
+                </div>
+              ))}
+            </section>
+          ) : tab == 'more' ? (
+            <div>
+              <section className="rounded-xl bg-neutral-800 p-8 mt-5 border-[0.5px] border-gray-500 w-full divide-y">
+                <div className="p-3 flex justify-between">
+                  <h1 className="text-2xl font-bold">Token</h1>
+                  <a
+                    href={`https://testnet.bscscan.com/nft/${
+                      wrapped == true
+                        ? '0x501CB529399486684f94c6f59F1b1617202DDE18/' +
+                          BigInt(node).toString(10)
+                        : manager + BigInt(node).toString(10)
+                    }`}
+                    className="flex text-[#FFB000] font-semibold"
+                  >
+                    BscScan
+                  </a>
+                </div>
+                <div className="mt-5">
+                  <div className="bg-gray-900 px-3 py-2 mt-2 text-sm rounded-full flex items-center">
+                    <div className="text-gray-400 mr-1 w-30">hex</div>
+                    <div className="break-all max-w-130">{node}</div>
+                  </div>
+                  <div className="bg-gray-900 px-3 py-2 mt-2 text-sm rounded-full flex items-center">
+                    <div className="text-gray-400 mr-1 w-30">decimal</div>
+                    <div className="break-all max-w-130">
+                      {BigInt(node).toString(10)}
+                    </div>
+                  </div>
+                </div>
+              </section>
+              <section className="rounded-xl bg-neutral-800 p-8 mt-5 border-[0.5px] border-gray-500 w-full ">
+                <h1 className="text-2xl font-bold">Name Wrapper</h1>
+                <div className="flex gap-3 items-center mt-4">
+                  <div className="bg-green-950 px-3 py-2  text-lg rounded-xl flex grow-1 items-center border-[0.5px] border-gray-500 font-semibold">
+                    {wrapped == true ? 'Wrapped' : 'Unwrapped'}
+                  </div>
+                  {wrappedOwner == walletAddress || owner == walletAddress ? (
+                    <button className="px-3 py-2 bg-[#FF7000] rounded-xl font-bold cursor-pointer">
+                      {wrapped == true ? 'Unwrap' : 'Wrap'}
+                    </button>
+                  ) : (
+                    ''
+                  )}
+                </div>
+              </section>
+              <section className="rounded-xl bg-neutral-800 p-8 mt-5 border-[0.5px] border-gray-500 w-full ">
+                <h1 className="text-2xl font-bold">Resolver</h1>
+                <div className="flex gap-3 items-center mt-4">
+                  <div className="bg-neutral-950 px-3 py-2 text-md rounded-xl flex grow-1 items-center border-[0.5px] border-gray-500 font-semibold">
+                    0xF90F11ddD972e661170836e9E3970BBE398988D8
+                  </div>
+                  {wrappedOwner == walletAddress || owner == walletAddress ? (
+                    <button className="px-3 py-2 bg-[#FF7000] rounded-xl font-bold cursor-pointer">
+                      Change Resolver
+                    </button>
+                  ) : (
+                    ''
+                  )}
+                </div>
+              </section>
             </div>
           ) : (
             ''
