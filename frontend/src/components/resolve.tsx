@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo} from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import Nav from './nav'
 import { useParams } from 'react-router-dom'
 import { keccak256, namehash, toBytes } from 'viem'
@@ -222,70 +222,52 @@ const Resolve = () => {
     name: `${label}.creator`,
     keys: accountKeys,
   })
-  const { records: texts,  } = useTextRecords({
+  const { records: texts } = useTextRecords({
     resolverAddress: '0xF90F11ddD972e661170836e9E3970BBE398988D8',
     name: `${label}.creator`,
     keys: textKeys,
   })
   const node = namehash(`${label}.creator`)
   const id = keccak256(label as any)
-  const {
-    data: address,
-    isPending,
-  } = useReadContract({
+  const { data: address, isPending } = useReadContract({
     abi: addr,
     functionName: 'addr',
     address: '0xF90F11ddD972e661170836e9E3970BBE398988D8',
     args: [node],
   })
-  const {
-    data: wrapped,
-  } = useReadContract({
+  const { data: wrapped } = useReadContract({
     abi: isWrapped,
     functionName: 'isWrapped',
     address: '0x501CB529399486684f94c6f59F1b1617202DDE18',
     args: [node],
   })
   console.log(wrapped)
-  const {
-    data,
-    isPending: wLoading,
-  } = useReadContract({
+  const { data, isPending: wLoading } = useReadContract({
     abi: getData,
     functionName: 'getData',
     address: '0x501CB529399486684f94c6f59F1b1617202DDE18',
     args: [node],
   })
-  const {
-    data: expires,
-  } = useReadContract({
+  const { data: expires } = useReadContract({
     abi: expiresAbi,
     functionName: 'nameExpires',
     address: '0xb4c95f28f762e7b42dcd6e108bb8c7fcf90cb413',
     args: [id],
   })
-  const {
-    data: gexpires,
-  } = useReadContract({
+  const { data: gexpires } = useReadContract({
     abi: gExpiresAbi,
     functionName: 'nameExpires',
     address: '0xB4C95f28F762E7B42dCd6E108BB8C7fCf90Cb413',
     args: [id],
   })
-  const {
-    data: owner,
-    isPending: ownerLoading
-  } = useReadContract({
+  const { data: owner, isPending: ownerLoading } = useReadContract({
     abi: ownerOf,
     functionName: 'ownerOf',
     address: '0xb4c95f28f762e7b42dcd6e108bb8c7fcf90cb413',
     args: [id],
   })
 
-  const {
-    data: manager,
-    isPending: managerLoading,
-  } = useReadContract({
+  const { data: manager, isPending: managerLoading } = useReadContract({
     abi: ensOwner,
     functionName: 'owner',
     address: '0xC33387F371067b1Bdc48E694bf30EDB8deF7d4A0',
@@ -464,7 +446,7 @@ const Resolve = () => {
   const [wrapOpen, setWrapOpen] = useState(false)
 
   const handleWrapper = () => {
-    if(wrapped == true) {
+    if (wrapped == true) {
       setIsOpen(true)
     } else {
       setWrapOpen(true)
@@ -858,10 +840,17 @@ const Resolve = () => {
                             10,
                           )
                     }`}
-                    className="flex text-[#FFB000] font-semibold"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      /* let the browser handle the navigation */
+                    }}
+                    className="flex text-[#FFB000] font-semibold cursor-pointer"
                   >
                     BscScan
                   </a>
+                  
                 </div>
                 <div className="mt-5">
                   <div className="bg-gray-900 px-3 py-2 mt-2 text-sm rounded-full flex items-center">
