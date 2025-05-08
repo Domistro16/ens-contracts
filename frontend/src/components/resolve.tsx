@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, SetStateAction } from 'react'
 import Nav from './nav'
 import { useParams } from 'react-router-dom'
-import { keccak256, namehash } from 'viem'
+import { keccak256, namehash, toBytes } from 'viem'
 import { useReadContract } from 'wagmi'
 import { useTextRecords } from '../hooks/getTextRecords'
 import { useENSName } from '../hooks/getPrimaryName'
@@ -9,6 +9,9 @@ import { Switch } from '@headlessui/react'
 import { useAccount } from 'wagmi'
 import Update from './updateTextRecords'
 import Renew from './renew'
+import Unwrap from './unwrap'
+import ChangeResolver from './changeResolver'
+import Wrap from './wrap'
 
 const ensOwner = [
   {
@@ -180,7 +183,6 @@ const Resolve = () => {
   const [graceExpiry, setGraceExpiry] = useState('')
   const [graceExpiryTime, setGraceExpiryTime] = useState('')
   const [tab, setTab] = useState('profile')
-  const [allowed, setAllowed] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const { address: walletAddress } = useAccount()
   const accountKeys = [
@@ -460,12 +462,23 @@ const Resolve = () => {
   ]
   const [next, setNext] = useState(1)
   const handleRenewal = () => {
-    if(walletAddress != wrappedOwner || owner) {
+    if (walletAddress != wrappedOwner || owner) {
       setNext(0)
     } else {
-      setNext(1);
+      setNext(1)
     }
-     setIsOpen(true)
+    setIsOpen(true)
+  }
+
+  const [resolverOpen, setResolverOpen] = useState(false)
+  const [wrapOpen, setWrapOpen] = useState(false)
+
+  const handleWrapper = () => {
+    if(wrapped == true) {
+      setIsOpen(true)
+    } else {
+      setWrapOpen(true)
+    }
   }
   return (
     <div>
@@ -538,7 +551,10 @@ const Resolve = () => {
                         </div>
                       ))}
                   </div>
-                  <button className="bg-[#FF7000] px-4 py-2 rounded-lg mt-2 text-sm cursor-pointer font-bold" onClick={handleRenewal}>
+                  <button
+                    className="bg-[#FF7000] px-4 py-2 rounded-lg mt-2 text-sm cursor-pointer font-bold"
+                    onClick={handleRenewal}
+                  >
                     ▶️ Extend
                   </button>
                 </div>
@@ -637,7 +653,13 @@ const Resolve = () => {
                   </div>
                 )}
               </div>
-              <Renew label={label as string} expires={expires as bigint} setIsOpen={setIsOpen} isOpen={isOpen} number={next} />
+              <Renew
+                label={label as string}
+                expires={expires as bigint}
+                setIsOpen={setIsOpen}
+                isOpen={isOpen}
+                number={next}
+              />
             </div>
           ) : tab == 'records' ? (
             <div className="rounded-xl bg-neutral-800 p-3 mt-5 border-[0.5px] border-gray-500 ">
@@ -697,7 +719,10 @@ const Resolve = () => {
                 isOpen={isOpen}
               />
               {wrappedOwner == walletAddress || owner == walletAddress ? (
-                <button className="px-3 py-2 mt-5 bg-[#FF7000] text-sm rounded-xl font-bold cursor-pointer" onClick={() => setIsOpen(true)}>
+                <button
+                  className="px-3 py-2 mt-5 bg-[#FF7000] text-sm rounded-xl font-bold cursor-pointer"
+                  onClick={() => setIsOpen(true)}
+                >
                   Edit Records
                 </button>
               ) : (
@@ -734,9 +759,9 @@ const Resolve = () => {
                   </div>
                 ) : wrapped == false ? (
                   <div>
-                    <div className="px-2 py-4 text-3xl font-bold text-white border-b-1 border-neutral-500">
+                    <div className="px-2 py-4 text-xl font-bold text-white border-b-1 border-neutral-500 flex items-center">
                       <div>Owner: </div>
-                      <div className="text-sm font-semibold ml-5">
+                      <div className="text-sm font-semibold ml-5 flex items-center">
                         {oname as string}
                         {oname.startsWith('0x') ? (
                           ''
@@ -747,9 +772,9 @@ const Resolve = () => {
                         )}
                       </div>
                     </div>
-                    <div className="px-2 py-4 text-3xl font-bold text-white border-b-1 border-neutral-500">
+                    <div className="px-2 py-4 text-xl font-bold text-white border-b-1 border-neutral-500 flex items-center">
                       <div>Manager: </div>
-                      <div className="text-sm font-semibold ml-5 flex">
+                      <div className="text-sm font-semibold ml-5 flex items-center">
                         {manname as string}
                         {manname.startsWith('0x') ? (
                           ''
@@ -806,14 +831,24 @@ const Resolve = () => {
                   </div>
                   <Switch
                     checked={allowed}
-                    onChange={setAllowed}
                     disabled
                     className={`
-        ${allowed ? 'bg-blue-600' : 'bg-gray-200'}
-        relative inline-flex h-6 w-11 items-center rounded-full transition-colors
-        disabled:opacity-50 disabled:cursor-not-allowed
-      `}
-                  />
+                      ${allowed ? 'bg-blue-600' : 'bg-gray-200'}
+                      relative inline-flex h-6 w-11 items-center rounded-full transition-colors
+                      disabled:opacity-50 disabled:cursor-not-allowed
+                    `}
+                  >
+                    <span className="sr-only">Toggle setting</span>
+
+                    {/* The Thumb: the moving circle */}
+                    <span
+                      aria-hidden="true"
+                      className={`
+      ${allowed ? 'translate-x-6' : 'translate-x-1'}
+      inline-block h-4 w-4 transform rounded-full bg-white transition-transform
+    `}
+                    />
+                  </Switch>
                 </div>
               ))}
             </section>
@@ -827,7 +862,11 @@ const Resolve = () => {
                       wrapped == true
                         ? '0x501CB529399486684f94c6f59F1b1617202DDE18/' +
                           BigInt(node).toString(10)
-                        : manager + BigInt(node).toString(10)
+                        : '0xb4c95f28f762e7b42dcd6e108bb8c7fcf90cb413' +
+                          '/' +
+                          BigInt(keccak256(toBytes(label as string))).toString(
+                            10,
+                          )
                     }`}
                     className="flex text-[#FFB000] font-semibold"
                   >
@@ -854,7 +893,10 @@ const Resolve = () => {
                     {wrapped == true ? 'Wrapped' : 'Unwrapped'}
                   </div>
                   {wrappedOwner == walletAddress || owner == walletAddress ? (
-                    <button className="px-3 py-2 bg-[#FF7000] rounded-xl font-bold cursor-pointer">
+                    <button
+                      className="px-3 py-2 bg-[#FF7000] rounded-xl font-bold cursor-pointer"
+                      onClick={handleWrapper}
+                    >
                       {wrapped == true ? 'Unwrap' : 'Wrap'}
                     </button>
                   ) : (
@@ -869,7 +911,12 @@ const Resolve = () => {
                     0xF90F11ddD972e661170836e9E3970BBE398988D8
                   </div>
                   {wrappedOwner == walletAddress || owner == walletAddress ? (
-                    <button className="px-3 py-2 bg-[#FF7000] rounded-xl font-bold cursor-pointer">
+                    <button
+                      className="px-3 py-2 bg-[#FF7000] rounded-xl font-bold cursor-pointer"
+                      onClick={() => {
+                        setResolverOpen(true)
+                      }}
+                    >
                       Change Resolver
                     </button>
                   ) : (
@@ -877,6 +924,22 @@ const Resolve = () => {
                   )}
                 </div>
               </section>
+              <Unwrap
+                label={label as string}
+                setIsOpen={setIsOpen}
+                isOpen={isOpen}
+              />
+              <Wrap
+                label={label as string}
+                setIsOpen={setWrapOpen}
+                isOpen={wrapOpen}
+              />
+              <ChangeResolver
+                label={label as string}
+                setIsOpen={setResolverOpen}
+                isOpen={resolverOpen}
+                wrapped={wrapped as boolean}
+              />
             </div>
           ) : (
             ''

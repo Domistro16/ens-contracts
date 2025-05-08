@@ -89,15 +89,15 @@ export default function Home() {
       <div className="min-h-screen  text-white flex flex-col items-center ">
         {/* Header */}
         <header className="w-full flex justify-between items-center px-10">
-          <div className="text-xl font-bold text-blue-500">ens</div>
+          <div className="text-xl font-bold text-[#FFB000]">CreatorNames</div>
           <div className="flex items-center space-x-6">
-            <span className="text-gray-300">My Names</span>
+            <span className="text-gray-400 font-bold">My Names</span>
            <ConnectButton />
           </div>
     </header>
   
         {/* Hero Section */}
-        <main className="text-center mt-20">
+        <main className="text-center mt-30">
           <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-[#FFF700] to-orange-400 text-transparent bg-clip-text">
             Your creator username
           </h1>
