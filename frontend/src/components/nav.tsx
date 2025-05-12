@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useReadContract } from 'wagmi'
-import { IdentificationIcon } from "@heroicons/react/outline";
+import { IdentificationIcon, MenuIcon } from "@heroicons/react/outline";
 import { CustomConnect } from './connectButton';
 const abi = [
   {
@@ -139,6 +139,7 @@ export default function Nav() {
           <IdentificationIcon className="w-7 h-7 flex-shrink-0" />
           <span className="w-full inline-flex max-w-max"> My Names </span>
         </div>
+         <MenuIcon className="h-5 w-5 text-gray-400 font-bold" />
         <CustomConnect />
       </div>
     </header>
