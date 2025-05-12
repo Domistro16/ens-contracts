@@ -14,6 +14,7 @@ import ChangeResolver from './changeResolver'
 import Wrap from './wrap'
 import { MobileNav } from './mobilenav'
 import { FastForwardIcon } from '@heroicons/react/solid'
+import { Avatar } from './useAvatar'
 
 const resolveAbi = [
   {
@@ -599,7 +600,10 @@ const Resolve = () => {
           {tab == 'profile' ? (
             <div>
               <div className="rounded-xl bg-neutral-800 p-3 md:px-10 md:py-5 mt-5 border-[0.5px] border-gray-500 relative flex items-center">
-                <div className=" w-15 h-15 md:w-24 md:h-24 bg-white rounded-full border-4 border-black mr-2" />
+                <Avatar
+                  name={`${label}.creator`}
+                  className="w-15 h-15 md:w-24 md:h-24 mr-2 "
+                />
                 <div className="ml-1 md:ml-5 flex items-center w-[80%]">
                   <div className="text-sm md:text-2xl font-bold grow-1">
                     {label}.creator
@@ -615,7 +619,7 @@ const Resolve = () => {
                     className="bg-[#FF7000] flex items-center p-2 md:px-4 md:py-2 rounded-lg mt-2 text-[12px] md:text-sm cursor-pointer font-bold"
                     onClick={handleRenewal}
                   >
-                    <FastForwardIcon className='h-5 w-5 mr-1' /> Extend
+                    <FastForwardIcon className="h-5 w-5 mr-1" /> Extend
                   </button>
                 </div>
               </div>

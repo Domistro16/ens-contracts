@@ -29,7 +29,7 @@ const resolverAbi = [
   },
 ]
 
-export function Avatar({ name, width, height }: { name: string, width?: string, height?: string}) {
+export function Avatar({ name, className }: { name: string, className?: string}) {
  const gradients = [
    'from-purple-400 to-blue-400',
    'from-pink-500 to-yellow-500',
@@ -75,13 +75,11 @@ export function Avatar({ name, width, height }: { name: string, width?: string, 
         <img
           src={data as string}
           alt="Avatar"
-          className="w-8 h-8 rounded-full"
+          className={`${className} rounded-full`}
         />
       ) : (
         <div
-          className={`${width ? `w-${width}` : 'w-8'} ${
-            height ? `h-${height}` : 'h-8'
-          } rounded-full bg-gradient-to-br ${gradient}`}
+          className={`${className} rounded-full bg-gradient-to-br ${gradient}`}
         />
       )}
     </>

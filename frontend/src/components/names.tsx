@@ -158,7 +158,7 @@ export default function Names() {
                   >
                     <div className="flex items-center space-x-4">
                       {/* Placeholder avatar circle */}
-                      <Avatar name={domain.name} />
+                      <Avatar name={domain.name} className='w-8 h-8'/>
                       <div className="leading-tight">
                         <p className="text-white font-medium">{domain.name}</p>
                         <p className={`${statusClass} text-sm`}>{statusText}</p>

@@ -55,7 +55,7 @@ export function WalletModal({
 
       {/* Avatar */}
       <div className="flex justify-center">
-        <Avatar name={name} width="15" height="15" />
+        <Avatar name={name} className='w-15 h-15' />
       </div>
 
       {/* Address */}
