@@ -39,7 +39,7 @@ const privateKeyProvider = new EthereumPrivateKeyProvider({
 })
 
 const web3AuthInstance = new Web3Auth({
-  clientId: import.meta.env.VITE_CLIENT_ID || '',
+  clientId: import.meta.env.CLIENT_ID || import.meta.env.VITE_CLIENT_ID,
   web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
   privateKeyProvider,
   uiConfig: {
