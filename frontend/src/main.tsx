@@ -1,4 +1,3 @@
-import { Buffer } from 'buffer'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
@@ -70,8 +69,6 @@ export const rainbowWeb3AuthConnector = (): Wallet => ({
       ...walletDetails,
     })),
 })
-;(globalThis as any).Buffer = Buffer
-
 export const client = new ApolloClient({
   link: new HttpLink({
     uri: 'https://api.studio.thegraph.com/query/110610/creator/v2',
