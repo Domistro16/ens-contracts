@@ -18,6 +18,8 @@ import { useParams, useNavigate } from 'react-router'
 import Countdown from 'react-countdown'
 import Modal from 'react-modal'
 import { buildTextRecords } from '../hooks/setText'
+import { useEstimateENSFees } from '../hooks/gasEstimation'
+import { MobileNav } from './mobilenav'
 
 const PriceAbi = [
   {
@@ -89,10 +91,7 @@ const Register = () => {
   const [message, setMessage] = useState('')
   const [next, setNext] = useState(0)
   const [isOpen, setIsOpen] = useState(true)
-  const {
-    data: commithash,
-    writeContractAsync,
-  } = useWriteContract()
+  const { data: commithash, writeContractAsync } = useWriteContract()
 
   const {
     data: registerhash,
@@ -103,6 +102,7 @@ const Register = () => {
   const [owner, setOwner] = useState(
     address || ('0x0000000000000000000000000000000000000000' as `0x${string}`),
   )
+
 
   const nextYear = useMemo(() => {
     const d = new Date(now)
@@ -142,6 +142,24 @@ const Register = () => {
     abi: PriceAbi as any, // Replace with actual ABI
     functionName: 'latestRoundData',
   })
+    const { fees, loading: estimateLoading } = useEstimateENSFees({
+      name: `${label}`,
+      owner: address as `0x${string}`,
+      duration: seconds, // seconds
+    })
+
+
+  const [estimateBnb, setEstimateBnb] = useState('')
+  const [estimateUsd, setEstimateUsd] = useState('')
+  useEffect(() => {
+    console.log(fees?.fee.totalEth)
+    const bnb = Number(fees?.fee.totalEth).toFixed(4)
+    setEstimateBnb(bnb as string)
+
+    const [, answer, , ,] = (priceData as any) || [0, 0, 0, 0, 0]
+    const usd = (Number(fees?.fee.totalEth) * Number(answer)) / 1e8
+    setEstimateUsd(usd.toFixed(2))
+  }, [fees, priceData])
 
   const price = useMemo(() => {
     const { base } = (latest as any) || { base: 0 }
@@ -235,7 +253,11 @@ const Register = () => {
   }
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setYears(Number(event.target.value))
+    if (Number(event.target.value) < 1) {
+      setYears(1);
+    } else if(Number(event.target.value) >= 1){
+      setYears(Number(event.target.value))
+    }
   }
   let durationString =
     (duration.years > 0
@@ -261,7 +283,6 @@ const Register = () => {
     const secretBytes = crypto.getRandomValues(new Uint8Array(32))
     const secretGenerated = bytesToHex(secretBytes) as `0x${string}`
     setSecret(secretGenerated)
-  
 
     const textRecords = [
       { key: 'description', value: description },
@@ -280,7 +301,7 @@ const Register = () => {
       (r) => r.key.trim() !== '' && r.value.trim() !== '',
     )
 
-      console.log(validTextRecords)
+    console.log(validTextRecords)
 
     const builtData = buildTextRecords(
       validTextRecords,
@@ -388,19 +409,19 @@ const Register = () => {
   return (
     <div>
       <Nav />
-      <div className="flex flex-col mx-auto md:px-30 lg:px-60 mt-5">
+      <div className="flex flex-col mx-auto px-2 md:px-30 lg:px-60 md:mt-5">
         <div className="">
           <h2 className="font-bold text-2xl text-white">{label}.creator</h2>
           {next == 0 ? (
-            <div className="rounded-xl bg-neutral-800 px-10 py-5 mt-5 border-[0.5px] border-gray-400">
+            <div className="rounded-xl bg-neutral-800 px-5 md:px-10 py-5 mt-5 border-[0.5px] border-gray-400">
               <h1 className="text-lg font-semibold text-white">
                 {' '}
                 Register {label}.creator{' '}
               </h1>
               {date ? (
-                <div className="rounded-full p-5 border-[0.5px] border-gray-400 mt-5 flex items-center">
+                <div className="rounded-full py-4 px-4  border-[0.5px] border-gray-400 mt-5 flex items-center relative">
                   <button
-                    className="flex items-center justify-center text-4xl w-10 h-10 p-7 rounded-full border-[0.5px] cursor-pointer border-gray-400 bg-[#FFF700] disabled:bg-neutral-500 disabled:cursor-not-allowed text-neutral-900 "
+                    className="flex items-center justify-center text-3xl w-10 h-10 p-2  rounded-full border-[0.5px] cursor-pointer border-gray-400 bg-[#FFF700] disabled:bg-neutral-500 disabled:cursor-not-allowed text-neutral-900 "
                     disabled={disable}
                     onClick={decrease}
                   >
@@ -408,7 +429,7 @@ const Register = () => {
                   </button>
                   {input ? (
                     <div
-                      className="text-4xl text-[#FFF700] font-semibold grow-1 text-center hover:bg-[#807F00]  transition-all duration-300 rounded-full cursor-pointer mx-5"
+                      className="text-3xl md:text-3xl text-[#FFF700] font-semibold grow-1 text-center hover:bg-[#807F00]  transition-all duration-300 rounded-full cursor-pointer mx-5"
                       onClick={() => {
                         setInput(false)
                       }}
@@ -422,13 +443,13 @@ const Register = () => {
                       ref={inputRef}
                       type="number"
                       min={1}
-                      className="text-4xl text-[#FFF700] font-semibold grow-1 text-center hover:bg-[#807F00]  transition-all duration-300 rounded-full cursor-pointer mx-5"
+                      className="text-3xl md:text-4xl w-30 md:w-full text-[#FFF700] font-semibold grow-1 text-center hover:bg-[#807F00]  transition-all duration-300 rounded-full cursor-pointer mx-5"
                       value={years}
                       onChange={handleChange}
                     />
                   )}
                   <button
-                    className="flex items-center justify-center text-4xl w-10 h-10 p-7 rounded-full bg-[#FFF700] border-[0.5px] border-gray-400 cursor-pointer text-neutral-900"
+                    className="flex items-center justify-center text-3xl w-10 h-10 p-2 rounded-full bg-[#FFF700] border-[0.5px] border-gray-400 cursor-pointer text-neutral-900"
                     onClick={increment}
                   >
                     +
@@ -437,7 +458,7 @@ const Register = () => {
               ) : (
                 <div
                   ref={containerRef}
-                  className="rounded-full p-5 border-[0.5px] border-gray-400 mt-5 flex items-center hover:bg-[#807F00] cursor-pointer transition-all ease-in-out duration-300 relative"
+                  className="rounded-full p-4 border-[0.5px] border-gray-400 mt-5 flex items-center hover:bg-[#807F00] cursor-pointer transition-all ease-in-out duration-300 relative"
                   onClick={() => {
                     setPicker(true)
                   }}
@@ -455,10 +476,8 @@ const Register = () => {
                     // ◀️ Custom wrapper for the calendar popper
                     calendarContainer={({ className, children }) => (
                       <div
-                        style={{
-                          width: 'auto,',
-                        }}
                         className={`${className} absolute top-full left-0 mt-7 z-50`}
+                        style={{ width: 'auto' }}
                       >
                         {children}
                       </div>
@@ -472,7 +491,7 @@ const Register = () => {
                     })}
                   </div>
 
-                  <button className="flex items-center justify-center text-6xl w-10 h-10 p-7 rounded-full bg-[#FFF700] border-[0.5px] border-gray-400 cursor-pointer text-neutral-900">
+                  <button className="flex items-center justify-center text-3xl w-10 h-10 p-2  rounded-full bg-[#FFF700] border-[0.5px] border-gray-400 cursor-pointer text-neutral-900">
                     +
                   </button>
                 </div>
@@ -514,7 +533,7 @@ const Register = () => {
                 </p>
               )}
               <div>
-                <div className="inline-flex bg-neutral-900 rounded-full p-1">
+                <div className="inline-flex bg-neutral-900 rounded-full p-1 mt-5">
                   {(['BNB', 'USD'] as const).map((curr) => {
                     const isActive = curr === currency
                     return (
@@ -540,74 +559,140 @@ const Register = () => {
                 </div>
                 <div className="rounded-xl bg-neutral-900 px-5 py-5 mt-5">
                   {bnb ? (
-                    <div className="flex">
-                      {date ? (
-                        <div className="text-sm flex font-semibold text-gray-400 grow-1">
-                          {years} year{years > 1 ? 's' : ''} registration
-                        </div>
-                      ) : (
-                        <div className="text-sm flex font-semibold text-gray-400 grow-1">
-                          {duration.years > 0
-                            ? ` ${duration.years} year${
-                                duration.years > 1 ? 's' : ''
-                              }`
-                            : ''}
-                          {duration.months > 0
-                            ? `${duration.years > 0 ? ',' : ''} ${
-                                duration.months
-                              } months`
-                            : ''}
-                          {duration.days > 0
-                            ? `${duration.months > 0 ? ',' : ''} ${
-                                duration.days
-                              } days`
-                            : ''}{' '}
-                          registration.
-                        </div>
-                      )}
+                    <div className="space-y-1">
+                      <div className="flex">
+                        {date ? (
+                          <div className="text-sm flex font-semibold text-gray-400 grow-1">
+                            {years} year{years > 1 ? 's' : ''} registration
+                          </div>
+                        ) : (
+                          <div className="text-sm flex font-semibold text-gray-400 grow-1">
+                            {duration.years > 0
+                              ? ` ${duration.years} year${
+                                  duration.years > 1 ? 's' : ''
+                                }`
+                              : ''}
+                            {duration.months > 0
+                              ? `${duration.years > 0 ? ',' : ''} ${
+                                  duration.months
+                                } months`
+                              : ''}
+                            {duration.days > 0
+                              ? `${duration.months > 0 ? ',' : ''} ${
+                                  duration.days
+                                } days`
+                              : ''}{' '}
+                            registration.
+                          </div>
+                        )}
 
-                      {loading ? (
-                        <div className="animate-pulse">
-                          <div className="animate-pulse w-20 h-6 rounded-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
+                        {loading ? (
+                          <div className="animate-pulse">
+                            <div className="animate-pulse w-20 h-6 rounded-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
+                          </div>
+                        ) : (
+                          <div className="text-gray-400">{price.bnb} BNB</div>
+                        )}
+                      </div>
+                      <div className="flex">
+                        <div className="text-sm flex font-semibold text-gray-400 grow-1">
+                          Estimated Gas Fee
                         </div>
-                      ) : (
-                        <div>{price.bnb} BNB</div>
-                      )}
+
+                        {estimateLoading ? (
+                          <div className="animate-pulse">
+                            <div className="animate-pulse w-20 h-6 rounded-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
+                          </div>
+                        ) : (
+                          <div className="text-gray-400">{estimateBnb} BNB</div>
+                        )}
+                      </div>
+                      <div className="flex">
+                        <div className="text-sm flex font-semibold text-white grow-1">
+                          Estimated Total
+                        </div>
+
+                        {loading || estimateLoading ? (
+                          <div className="animate-pulse">
+                            <div className="animate-pulse w-20 h-6 rounded-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
+                          </div>
+                        ) : (
+                          <div className="text-white">
+                            {(Number(estimateBnb) + Number(price.bnb)).toFixed(
+                              4,
+                            )}{' '}
+                            BNB
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ) : (
-                    <div className="flex">
-                      {date ? (
-                        <div className="text-sm flex font-semibold text-gray-400 grow-1">
-                          {years} year{years > 1 ? 's' : ''} registration
-                        </div>
-                      ) : (
-                        <div className="text-sm flex font-semibold text-gray-400 grow-1">
-                          {duration.years > 0
-                            ? ` ${duration.years} year${
-                                duration.years > 1 ? 's' : ''
-                              }`
-                            : ''}
-                          {duration.months > 0
-                            ? `${duration.years > 0 ? ',' : ''} ${
-                                duration.months
-                              } months`
-                            : ''}
-                          {duration.days > 0
-                            ? `${duration.months > 0 ? ',' : ''} ${
-                                duration.days
-                              } days`
-                            : ''}{' '}
-                          registration.
-                        </div>
-                      )}
+                    <div className="space-y-1">
+                      <div className="flex">
+                        {date ? (
+                          <div className="text-sm flex font-semibold text-gray-400 grow-1">
+                            {years} year{years > 1 ? 's' : ''} registration
+                          </div>
+                        ) : (
+                          <div className="text-sm flex font-semibold text-gray-400 grow-1">
+                            {duration.years > 0
+                              ? ` ${duration.years} year${
+                                  duration.years > 1 ? 's' : ''
+                                }`
+                              : ''}
+                            {duration.months > 0
+                              ? `${duration.years > 0 ? ',' : ''} ${
+                                  duration.months
+                                } months`
+                              : ''}
+                            {duration.days > 0
+                              ? `${duration.months > 0 ? ',' : ''} ${
+                                  duration.days
+                                } days`
+                              : ''}{' '}
+                            registration.
+                          </div>
+                        )}
 
-                      {loading ? (
-                        <div className="animate-pulse">
-                          <div className="animate-pulse w-20 h-6 rounded-lg bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
+                        {loading ? (
+                          <div className="animate-pulse">
+                            <div className="animate-pulse w-20 h-6 rounded-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
+                          </div>
+                        ) : (
+                          <div className="text-gray-400">${price.usd}</div>
+                        )}
+                      </div>
+                      <div className="flex">
+                        <div className="text-sm flex font-semibold text-gray-400 grow-1">
+                          Estimated Gas Fee
                         </div>
-                      ) : (
-                        <div>${price.usd}</div>
-                      )}
+
+                        {estimateLoading ? (
+                          <div className="animate-pulse">
+                            <div className="animate-pulse w-20 h-6 rounded-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
+                          </div>
+                        ) : (
+                          <div className="text-gray-400">${estimateUsd}</div>
+                        )}
+                      </div>
+                      <div className="flex">
+                        <div className="text-sm flex font-semibold text-white grow-1">
+                          Estimated Total
+                        </div>
+
+                        {loading || estimateLoading ? (
+                          <div className="animate-pulse">
+                            <div className="animate-pulse w-20 h-6 rounded-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
+                          </div>
+                        ) : (
+                          <div className="text-white">
+                            $
+                            {(Number(estimateUsd) + Number(price.usd)).toFixed(
+                              2,
+                            )}{' '}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -616,7 +701,7 @@ const Register = () => {
                     <h1 className="text-xl font-semibold">
                       Set as Primary Name
                     </h1>
-                    <p className="text-gray-400 text-sm max-w-100 mt-5">
+                    <p className="text-gray-400 text-sm max-w-60 md:max-w-100 mt-5">
                       This links your address to this name, allowing dApps to
                       display it as your profile when connected to them. You can
                       only have one primary name per address.
@@ -668,7 +753,7 @@ const Register = () => {
               setTextRecords={setNewRecords}
             />
           ) : next == 2 ? (
-            <div className="rounded-xl bg-neutral-800 px-10 py-5 mt-5 border-[0.5px] border-gray-400">
+            <div className="rounded-xl bg-neutral-800 px-5 md:px-10 py-5 mt-5 border-[0.5px] border-gray-400">
               <h1 className="text-center text-2xl font-semibold">
                 Before we Start
               </h1>
@@ -676,27 +761,27 @@ const Register = () => {
                 Registering your name takes three steps
               </p>
               <div className="w-full flex space-x-5 justify-center mt-5">
-                <div className="rounded-lg p-3 border-1 border-gray-300 w-48 h-38 flex-col flex items-center">
+                <div className="rounded-lg p-3 border-1 border-gray-300 w-25 md:w-48 h-38 flex-col flex items-center text-sm lg:text-md">
                   <div className="p-2 flex items-center w-10 h-10 bg-[#FFF700] rounded-full justify-center text-neutral-900 font-bold">
                     1
                   </div>
-                  <p className="text-center text-sm font-semibold mt-5">
+                  <p className="text-center text-[10px] lg:text-sm font-semibold mt-5">
                     Complete a transaction to begin the timer
                   </p>
                 </div>
-                <div className="rounded-lg p-3 border-1 border-gray-300 w-48 h-38 flex-col flex items-center">
+                <div className="rounded-lg p-3 border-1 border-gray-300 w-25 md:w-48 h-38 flex-col flex items-center text-sm lg:text-md">
                   <div className="p-2 flex items-center w-10 h-10 bg-[#FFF700] rounded-full justify-center text-neutral-900 font-bold">
                     2
                   </div>
-                  <p className="text-center text-sm font-semibold mt-5">
+                  <p className="text-center text-[10px] lg:text-sm font-semibold mt-5">
                     Wait 60 seconds for the timer to complete
                   </p>
                 </div>
-                <div className="rounded-lg p-3 border-1 border-gray-300 w-48 h-38 flex-col flex items-center">
+                <div className="rounded-lg p-3 border-1 border-gray-300 w-25 md:w-48 h-38 flex-col flex items-center text-sm lg:text-md">
                   <div className="p-2 flex items-center w-10 h-10 bg-[#FFF700] rounded-full justify-center text-neutral-900 font-bold">
                     3
                   </div>
-                  <p className="text-center text-sm font-semibold mt-5">
+                  <p className="text-center text-[10px] lg:text-sm font-semibold mt-5">
                     Complete a second transaction to secure your name
                   </p>
                 </div>
@@ -728,74 +813,140 @@ const Register = () => {
                 </div>
                 <div className="rounded-xl bg-neutral-900 px-5 py-5 mt-5">
                   {bnb ? (
-                    <div className="flex">
-                      {date ? (
-                        <div className="text-sm flex font-semibold text-gray-400 grow-1">
-                          {years} year{years > 1 ? 's' : ''} registration
-                        </div>
-                      ) : (
-                        <div className="text-sm flex font-semibold text-gray-400 grow-1">
-                          {duration.years > 0
-                            ? ` ${duration.years} year${
-                                duration.years > 1 ? 's' : ''
-                              }`
-                            : ''}
-                          {duration.months > 0
-                            ? `${duration.years > 0 ? ',' : ''} ${
-                                duration.months
-                              } months`
-                            : ''}
-                          {duration.days > 0
-                            ? `${duration.months > 0 ? ',' : ''} ${
-                                duration.days
-                              } days`
-                            : ''}{' '}
-                          registration.
-                        </div>
-                      )}
+                    <div className="space-y-1">
+                      <div className="flex">
+                        {date ? (
+                          <div className="text-sm flex font-semibold text-gray-400 grow-1">
+                            {years} year{years > 1 ? 's' : ''} registration
+                          </div>
+                        ) : (
+                          <div className="text-sm flex font-semibold text-gray-400 grow-1">
+                            {duration.years > 0
+                              ? ` ${duration.years} year${
+                                  duration.years > 1 ? 's' : ''
+                                }`
+                              : ''}
+                            {duration.months > 0
+                              ? `${duration.years > 0 ? ',' : ''} ${
+                                  duration.months
+                                } months`
+                              : ''}
+                            {duration.days > 0
+                              ? `${duration.months > 0 ? ',' : ''} ${
+                                  duration.days
+                                } days`
+                              : ''}{' '}
+                            registration.
+                          </div>
+                        )}
 
-                      {loading ? (
-                        <div className="animate-pulse">
-                          <div className="animate-pulse w-20 h-6 rounded-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
+                        {loading ? (
+                          <div className="animate-pulse">
+                            <div className="animate-pulse w-20 h-6 rounded-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
+                          </div>
+                        ) : (
+                          <div className="text-gray-400">{price.bnb} BNB</div>
+                        )}
+                      </div>
+                      <div className="flex">
+                        <div className="text-sm flex font-semibold text-gray-400 grow-1">
+                          Estimated Gas Fee
                         </div>
-                      ) : (
-                        <div>{price.bnb} BNB</div>
-                      )}
+
+                        {estimateLoading ? (
+                          <div className="animate-pulse">
+                            <div className="animate-pulse w-20 h-6 rounded-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
+                          </div>
+                        ) : (
+                          <div className="text-gray-400">{estimateBnb} BNB</div>
+                        )}
+                      </div>
+                      <div className="flex">
+                        <div className="text-sm flex font-semibold text-white grow-1">
+                          Estimated Total
+                        </div>
+
+                        {loading || estimateLoading ? (
+                          <div className="animate-pulse">
+                            <div className="animate-pulse w-20 h-6 rounded-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
+                          </div>
+                        ) : (
+                          <div className="text-white">
+                            {(Number(estimateBnb) + Number(price.bnb)).toFixed(
+                              4,
+                            )}{' '}
+                            BNB
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ) : (
-                    <div className="flex">
-                      {date ? (
-                        <div className="text-sm flex font-semibold text-gray-400 grow-1">
-                          {years} year{years > 1 ? 's' : ''} registration
-                        </div>
-                      ) : (
-                        <div className="text-sm flex font-semibold text-gray-400 grow-1">
-                          {duration.years > 0
-                            ? ` ${duration.years} year${
-                                duration.years > 1 ? 's' : ''
-                              }`
-                            : ''}
-                          {duration.months > 0
-                            ? `${duration.years > 0 ? ',' : ''} ${
-                                duration.months
-                              } months`
-                            : ''}
-                          {duration.days > 0
-                            ? `${duration.months > 0 ? ',' : ''} ${
-                                duration.days
-                              } days`
-                            : ''}{' '}
-                          registration.
-                        </div>
-                      )}
+                    <div>
+                      <div className="flex">
+                        {date ? (
+                          <div className="text-sm flex font-semibold text-gray-400 grow-1">
+                            {years} year{years > 1 ? 's' : ''} registration
+                          </div>
+                        ) : (
+                          <div className="text-sm flex font-semibold text-gray-400 grow-1">
+                            {duration.years > 0
+                              ? ` ${duration.years} year${
+                                  duration.years > 1 ? 's' : ''
+                                }`
+                              : ''}
+                            {duration.months > 0
+                              ? `${duration.years > 0 ? ',' : ''} ${
+                                  duration.months
+                                } months`
+                              : ''}
+                            {duration.days > 0
+                              ? `${duration.months > 0 ? ',' : ''} ${
+                                  duration.days
+                                } days`
+                              : ''}{' '}
+                            registration.
+                          </div>
+                        )}
 
-                      {loading ? (
-                        <div className="animate-pulse">
-                          <div className="animate-pulse w-20 h-6 rounded-lg bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
+                        {loading ? (
+                          <div className="animate-pulse">
+                            <div className="animate-pulse w-20 h-6 rounded-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
+                          </div>
+                        ) : (
+                          <div className="text-gray-400">${price.usd}</div>
+                        )}
+                      </div>
+                      <div className="flex">
+                        <div className="text-sm flex font-semibold text-gray-400 grow-1">
+                          Estimated Gas Fee
                         </div>
-                      ) : (
-                        <div>${price.usd}</div>
-                      )}
+
+                        {estimateLoading ? (
+                          <div className="animate-pulse">
+                            <div className="animate-pulse w-20 h-6 rounded-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
+                          </div>
+                        ) : (
+                          <div className="text-gray-400">${estimateUsd}</div>
+                        )}
+                      </div>
+                      <div className="flex">
+                        <div className="text-sm flex font-semibold text-white grow-1">
+                          Estimated Total
+                        </div>
+
+                        {loading || estimateLoading ? (
+                          <div className="animate-pulse">
+                            <div className="animate-pulse w-20 h-6 rounded-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
+                          </div>
+                        ) : (
+                          <div className="text-white">
+                            $
+                            {(Number(estimateUsd) + Number(price.usd)).toFixed(
+                              2,
+                            )}{' '}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -803,7 +954,7 @@ const Register = () => {
 
               <div className="flex space-x-5 mt-10 justify-center">
                 <button
-                  className="p-3 px-15 bg-gray-300 text-black rounded-lg font-semibold cursor-pointer"
+                  className="p-3 px-10 md:px-15 bg-gray-300 text-black rounded-lg font-semibold cursor-pointer"
                   onClick={() => {
                     setNext((prev) => prev - 1)
                   }}
@@ -811,9 +962,10 @@ const Register = () => {
                   Back
                 </button>
                 <button
-                  className="p-3 px-15 bg-[#FFF700]  rounded-lg text-black font-semibold cursor-pointer"
+                  className="p-3 px-10 md:px-15 bg-[#FFF700]  rounded-lg text-black font-semibold cursor-pointer"
                   onClick={() => {
                     setNext((prev) => prev + 1)
+                    commit()
                   }}
                 >
                   Begin
@@ -875,6 +1027,7 @@ const Register = () => {
                     onClick={() => {
                       setNext((prev) => prev + 1)
                       setIsOpen(true)
+                      register()
                     }}
                   >
                     Complete Registration
@@ -887,9 +1040,6 @@ const Register = () => {
                 name={`${label}.creator` || ''}
                 action="Start timer"
                 info="Start timer to register name"
-                onOpenWallet={() => {
-                  commit()
-                }}
               />
             </div>
           ) : next == 4 ? (
@@ -900,9 +1050,6 @@ const Register = () => {
                 name={`${label}.creator` || ''}
                 action="Register name"
                 duration={durationString}
-                onOpenWallet={() => {
-                  register()
-                }}
               />
               {registerPending ? (
                 <h2 className="text-3xl font-bold text-center text-neutral-800 dark:text-white">
@@ -1002,6 +1149,7 @@ const Register = () => {
           )}
         </div>
       </div>
+            <MobileNav />
     </div>
   )
 }
@@ -1219,7 +1367,6 @@ interface ConfirmDetailsModalProps {
   name: string
   action: string
   info: string
-  onOpenWallet: () => void
 }
 
 Modal.setAppElement('#root') // IMPORTANT for accessibility
@@ -1230,7 +1377,6 @@ function ConfirmDetailsModal({
   name,
   action,
   info,
-  onOpenWallet,
 }: ConfirmDetailsModalProps) {
   return (
     <Modal
@@ -1241,7 +1387,7 @@ function ConfirmDetailsModal({
       overlayClassName="modal-overlay"
     >
       {/* Modal content */}
-      <div className="p-8 rounded-2xl bg-white dark:bg-neutral-900 shadow-xl relative w-[400px] mx-auto flex flex-col gap-6">
+      <div className="p-8 rounded-2xl bg-white dark:bg-neutral-900 shadow-xl relative w-[300px] md:w-[400px] mx-auto flex flex-col gap-6">
         <button
           onClick={onRequestClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl"
@@ -1260,7 +1406,7 @@ function ConfirmDetailsModal({
         <div className="flex flex-col gap-3">
           <div className="flex justify-between items-center border border-gray-200 dark:border-gray-700 rounded-lg p-3">
             <div className="text-gray-500 text-sm">Name</div>
-            <div className="flex items-center gap-2 font-bold text-black dark:text-white">
+            <div className="flex items-center gap-2 font-bold text-black dark:text-white text-sm md:text-md">
               {name}
               <div className="w-4 h-4 rounded-full bg-gradient-to-r from-pink-400 to-pink-600" />
             </div>
@@ -1268,21 +1414,18 @@ function ConfirmDetailsModal({
 
           <div className="flex justify-between items-center border border-gray-200 dark:border-gray-700 rounded-lg p-3">
             <div className="text-gray-500 text-sm">Action</div>
-            <div className="font-bold text-black dark:text-white">{action}</div>
+            <div className="font-bold text-black dark:text-white text-sm md:text-md">
+              {action}
+            </div>
           </div>
 
           <div className="flex justify-between items-center border border-gray-200 dark:border-gray-700 rounded-lg p-3">
             <div className="text-gray-500 text-sm">Info</div>
-            <div className="font-bold text-black dark:text-white">{info}</div>
+            <div className="font-bold text-black dark:text-white text-sm md:text-md text-right">
+              {info}
+            </div>
           </div>
         </div>
-
-        <button
-          onClick={onOpenWallet}
-          className="bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition cursor-pointer"
-        >
-          Open Wallet
-        </button>
       </div>
     </Modal>
   )
@@ -1293,7 +1436,6 @@ interface RegisterDetailsModalProps {
   name: string
   action: string
   duration: string
-  onOpenWallet: () => void
 }
 
 Modal.setAppElement('#root') // IMPORTANT for accessibility
@@ -1304,7 +1446,6 @@ function RegisterDetailsModal({
   name,
   action,
   duration,
-  onOpenWallet,
 }: RegisterDetailsModalProps) {
   return (
     <Modal
@@ -1315,7 +1456,7 @@ function RegisterDetailsModal({
       overlayClassName="modal-overlay"
     >
       {/* Modal content */}
-      <div className="p-8 rounded-2xl bg-white dark:bg-neutral-900 shadow-xl relative w-[400px] mx-auto flex flex-col gap-6">
+      <div className="p-8 rounded-2xl bg-white dark:bg-neutral-900 shadow-xl relative w-[300px] md:w-[400px] mx-auto flex flex-col gap-6">
         <button
           onClick={onRequestClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl"
@@ -1334,7 +1475,7 @@ function RegisterDetailsModal({
         <div className="flex flex-col gap-3">
           <div className="flex justify-between items-center border border-gray-200 dark:border-gray-700 rounded-lg p-3">
             <div className="text-gray-500 text-sm">Name</div>
-            <div className="flex items-center gap-2 font-bold text-black dark:text-white">
+            <div className="flex items-center gap-2 font-bold text-black dark:text-white text-sm md:text-md">
               {name}
               <div className="w-4 h-4 rounded-full bg-gradient-to-r from-pink-400 to-pink-600" />
             </div>
@@ -1342,23 +1483,18 @@ function RegisterDetailsModal({
 
           <div className="flex justify-between items-center border border-gray-200 dark:border-gray-700 rounded-lg p-3">
             <div className="text-gray-500 text-sm">Action</div>
-            <div className="font-bold text-black dark:text-white">{action}</div>
+            <div className="font-bold text-black dark:text-white text-sm md:text-md">
+              {action}
+            </div>
           </div>
 
           <div className="flex justify-between items-center border border-gray-200 dark:border-gray-700 rounded-lg p-3">
             <div className="text-gray-500 text-sm">Duration</div>
-            <div className="font-bold text-black dark:text-white">
+            <div className="font-bold text-black dark:text-white text-sm md:text-md text-right">
               {duration}
             </div>
           </div>
         </div>
-
-        <button
-          onClick={onOpenWallet}
-          className="bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition cursor-pointer"
-        >
-          Open Wallet
-        </button>
       </div>
     </Modal>
   )

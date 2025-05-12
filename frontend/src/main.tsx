@@ -14,6 +14,20 @@ import App from './App.tsx'
 import './index.css'
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { bscTestnet } from 'viem/chains'
+import {
+  ApolloClient,
+  InMemoryCache,
+  ApolloProvider,
+  HttpLink,
+} from '@apollo/client'
+
+export const client = new ApolloClient({
+  link: new HttpLink({
+    uri: 'https://api.studio.thegraph.com/query/110610/creator/v2',
+    // ← Replace this with your subgraph’s URL
+  }),
+  cache: new InMemoryCache(),
+})
 
 ;(globalThis as any).Buffer = Buffer
 
@@ -31,10 +45,12 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <WagmiProvider config={config as any}>
       <QueryClientProvider client={queryClient}>
-      <RainbowKitProvider >
-        <BrowserRouter>
-        <App />
-        </BrowserRouter>
+        <RainbowKitProvider>
+          <BrowserRouter>
+            <ApolloProvider client={client}>
+              <App />
+            </ApolloProvider>
+          </BrowserRouter>
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>

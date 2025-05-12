@@ -1,7 +1,9 @@
-import { ConnectButton } from "@rainbow-me/rainbowkit";
 import {useState, useEffect, useRef} from 'react'
 import { useReadContract } from "wagmi";
 import { useNavigate } from "react-router-dom";
+import { CustomConnect } from "./connectButton";
+import { MobileNav } from "./mobilenav";
+import { IdentificationIcon } from "@heroicons/react/outline";
 const abi = [
   {
     "inputs": [
@@ -56,7 +58,9 @@ export default function Home() {
   }, [showBox]);
 
   useEffect(() => {
-    if (search.length < 3) {
+    if(search.includes('.')){
+      setAvailable('Invalid')
+    }else if (search.length < 3) {
       setAvailable("Too Short");
     } else if (isPending) {
       setAvailable("Loading…");
@@ -86,26 +90,35 @@ export default function Home() {
     }
   }
     return (
-      <div className="min-h-screen  text-white flex flex-col items-center ">
+      <div className="min-h-screen  ext-white flex flex-col items-center ">
         {/* Header */}
-        <header className="w-full flex justify-between items-center px-10">
+        <header className="w-full flex justify-between items-center px-5 md:px-10">
           <div className="text-xl font-bold text-[#FFB000]">CreatorNames</div>
           <div className="flex items-center space-x-6">
-            <span className="text-gray-400 font-bold">My Names</span>
-           <ConnectButton />
+            <div
+              className="text-gray-400 font-bold hidden md:flex items-center hover:text-white duration-200 cursor-pointer max-w-max gap-3 flex-nowrap"
+              onClick={() => navigate(`/mynames`)}
+            >
+              <IdentificationIcon className="w-7 h-7 flex-shrink-0" />
+              <span className="w-full inline-flex max-w-max"> My Names </span>
+            </div>
+            <div className="hidden md:flex">
+              {' '}
+              <CustomConnect />{' '}
+            </div>
           </div>
-    </header>
-  
+        </header>
+
         {/* Hero Section */}
         <main className="text-center mt-30">
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-[#FFF700] to-orange-400 text-transparent bg-clip-text">
+          <h1 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-[#FFF700] to-orange-400 text-transparent bg-clip-text">
             Your creator username
           </h1>
-          <p className="mt-4 text-gray-400 text-lg max-w-xl mx-auto">
+          <p className="mt-4 text-gray-400 text-md md:text-lg  max-w-xl mx-auto">
             Your identity across web3, one name for all your crypto addresses,
             and your decentralised website.
           </p>
-  
+
           {/* Search Bar */}
           <div className="mt-10 relative">
             <input
@@ -113,20 +126,36 @@ export default function Home() {
               type="text"
               placeholder="Search for a name"
               onChange={handleChange}
-              className="w-80 md:w-96 px-6 py-4 rounded-xl bg-gray-900 text-white border border-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-80 md:w-96 px-6 py-4 text-xl rounded-xl bg-gray-900 font-semibold text-white border border-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-  
+
             {/* Search Results Popup */}
-            <div ref={boxRef} className={`absolute left-1/2 transform -translate-x-1/2 mt-2 w-80 md:w-96 bg-gray-800 border border-gray-700 rounded-xl shadow-lg text-left z-10 transform origin-top
+            <div
+              ref={boxRef}
+              className={`absolute left-1/2 transform -translate-x-1/2 mt-2 w-80 md:w-96 bg-gray-800 border border-gray-700 rounded-xl shadow-lg text-left z-10 transform origin-top
               transition-transform duration-300 ease-out
-              overflow-hidden ${showBox ? "scale-y-100" : "scale-y-0"}`}>
+              overflow-hidden ${showBox ? 'scale-y-100' : 'scale-y-0'}`}
+            >
               <ul className="divide-y divide-gray-700">
-                <li className="px-6 py-3 hover:bg-gray-700 rounded-xl cursor-pointer flex justify-between" onClick={route}><div>{`${search != '' ?  search + '.creator' : ''}`}</div> {available != '' ? (<div className="text-[13px] bg-green-800 text-green-300 p-1 rounded-full">{available}</div>) : ''}</li>
+                <li
+                  className="px-6 py-3 hover:bg-gray-700 font-bold rounded-xl cursor-pointer flex justify-between"
+                  onClick={route}
+                >
+                  <div>{`${search != '' ? search + '.creator' : ''}`}</div>{' '}
+                  {available != '' ? (
+                    <div className="text-[13px] bg-green-800 text-green-300 p-1 rounded-full">
+                      {available}
+                    </div>
+                  ) : (
+                    ''
+                  )}
+                </li>
               </ul>
             </div>
           </div>
         </main>
+        <MobileNav />
       </div>
-    );
+    )
   }
   

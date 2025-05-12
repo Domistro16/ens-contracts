@@ -106,7 +106,7 @@ const ChangeResolver = ({
                 e.preventDefault()
                 setResolverState(e.target.value)
               }}
-              placeholder="Resolver" 
+              placeholder="Resolver"
               className="w-full mb-5 p-3 bg-neutral-700 rounded-lg focus:outline-none"
             />
           </div>
@@ -124,6 +124,7 @@ const ChangeResolver = ({
               className="p-3 bg-[#FFF700] w-full rounded-lg text-black font-semibold cursor-pointer"
               onClick={() => {
                 setNext((prev) => prev + 1)
+                setResolver()
               }}
             >
               Next
@@ -131,7 +132,7 @@ const ChangeResolver = ({
           </div>
         </div>
       ) : (
-        <div className="p-8 rounded-2xl bg-white dark:bg-neutral-900 shadow-xl relative w-[400px] mx-auto flex flex-col gap-6">
+        <div className="p-8 rounded-2xl bg-white dark:bg-neutral-900 shadow-xl relative w-[450px] mx-auto flex flex-col gap-6">
           <button
             onClick={onRequestClose}
             className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl"
@@ -164,20 +165,13 @@ const ChangeResolver = ({
             </div>
             {!setResolverPending && setResolverHash && (
               <div className="flex justify-between items-center border border-gray-200 dark:border-gray-700 rounded-lg p-3">
-                <div className="text-gray-500 text-sm">hash</div>
+                <div className="text-gray-500 text-sm w-20">hash</div>
                 <div className="font-bold text-black dark:text-white flex-wrap break-all text-sm">
                   {setResolverHash}
                 </div>
               </div>
             )}
           </div>
-
-          <button
-            onClick={setResolver}
-            className="bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition cursor-pointer"
-          >
-            Open Wallet
-          </button>
         </div>
       )}
     </Modal>

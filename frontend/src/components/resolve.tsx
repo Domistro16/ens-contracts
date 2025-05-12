@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import Nav from './nav'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { keccak256, namehash, toBytes } from 'viem'
 import { useReadContract } from 'wagmi'
 import { useTextRecords } from '../hooks/getTextRecords'
@@ -12,6 +12,51 @@ import Renew from './renew'
 import Unwrap from './unwrap'
 import ChangeResolver from './changeResolver'
 import Wrap from './wrap'
+import { MobileNav } from './mobilenav'
+
+const resolveAbi = [
+  {
+    inputs: [
+      {
+        internalType: 'bytes32',
+        name: 'node',
+        type: 'bytes32',
+      },
+    ],
+    name: 'resolver',
+    outputs: [
+      {
+        internalType: 'address',
+        name: '',
+        type: 'address',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+]
+
+const availableAbi = [
+  {
+    inputs: [
+      {
+        internalType: 'string',
+        name: 'name',
+        type: 'string',
+      },
+    ],
+    name: 'available',
+    outputs: [
+      {
+        internalType: 'bool',
+        name: '',
+        type: 'bool',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+]
 
 const ensOwner = [
   {
@@ -173,7 +218,11 @@ const addr = [
 ]
 
 function shortenAddress(address: string): string {
-  return `${address.slice(0, 4)}...${address.slice(-5).toUpperCase()}`
+  if (address) {
+    return `${address.slice(0, 4)}...${address.slice(-5).toUpperCase()}`
+  } else {
+    return '0x000...00000'
+  }
 }
 
 const Resolve = () => {
@@ -212,28 +261,14 @@ const Resolve = () => {
     'com.snapchat',
     'com.tiktok',
   ]
-  const { records: others } = useTextRecords({
-    resolverAddress: '0xF90F11ddD972e661170836e9E3970BBE398988D8',
-    name: `${label}.creator`,
-    keys: otherKeys,
-  })
-  const { records: accounts } = useTextRecords({
-    resolverAddress: '0xF90F11ddD972e661170836e9E3970BBE398988D8',
-    name: `${label}.creator`,
-    keys: accountKeys,
-  })
-  const { records: texts } = useTextRecords({
-    resolverAddress: '0xF90F11ddD972e661170836e9E3970BBE398988D8',
-    name: `${label}.creator`,
-    keys: textKeys,
-  })
+
   const node = namehash(`${label}.creator`)
   const id = keccak256(label as any)
-  const { data: address, isPending } = useReadContract({
-    abi: addr,
-    functionName: 'addr',
-    address: '0xF90F11ddD972e661170836e9E3970BBE398988D8',
-    args: [node],
+  const { data: available } = useReadContract({
+    address: '0x98e9FdF05313A49D95A44ff3563EA3ba05Ce551E',
+    abi: availableAbi,
+    functionName: 'available',
+    args: [label as string],
   })
   const { data: wrapped } = useReadContract({
     abi: isWrapped,
@@ -266,7 +301,6 @@ const Resolve = () => {
     address: '0xb4c95f28f762e7b42dcd6e108bb8c7fcf90cb413',
     args: [id],
   })
-
   const { data: manager, isPending: managerLoading } = useReadContract({
     abi: ensOwner,
     functionName: 'owner',
@@ -274,6 +308,50 @@ const Resolve = () => {
     args: [node],
   })
 
+  const { data: resolverResponse, isPending: resolverLoading } = useReadContract({
+    abi: resolveAbi,
+    functionName: 'resolver',
+    address: '0xC33387F371067b1Bdc48E694bf30EDB8deF7d4A0',
+    args: [node],
+  })
+   const resolver = useMemo(() => {
+     if (!resolverLoading && resolverResponse) {
+       return resolverResponse as `0x${string}`
+     }else {
+      return '' as `0x${string}`
+     }
+   }, [resolverLoading, resolverResponse])
+
+  const { data: address, isPending } = useReadContract({
+    abi: addr,
+    functionName: 'addr',
+    address: resolver,
+    args: [node],
+  })
+  const { records: others } = useTextRecords({
+    resolverAddress: resolver,
+    name: `${label}.creator`,
+    keys: otherKeys,
+  })
+  const { records: accounts } = useTextRecords({
+    resolverAddress: resolver,
+    name: `${label}.creator`,
+    keys: accountKeys,
+  })
+  const { records: texts } = useTextRecords({
+    resolverAddress: resolver,
+    name: `${label}.creator`,
+    keys: textKeys,
+  })
+  const navigate = useNavigate()
+  useEffect(() => {
+    if (available === true) {
+      navigate('/register/' + label)
+      console.log(available)
+    } else if (available === false) {
+      setNext(0)
+    }
+  }, [available, navigate])
   useEffect(() => {
     console.log(expires)
     if (expires && gexpires) {
@@ -325,6 +403,8 @@ const Resolve = () => {
   const { name: wrappedOwnerName } = useENSName({
     owner: wrappedOwner as `0x${string}`,
   })
+
+ 
 
   const woname = useMemo(() => {
     if (wrappedOwnerName != undefined) {
@@ -455,14 +535,14 @@ const Resolve = () => {
   return (
     <div>
       <Nav />
-      <div className="flex flex-col mx-auto p-5 md:px-30 lg:px-60 mt-5">
+      <div className="flex flex-col mx-auto p-2 md:px-30 lg:px-60 md:mt-5">
         <div className="">
           <h2 className="font-bold text-2xl text-white">
             {label as string}.creator
           </h2>
 
           {/* Tabs */}
-          <div className="flex space-x-6 text-gray-400 text-xl mt-4 pb-2">
+          <div className="flex space-x-6 text-gray-400 text-xl mt-4 pb-2 overflow-auto">
             <button
               className={`${
                 tab == 'profile' ? 'text-[#FFB000]' : ''
@@ -510,21 +590,21 @@ const Resolve = () => {
           {/* Profile Card */}
           {tab == 'profile' ? (
             <div>
-              <div className="rounded-xl bg-neutral-800 px-10 py-5 mt-5 border-[0.5px] border-gray-500 relative flex items-center">
-                <div className="w-24 h-24 bg-white rounded-full border-4 border-black mr-2" />
-                <div className="ml-5 flex items-center w-[80%]">
-                  <div className="text-2xl font-bold grow-1">
+              <div className="rounded-xl bg-neutral-800 p-3 md:px-10 md:py-5 mt-5 border-[0.5px] border-gray-500 relative flex items-center">
+                <div className=" w-15 h-15 md:w-24 md:h-24 bg-white rounded-full border-4 border-black mr-2" />
+                <div className="ml-1 md:ml-5 flex items-center w-[80%]">
+                  <div className="text-sm md:text-2xl font-bold grow-1">
                     {label}.creator
                     {texts
                       .filter((k) => k.key == 'description')
                       .map((item) => (
-                        <div className="text-sm font-normal mt-2 max-w-90 break-all">
+                        <div className="text-[10px] md:text-sm font-normal mt-2 max-w-90 break-all">
                           {item.value}
                         </div>
                       ))}
                   </div>
                   <button
-                    className="bg-[#FF7000] px-4 py-2 rounded-lg mt-2 text-sm cursor-pointer font-bold"
+                    className="bg-[#FF7000] flex p-2 md:px-4 md:py-2 rounded-lg mt-2 text-[12px] md:text-sm cursor-pointer font-bold"
                     onClick={handleRenewal}
                   >
                     ▶️ Extend
@@ -533,7 +613,7 @@ const Resolve = () => {
               </div>
 
               {/* Metadata Card */}
-              <div className="bg-neutral-800 rounded-xl p-6 mt-6 space-y-3 border-[0.5px] border-neutral-500">
+              <div className="bg-neutral-800 rounded-xl p-4 md:p-6 mt-6 space-y-3 border-[0.5px] border-neutral-500">
                 {accounts.length > 0 ? (
                   <div>
                     <div className="font-semibold text-gray-300 ml-1">
@@ -670,9 +750,9 @@ const Resolve = () => {
                     Address{' '}
                   </div>
                   <div className="flex flex-col gap-2">
-                    <div className="bg-gray-900 px-3 py-1 mt-2 text-sm rounded-full flex">
+                    <div className="bg-gray-900 px-3 py-1 mt-2 text-sm rounded-full flex items-center">
                       <div className="text-gray-400 mr-1 w-30">bsc</div>
-                      <div>{address as string}</div>
+                      <div className="break-all">{address as string}</div>
                     </div>
                   </div>
                 </div>
@@ -711,7 +791,7 @@ const Resolve = () => {
                   <div>
                     <div className="px-2 py-4 text-xl font-bold text-white border-b-1 border-neutral-500 flex items-center">
                       <div>Owner: </div>
-                      <div className="text-sm font-semibold ml-5 flex items-center">
+                      <div className="text-sm font-semibold ml-5 flex items-center max-w-50 flex-wrap">
                         {woname as string}
                         {woname.startsWith('0x') ? (
                           ''
@@ -731,9 +811,9 @@ const Resolve = () => {
                   </div>
                 ) : wrapped == false ? (
                   <div>
-                    <div className="px-2 py-4 text-xl font-bold text-white border-b-1 border-neutral-500 flex items-center">
+                    <div className="px-2 py-4 text-lg md:text-xl font-bold text-white border-b-1 border-neutral-500 flex items-center">
                       <div>Owner: </div>
-                      <div className="text-sm font-semibold ml-5 flex items-center">
+                      <div className="text-sm font-semibold ml-2 flex items-center max-w-50 flex-wrap">
                         {oname as string}
                         {oname.startsWith('0x') ? (
                           ''
@@ -744,9 +824,9 @@ const Resolve = () => {
                         )}
                       </div>
                     </div>
-                    <div className="px-2 py-4 text-xl font-bold text-white border-b-1 border-neutral-500 flex items-center">
+                    <div className="px-2 py-4 text-lg md:text-xl font-bold text-white border-b-1 border-neutral-500 flex items-center">
                       <div>Manager: </div>
-                      <div className="text-sm font-semibold ml-5 flex items-center">
+                      <div className="text-sm font-semibold ml-2 flex items-center max-w-50 flex-wrap">
                         {manname as string}
                         {manname.startsWith('0x') ? (
                           ''
@@ -762,9 +842,9 @@ const Resolve = () => {
                   ''
                 )}
               </div>
-              <div className="rounded-xl bg-neutral-800 mt-5 border-[0.5px] border-neutral-500 p-4 flex justify-center">
-                <div className="grid grid-cols-2">
-                  <div className="text-left px-6 border-r-1 border-neutral-500">
+              <div className="rounded-xl bg-neutral-800 mt-5 border-[0.5px] border-neutral-500 p-4 flex md:justify-center justify-left">
+                <div className="grid md:grid-cols-2 grid-cols-1">
+                  <div className="text-left md:px-6 md:border-r-1 border-b-1 py-6 border-neutral-500 w-full">
                     <div className="font-bold text-lg">Name Expires</div>
                     <div className="text-[13px] font-semibold">
                       {expiry}
@@ -773,7 +853,7 @@ const Resolve = () => {
                       </span>
                     </div>
                   </div>
-                  <div className="px-6">
+                  <div className="md:px-6 text-left py-6">
                     <div className="font-bold text-lg">
                       Grace Period Expires
                     </div>
@@ -826,7 +906,7 @@ const Resolve = () => {
             </section>
           ) : tab == 'more' ? (
             <div>
-              <section className="rounded-xl bg-neutral-800 p-8 mt-5 border-[0.5px] border-gray-500 w-full divide-y">
+              <section className="rounded-xl bg-neutral-800 p-4 md:p-8 mt-5 border-[0.5px] border-gray-500 w-full divide-y">
                 <div className="p-3 flex justify-between">
                   <h1 className="text-2xl font-bold">Token</h1>
                   <a
@@ -850,25 +930,28 @@ const Resolve = () => {
                   >
                     BscScan
                   </a>
-                  
                 </div>
                 <div className="mt-5">
-                  <div className="bg-gray-900 px-3 py-2 mt-2 text-sm rounded-full flex items-center">
-                    <div className="text-gray-400 mr-1 w-30">hex</div>
-                    <div className="break-all max-w-130">{node}</div>
+                  <div className="bg-gray-900 px-3 py-3 mt-2 text-sm md:text-sm rounded-full flex items-center justify-between">
+                    <div className="text-gray-400 mr-1 w-30 text-sm">hex</div>
+                    <div className="break-all max-w-43 md:max-w-130  md:text-sm">
+                      {node}
+                    </div>
                   </div>
-                  <div className="bg-gray-900 px-3 py-2 mt-2 text-sm rounded-full flex items-center">
-                    <div className="text-gray-400 mr-1 w-30">decimal</div>
-                    <div className="break-all max-w-130">
+                  <div className="bg-gray-900 px-3 py-3 mt-2 text-sm md:text-sm rounded-full flex items-center justify-between">
+                    <div className="text-gray-400 mr-1 w-30 text-sm">
+                      decimal
+                    </div>
+                    <div className="break-all max-w-43 md:max-w-130">
                       {BigInt(node).toString(10)}
                     </div>
                   </div>
                 </div>
               </section>
-              <section className="rounded-xl bg-neutral-800 p-8 mt-5 border-[0.5px] border-gray-500 w-full ">
+              <section className="rounded-xl bg-neutral-800 p-4 md:p-8 mt-5 border-[0.5px] border-gray-500 w-full ">
                 <h1 className="text-2xl font-bold">Name Wrapper</h1>
-                <div className="flex gap-3 items-center mt-4">
-                  <div className="bg-green-950 px-3 py-2  text-lg rounded-xl flex grow-1 items-center border-[0.5px] border-gray-500 font-semibold">
+                <div className="flex flex-col md:flex-row gap-3 items-center mt-4">
+                  <div className="bg-green-950 px-3 py-2 text-md md:text-lg rounded-xl flex grow-1 items-center border-[0.5px] border-gray-500 font-semibold w-full">
                     {wrapped == true ? 'Wrapped' : 'Unwrapped'}
                   </div>
                   {wrappedOwner == walletAddress || owner == walletAddress ? (
@@ -883,11 +966,11 @@ const Resolve = () => {
                   )}
                 </div>
               </section>
-              <section className="rounded-xl bg-neutral-800 p-8 mt-5 border-[0.5px] border-gray-500 w-full ">
+              <section className="rounded-xl bg-neutral-800 p-4 md:p-8 mt-5 border-[0.5px] border-gray-500 w-full ">
                 <h1 className="text-2xl font-bold">Resolver</h1>
-                <div className="flex gap-3 items-center mt-4">
-                  <div className="bg-neutral-950 px-3 py-2 text-md rounded-xl flex grow-1 items-center border-[0.5px] border-gray-500 font-semibold">
-                    0xF90F11ddD972e661170836e9E3970BBE398988D8
+                <div className="flex md:flex-row flex-col gap-3 items-center mt-4">
+                  <div className="bg-neutral-950 px-3 py-2 text-sm md:text-md rounded-xl flex grow-1 items-center border-[0.5px] border-gray-500 font-semibold break-all">
+                    {resolver}
                   </div>
                   {wrappedOwner == walletAddress || owner == walletAddress ? (
                     <button
@@ -925,6 +1008,7 @@ const Resolve = () => {
           )}
         </div>
       </div>
+      <MobileNav />
     </div>
   )
 }

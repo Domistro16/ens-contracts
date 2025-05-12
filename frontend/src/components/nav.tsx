@@ -1,8 +1,8 @@
-import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useReadContract } from 'wagmi'
-
+import { IdentificationIcon } from "@heroicons/react/outline";
+import { CustomConnect } from './connectButton';
 const abi = [
   {
     inputs: [
@@ -88,16 +88,21 @@ export default function Nav() {
   }
 
   return (
-    <header className="w-full flex justify-between items-center px-5">
+    <header className="w-full md:flex justify-between items-center px-5 hidden">
       <div className="text-xl font-bold text-blue-500 flex items-center">
-        <div className="text-xl font-bold text-[#FFB000]">CreatorNames</div>
+        <div
+          className="text-xl font-bold text-[#FFB000] cursor-pointer"
+          onClick={() => navigate('/')}
+        >
+          CreatorNames
+        </div>
         <div className="ml-5 relative">
           <input
             ref={inputRef}
             type="text"
             placeholder="Search for a name"
             onChange={handleChange}
-            className="w-60 md:w-96 px-6 py-2 rounded-xl text-[17px] bg-neutral-800 text-white border border-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-60 md:w-70 lg:w-96 px-6 py-2 rounded-xl text-[17px] bg-neutral-800 text-white border border-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 hidden md:flex"
           />
 
           {/* Search Results Popup */}
@@ -127,8 +132,14 @@ export default function Nav() {
       </div>
 
       <div className="flex items-center space-x-6">
-        <span className="text-gray-400 font-bold">My Names</span>
-        <ConnectButton />
+        <div
+          className="text-gray-400 font-bold hidden md:flex items-center hover:text-white duration-200 cursor-pointer max-w-max gap-3 flex-nowrap"
+          onClick={() => navigate(`/mynames`)}
+        >
+          <IdentificationIcon className="w-7 h-7 flex-shrink-0" />
+          <span className="w-full inline-flex max-w-max"> My Names </span>
+        </div>
+        <CustomConnect />
       </div>
     </header>
   )

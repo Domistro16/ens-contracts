@@ -4,6 +4,8 @@ import { intervalToDuration, startOfDay } from 'date-fns'
 import Modal from 'react-modal'
 import Controller from '../../../deployments/testnet/ETHRegistrarController.json'
 import DatePicker from 'react-datepicker'
+import { useEstimateENSFees } from '../hooks/gasEstimation'
+import { zeroAddress } from 'viem'
 
 interface RenewProps {
   expires: bigint
@@ -70,13 +72,7 @@ const PriceAbi = [
 
 Modal.setAppElement('#root')
 
-const Renew = ({
-  expires,
-  label,
-  setIsOpen,
-  isOpen,
-  number,
-}: RenewProps) => {
+const Renew = ({ expires, label, setIsOpen, isOpen, number }: RenewProps) => {
   const {
     data: renewHash,
     error: renewError,
@@ -89,13 +85,12 @@ const Renew = ({
   }
   const [years, setYears] = useState(1)
   const now = useMemo(() => {
-    if(!expires){
-        return 31536000
+    if (!expires) {
+      return 31536000
     } else {
-        return new Date(Number(expires) * 1000)
+      return new Date(Number(expires) * 1000)
     }
-    
-}, [expires])
+  }, [expires])
   const nextYear = useMemo(() => {
     const d = new Date(now)
     d.setFullYear(d.getFullYear() + 1)
@@ -115,9 +110,7 @@ const Renew = ({
   const [disable, setDisable] = useState(true)
   const [seconds, setSeconds] = useState(0)
   const [currency, setCurrency] = useState<'BNB' | 'USD'>('BNB')
-  const [bnb, setBnb] = useState(true) 
-
-  
+  const [bnb, setBnb] = useState(true)
 
   const { data: latest, isPending: loading } = useReadContract({
     address: '0x98e9FdF05313A49D95A44ff3563EA3ba05Ce551E', // Replace with actual contract address
@@ -130,6 +123,24 @@ const Renew = ({
     abi: PriceAbi as any, // Replace with actual ABI
     functionName: 'latestRoundData',
   })
+
+  const { fees, loading: estimateLoading } = useEstimateENSFees({
+    name: `${label}`,
+    owner: zeroAddress as `0x${string}`,
+    duration: seconds, // seconds
+  })
+
+  const [estimateBnb, setEstimateBnb] = useState('')
+  const [estimateUsd, setEstimateUsd] = useState('')
+  useEffect(() => {
+    console.log(fees?.fee.totalEth)
+    const bnb = Number(fees?.fee.totalEth).toFixed(4)
+    setEstimateBnb(bnb as string)
+
+    const [, answer, , ,] = (priceData as any) || [0, 0, 0, 0, 0]
+    const usd = (Number(fees?.fee.totalEth) * Number(answer)) / 1e8
+    setEstimateUsd(usd.toFixed(2))
+  }, [fees, priceData])
 
   const price = useMemo(() => {
     const { base } = (latest as any) || { base: 0 }
@@ -247,14 +258,14 @@ const Renew = ({
       overlayClassName="modal-overlay"
     >
       {next == 0 ? (
-         <div className="rounded-xl bg-neutral-800 px-10 py-5 mt-5 border-[0.5px] flex justify-center text-center border-gray-400 h-100 w-100">
-                You are not the owner would you like to proceed with this
-         </div>
-      ): next == 1 ? (
-        <div className="rounded-xl bg-neutral-800 px-10 py-5 mt-5 border-[0.5px] border-gray-400 h-110 w-150">
+        <div className="rounded-xl bg-neutral-800 px-10 py-5 mt-5 border-[0.5px] flex justify-center text-center border-gray-400 h-100 w-100">
+          You are not the owner would you like to proceed with this
+        </div>
+      ) : next == 1 ? (
+        <div className="rounded-xl bg-neutral-800 px-10 py-5 mt-5 border-[0.5px] border-gray-400 h-120 w-150">
           <h1 className="text-lg font-semibold text-white">
             {' '}
-            Register {label}.creator{' '}
+            Renew {label}.creator{' '}
           </h1>
           {date ? (
             <div className="rounded-full p-5 border-[0.5px] border-gray-400 mt-5 flex items-center">
@@ -397,74 +408,135 @@ const Renew = ({
             </div>
             <div className="rounded-xl bg-neutral-900 px-5 py-5 mt-5">
               {bnb ? (
-                <div className="flex">
-                  {date ? (
-                    <div className="text-sm flex font-semibold text-gray-400 grow-1">
-                      {years} year{years > 1 ? 's' : ''} registration
-                    </div>
-                  ) : (
-                    <div className="text-sm flex font-semibold text-gray-400 grow-1">
-                      {duration.years > 0
-                        ? ` ${duration.years} year${
-                            duration.years > 1 ? 's' : ''
-                          }`
-                        : ''}
-                      {duration.months > 0
-                        ? `${duration.years > 0 ? ',' : ''} ${
-                            duration.months
-                          } months`
-                        : ''}
-                      {duration.days > 0
-                        ? `${duration.months > 0 ? ',' : ''} ${
-                            duration.days
-                          } days`
-                        : ''}{' '}
-                      registration.
-                    </div>
-                  )}
+                <div className="space-y-1">
+                  <div className="flex">
+                    {date ? (
+                      <div className="text-sm flex font-semibold text-gray-400 grow-1">
+                        {years} year{years > 1 ? 's' : ''} registration
+                      </div>
+                    ) : (
+                      <div className="text-sm flex font-semibold text-gray-400 grow-1">
+                        {duration.years > 0
+                          ? ` ${duration.years} year${
+                              duration.years > 1 ? 's' : ''
+                            }`
+                          : ''}
+                        {duration.months > 0
+                          ? `${duration.years > 0 ? ',' : ''} ${
+                              duration.months
+                            } months`
+                          : ''}
+                        {duration.days > 0
+                          ? `${duration.months > 0 ? ',' : ''} ${
+                              duration.days
+                            } days`
+                          : ''}{' '}
+                        registration.
+                      </div>
+                    )}
 
-                  {loading ? (
-                    <div className="animate-pulse">
-                      <div className="animate-pulse w-20 h-6 rounded-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
+                    {loading ? (
+                      <div className="animate-pulse">
+                        <div className="animate-pulse w-20 h-6 rounded-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
+                      </div>
+                    ) : (
+                      <div className="text-gray-400">{price.bnb} BNB</div>
+                    )}
+                  </div>
+                  <div className="flex">
+                    <div className="text-sm flex font-semibold text-gray-400 grow-1">
+                      Estimated Gas Fee
                     </div>
-                  ) : (
-                    <div>{price.bnb} BNB</div>
-                  )}
+
+                    {estimateLoading ? (
+                      <div className="animate-pulse">
+                        <div className="animate-pulse w-20 h-6 rounded-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
+                      </div>
+                    ) : (
+                      <div className="text-gray-400">{estimateBnb} BNB</div>
+                    )}
+                  </div>
+                  <div className="flex">
+                    <div className="text-sm flex font-semibold text-white grow-1">
+                      Estimated Total
+                    </div>
+
+                    {loading || estimateLoading ? (
+                      <div className="animate-pulse">
+                        <div className="animate-pulse w-20 h-6 rounded-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
+                      </div>
+                    ) : (
+                      <div className="text-white">
+                        {(Number(estimateBnb) + Number(price.bnb)).toFixed(4)}{' '}
+                        BNB
+                      </div>
+                    )}
+                  </div>
                 </div>
               ) : (
-                <div className="flex">
-                  {date ? (
-                    <div className="text-sm flex font-semibold text-gray-400 grow-1">
-                      {years} year{years > 1 ? 's' : ''} registration
-                    </div>
-                  ) : (
-                    <div className="text-sm flex font-semibold text-gray-400 grow-1">
-                      {duration.years > 0
-                        ? ` ${duration.years} year${
-                            duration.years > 1 ? 's' : ''
-                          }`
-                        : ''}
-                      {duration.months > 0
-                        ? `${duration.years > 0 ? ',' : ''} ${
-                            duration.months
-                          } months`
-                        : ''}
-                      {duration.days > 0
-                        ? `${duration.months > 0 ? ',' : ''} ${
-                            duration.days
-                          } days`
-                        : ''}{' '}
-                      registration.
-                    </div>
-                  )}
+                <div className="space-y-1">
+                  <div className="flex">
+                    {date ? (
+                      <div className="text-sm flex font-semibold text-gray-400 grow-1">
+                        {years} year{years > 1 ? 's' : ''} registration
+                      </div>
+                    ) : (
+                      <div className="text-sm flex font-semibold text-gray-400 grow-1">
+                        {duration.years > 0
+                          ? ` ${duration.years} year${
+                              duration.years > 1 ? 's' : ''
+                            }`
+                          : ''}
+                        {duration.months > 0
+                          ? `${duration.years > 0 ? ',' : ''} ${
+                              duration.months
+                            } months`
+                          : ''}
+                        {duration.days > 0
+                          ? `${duration.months > 0 ? ',' : ''} ${
+                              duration.days
+                            } days`
+                          : ''}{' '}
+                        registration.
+                      </div>
+                    )}
 
-                  {loading ? (
-                    <div className="animate-pulse">
-                      <div className="animate-pulse w-20 h-6 rounded-lg bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
+                    {loading ? (
+                      <div className="animate-pulse">
+                        <div className="animate-pulse w-20 h-6 rounded-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
+                      </div>
+                    ) : (
+                      <div className="text-gray-400">${price.usd}</div>
+                    )}
+                  </div>
+                  <div className="flex">
+                    <div className="text-sm flex font-semibold text-gray-400 grow-1">
+                      Estimated Gas Fee
                     </div>
-                  ) : (
-                    <div>${price.usd}</div>
-                  )}
+
+                    {estimateLoading ? (
+                      <div className="animate-pulse">
+                        <div className="animate-pulse w-20 h-6 rounded-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
+                      </div>
+                    ) : (
+                      <div className="text-gray-400">${estimateUsd}</div>
+                    )}
+                  </div>
+                  <div className="flex">
+                    <div className="text-sm flex font-semibold text-white grow-1">
+                      Estimated Total
+                    </div>
+
+                    {loading || estimateLoading ? (
+                      <div className="animate-pulse">
+                        <div className="animate-pulse w-20 h-6 rounded-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
+                      </div>
+                    ) : (
+                      <div className="text-white">
+                        ${(Number(estimateUsd) + Number(price.usd)).toFixed(2)}{' '}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -474,6 +546,7 @@ const Renew = ({
               className="px-5 py-3 bg-[#FFF700] text-neutral-900 font-semibold mt-5 rounded-xl cursor-pointer hover:bg-[#B3AE00] transition-all duration-300 flex items-center"
               onClick={() => {
                 setNext(2)
+                renew()
               }}
             >
               Next
@@ -481,7 +554,7 @@ const Renew = ({
           </div>
         </div>
       ) : next == 2 ? (
-        <div className="p-8 rounded-2xl bg-white dark:bg-neutral-900 shadow-xl relative w-[400px] mx-auto flex flex-col gap-6">
+        <div className="p-8 rounded-2xl bg-white dark:bg-neutral-900 shadow-xl relative w-[450px] mx-auto flex flex-col gap-6">
           <button
             onClick={onRequestClose}
             className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl"
@@ -514,22 +587,17 @@ const Renew = ({
             </div>
             {!renewPending && renewHash && (
               <div className="flex justify-between items-center border border-gray-200 dark:border-gray-700 rounded-lg p-3">
-                <div className="text-gray-500 text-sm">Hash</div>
+                <div className="text-gray-500 text-sm w-20">Hash</div>
                 <div className="font-bold text-black dark:text-white flex-wrap break-all text-sm">
                   {renewHash}
                 </div>
               </div>
             )}
           </div>
-
-          <button
-            onClick={renew}
-            className="bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition cursor-pointer"
-          >
-            Open Wallet
-          </button>
         </div>
-      ) : '' }
+      ) : (
+        ''
+      )}
     </Modal>
   )
 }
