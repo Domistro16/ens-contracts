@@ -612,7 +612,7 @@ const Resolve = () => {
                       ))}
                   </div>
                   <button
-                    className="bg-[#FF7000] flex p-2 md:px-4 md:py-2 rounded-lg mt-2 text-[12px] md:text-sm cursor-pointer font-bold"
+                    className="bg-[#FF7000] flex items-center p-2 md:px-4 md:py-2 rounded-lg mt-2 text-[12px] md:text-sm cursor-pointer font-bold"
                     onClick={handleRenewal}
                   >
                     <FastForwardIcon className='h-5 w-5 mr-1' /> Extend

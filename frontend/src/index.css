@@ -1,8 +1,17 @@
+@import url('https://fonts.cdnfonts.com/css/gilroy-bold');
 @import "tailwindcss";
 @import "react-datepicker/dist/react-datepicker.css";
 
+@theme {
+  --font-bold: "Gilroy-bold", sans-serif;
+  --font-heavy: 'Gilroy-Heavy', sans-serif;
+  --font-light: 'Gilroy-Light', sans-serif;
+  --font-semibold: 'Gilroy-Medium', sans-serif;
+  --font-gilroy: 'Gilroy-Regular', sans-serif;
+}
+
 body{
-  @apply bg-neutral-900 text-white px-2 py-8
+  @apply bg-neutral-900 text-white px-2 py-8 font-gilroy
 }
 .react-datepicker__input-container input {
   caret-color: transparent;  /* hides the blinking caret */
