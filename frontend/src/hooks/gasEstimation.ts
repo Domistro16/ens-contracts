@@ -209,7 +209,7 @@ export function useEstimateENSFees({
         )
       } catch (error: any) {
         console.log(error)
-        if (error.code === 'UNPREDICTABLE_GAS_LIMIT' || error.code === '-32603') {
+        if (error) {
           // fallback to a fixed limit
           gasRegister = BigNumber.from(338_568)
         } else {
