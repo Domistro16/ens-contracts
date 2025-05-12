@@ -96,9 +96,9 @@ export default function Home() {
   return (
     <div className="min-h-screen text-white flex flex-col items-center">
       {/* Header */}
-      <header className="w-full flex justify-between items-center px-2 md:px-10 mx-auto">
+      <header className="w-full flex justify-between items-center px-4 md:px-10 mx-auto">
         <div className="text-xl font-bold text-[#FFB000]">CreatorNames</div>
-        <div className="flex items-center space-x-6">
+        <div className="flex items-center md:space-x-6">
           <div
             className="text-gray-400 font-bold hidden md:flex items-center hover:text-white duration-200 cursor-pointer max-w-max gap-1 flex-nowrap"
             onClick={() => navigate(`/mynames`)}
@@ -115,7 +115,7 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <main className="text-center mt-30">
+      <main className="text-center mt-35 md:mt-30">
         <h1 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-[#FFF700] to-orange-400 text-transparent bg-clip-text">
           Your creator username
         </h1>
