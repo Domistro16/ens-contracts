@@ -103,7 +103,6 @@ const Register = () => {
     address || ('0x0000000000000000000000000000000000000000' as `0x${string}`),
   )
 
-
   const nextYear = useMemo(() => {
     const d = new Date(now)
     d.setFullYear(d.getFullYear() + 1)
@@ -142,12 +141,11 @@ const Register = () => {
     abi: PriceAbi as any, // Replace with actual ABI
     functionName: 'latestRoundData',
   })
-    const { fees, loading: estimateLoading } = useEstimateENSFees({
-      name: `${label}`,
-      owner: address as `0x${string}`,
-      duration: seconds, // seconds
-    })
-
+  const { fees, loading: estimateLoading } = useEstimateENSFees({
+    name: `${label}`,
+    owner: address as `0x${string}`,
+    duration: seconds, // seconds
+  })
 
   const [estimateBnb, setEstimateBnb] = useState('')
   const [estimateUsd, setEstimateUsd] = useState('')
@@ -186,7 +184,11 @@ const Register = () => {
     const d = intervalToDuration({ start, end })
     return { years: d.years || 0, months: d.months || 0, days: d.days || 0 }
   }, [nextYear, dateText])
-
+  useEffect(() => {
+    if (label != undefined && label.includes('.')) {
+      navigate('/')
+    }
+  }, [])
   // close when clicking outside
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -238,6 +240,9 @@ const Register = () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [input])
+  useEffect(() => {
+    document.title = `Register – ${label}.creator`
+  }, [label])
 
   useEffect(() => {
     if (years == 1) {
@@ -254,8 +259,8 @@ const Register = () => {
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (Number(event.target.value) < 1) {
-      setYears(1);
-    } else if(Number(event.target.value) >= 1){
+      setYears(1)
+    } else if (Number(event.target.value) >= 1) {
       setYears(Number(event.target.value))
     }
   }
@@ -1149,7 +1154,7 @@ const Register = () => {
           )}
         </div>
       </div>
-            <MobileNav />
+      <MobileNav />
     </div>
   )
 }

@@ -1,12 +1,15 @@
 import { useAccount } from 'wagmi'
 import Nav from './nav'
 import { useAllOwnedNames } from '../hooks/getAllNames'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { WrappedBadge } from './badge'
 import { Avatar } from './useAvatar'
 import { useNavigate } from 'react-router-dom'
 import { MobileNav } from './mobilenav'
 export default function Names() {
+  useEffect(() => {
+    document.title = `My Names`
+  }, [])
   const { address } = useAccount()
   const navigate = useNavigate()
   console.log(address)

@@ -308,19 +308,20 @@ const Resolve = () => {
     args: [node],
   })
 
-  const { data: resolverResponse, isPending: resolverLoading } = useReadContract({
-    abi: resolveAbi,
-    functionName: 'resolver',
-    address: '0xC33387F371067b1Bdc48E694bf30EDB8deF7d4A0',
-    args: [node],
-  })
-   const resolver = useMemo(() => {
-     if (!resolverLoading && resolverResponse) {
-       return resolverResponse as `0x${string}`
-     }else {
+  const { data: resolverResponse, isPending: resolverLoading } =
+    useReadContract({
+      abi: resolveAbi,
+      functionName: 'resolver',
+      address: '0xC33387F371067b1Bdc48E694bf30EDB8deF7d4A0',
+      args: [node],
+    })
+  const resolver = useMemo(() => {
+    if (!resolverLoading && resolverResponse) {
+      return resolverResponse as `0x${string}`
+    } else {
       return '' as `0x${string}`
-     }
-   }, [resolverLoading, resolverResponse])
+    }
+  }, [resolverLoading, resolverResponse])
 
   const { data: address, isPending } = useReadContract({
     abi: addr,
@@ -343,6 +344,14 @@ const Resolve = () => {
     name: `${label}.creator`,
     keys: textKeys,
   })
+  useEffect(() => {
+    document.title = `${label}.creator`
+  }, [label])
+  useEffect(() => {
+    if (label != undefined && label.includes('.')) {
+      navigate('/')
+    }
+  }, [])
   const navigate = useNavigate()
   useEffect(() => {
     if (available === true) {
@@ -403,8 +412,6 @@ const Resolve = () => {
   const { name: wrappedOwnerName } = useENSName({
     owner: wrappedOwner as `0x${string}`,
   })
-
- 
 
   const woname = useMemo(() => {
     if (wrappedOwnerName != undefined) {
