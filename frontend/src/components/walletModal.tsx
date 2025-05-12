@@ -55,7 +55,7 @@ export function WalletModal({
 
       {/* Avatar */}
       <div className="flex justify-center">
-        <Avatar name={name} className='w-15 h-15' />
+        <Avatar name={name == '' ? `${fullAddress || ''}` : name as string} className='w-15 h-15' />
       </div>
 
       {/* Address */}
@@ -75,10 +75,10 @@ export function WalletModal({
       </p>
 
       {/* Buttons */}
-      <div className="mt-6 grid grid-cols-3 gap-4">
+      <div className="mt-6 flex justify-center gap-4 mx-auto">
         <button
           onClick={() => navigator.clipboard.writeText(fullAddress as string)}
-          className="flex flex-col items-center justify-center rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 cursor-pointer hover:scale-105 duration-200"
+          className="flex w-full flex-col items-center justify-center rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 cursor-pointer hover:scale-105 duration-200"
         >
           <DuplicateIcon className="h-5 w-5 text-gray-500" />
           <div>Copy Address</div>
@@ -88,7 +88,7 @@ export function WalletModal({
             onClick={() =>
               navigate(`/resolve/${name.replace(/\.creator$/, '')}`)
             }
-            className="flex flex-col items-center justify-center rounded-lg bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-200 cursor-pointer hover:scale-105 duration-200"
+            className="flex w-full flex-col items-center justify-center rounded-lg bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-200 cursor-pointer hover:scale-105 duration-200"
           >
             <DuplicateIcon className=" h-5 w-5 text-gray-500" />
             <div>View Profile</div>
@@ -100,7 +100,7 @@ export function WalletModal({
           onClick={() => {
             disconnect()
           }}
-          className="flex flex-col items-center justify-center rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 cursor-pointer hover:scale-105 duration-200"
+          className="flex w-full flex-col items-center justify-center rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 cursor-pointer hover:scale-105 duration-200"
         >
           <LogoutIcon className=" h-5 w-5 text-gray-500" />
           <div>Disconnect</div>

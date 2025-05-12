@@ -1,3 +1,4 @@
+import { Buffer } from 'buffer'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
@@ -25,8 +26,12 @@ import { Web3Auth } from '@web3auth/modal'
 import { EthereumPrivateKeyProvider } from '@web3auth/ethereum-provider'
 import { UX_MODE, WEB3AUTH_NETWORK } from '@web3auth/base'
 import { getEvmChainConfig } from '@web3auth/base'
-import { rainbowWallet, metaMaskWallet, trustWallet, coinbaseWallet } from '@rainbow-me/rainbowkit/wallets'
-
+import {
+  rainbowWallet,
+  metaMaskWallet,
+  trustWallet,
+  coinbaseWallet,
+} from '@rainbow-me/rainbowkit/wallets'
 
 const chainConfig = getEvmChainConfig(97, 'your_web3auth_client_id')
 
@@ -38,16 +43,16 @@ const web3AuthInstance = new Web3Auth({
   clientId: import.meta.env.VITE_CLIENT_ID || '',
   web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
   privateKeyProvider,
-   uiConfig: {
-    mode: "dark",
-    defaultLanguage: "en",
+  uiConfig: {
+    mode: 'dark',
+    defaultLanguage: 'en',
     theme: {
-      primary: "#768729",
+      primary: '#768729',
     },
     uxMode: UX_MODE.REDIRECT,
-    modalZIndex: "2147483647"
-  }
-});
+    modalZIndex: '2147483647',
+  },
+})
 
 export const rainbowWeb3AuthConnector = (): Wallet => ({
   id: 'web3auth',
@@ -65,6 +70,7 @@ export const rainbowWeb3AuthConnector = (): Wallet => ({
       ...walletDetails,
     })),
 })
+;(globalThis as any).Buffer = Buffer
 
 export const client = new ApolloClient({
   link: new HttpLink({

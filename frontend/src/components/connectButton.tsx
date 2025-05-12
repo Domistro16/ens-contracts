@@ -70,7 +70,10 @@ export const CustomConnect = () => {
                     }}
                     type="button"
                   >
-                    <Avatar name={name as string} className='w-8 h-8'/>
+                    <Avatar
+                      name={name == '' ? account?.address as string : name as string}
+                      className="w-8 h-8"
+                    />
                     {name ? (
                       <div className="hidden md:flex">{name as string}</div>
                     ) : (
