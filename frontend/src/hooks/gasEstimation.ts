@@ -190,11 +190,9 @@ export function useEstimateENSFees({
       const gasCommit: BigNumber = await controller.estimateGas.commit(
         commitment,
       )
-
       // 3️⃣ get price and total value
       const { base, premium } = await controller.rentPrice(name, duration)
       const totalValue: BigNumber = base.add(premium)
-
       // 4️⃣ estimate register gas
       let gasRegister: BigNumber
       try {
@@ -210,7 +208,8 @@ export function useEstimateENSFees({
           { value: totalValue },
         )
       } catch (error: any) {
-        if (error.code === 'UNPREDICTABLE_GAS_LIMIT') {
+        console.log(error)
+        if (error.code === 'UNPREDICTABLE_GAS_LIMIT' || error.code === '-32603') {
           // fallback to a fixed limit
           gasRegister = BigNumber.from(338_568)
         } else {
@@ -224,7 +223,6 @@ export function useEstimateENSFees({
       const feeCommit = gasCommit.mul(maxFee)
       const feeRegister = gasRegister.mul(maxFee)
       const totalFee = feeCommit.add(feeRegister)
-
       setFees({
         gasUnits: {
           commit: gasCommit.toString(),
