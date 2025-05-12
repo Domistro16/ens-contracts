@@ -42,6 +42,10 @@ export default function Home() {
   const boxRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
+    document.title = `Creator Domains - Get a Domain name with a creator identity`
+  }, [])
+
+  useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
         showBox &&
@@ -116,8 +120,8 @@ export default function Home() {
           Your creator username
         </h1>
         <p className="mt-4 text-gray-400 text-md md:text-lg  max-w-xl mx-auto">
-          Your identity across web3, one name for all your crypto addresses, and
-          your decentralised website.
+          Your Creator Identity accross all web3 platforms. Get a creator domain
+          name by searching for the name in the search bar below
         </p>
 
         {/* Search Bar */}
