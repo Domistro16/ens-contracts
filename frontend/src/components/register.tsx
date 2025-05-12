@@ -604,7 +604,7 @@ const Register = () => {
                           Estimated Gas Fee
                         </div>
 
-                        {estimateLoading ? (
+                        {estimateLoading || estimateBnb == 'NaN' ? (
                           <div className="animate-pulse">
                             <div className="animate-pulse w-20 h-6 rounded-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
                           </div>
@@ -617,7 +617,7 @@ const Register = () => {
                           Estimated Total
                         </div>
 
-                        {loading || estimateLoading ? (
+                        {loading || estimateLoading || estimateBnb == 'NaN' ? (
                           <div className="animate-pulse">
                             <div className="animate-pulse w-20 h-6 rounded-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
                           </div>
@@ -672,7 +672,7 @@ const Register = () => {
                           Estimated Gas Fee
                         </div>
 
-                        {estimateLoading ? (
+                        {estimateLoading || estimateUsd == 'NaN' ? (
                           <div className="animate-pulse">
                             <div className="animate-pulse w-20 h-6 rounded-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
                           </div>
@@ -685,7 +685,7 @@ const Register = () => {
                           Estimated Total
                         </div>
 
-                        {loading || estimateLoading ? (
+                        {loading || estimateLoading || estimateUsd == 'NaN' ? (
                           <div className="animate-pulse">
                             <div className="animate-pulse w-20 h-6 rounded-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800" />
                           </div>
