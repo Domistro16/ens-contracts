@@ -1,9 +1,11 @@
 import { CustomConnect } from './connectButton'
 import { useAccount } from 'wagmi'
 import { IdentificationIcon, SearchIcon } from '@heroicons/react/outline' // or any icon you like
+import { useNavigate } from 'react-router-dom'
 
 export const MobileNav = () => {
   const { isConnected } = useAccount()
+  const navigate = useNavigate()
 
   return (
     <div
@@ -23,14 +25,22 @@ export const MobileNav = () => {
     >
       {/* Menu toggle */}
       <button className="p-1 rounded-full hover:bg-neutral-700">
-        <SearchIcon className="w-9 h-9 text-gray-300" />
+        <SearchIcon
+          className="w-9 h-9 text-gray-300"
+          onClick={() => navigate(`/`)}
+        />
       </button>
 
       {/* Optional label when connected */}
-      {isConnected && <IdentificationIcon className="w-9 h-9 text-gray-300"/>}
+      {isConnected && (
+        <IdentificationIcon
+          className="w-9 h-9 text-gray-300"
+          onClick={() => navigate(`/mynames`)}
+        />
+      )}
 
       {/* Your custom connect button */}
-        <CustomConnect/>
+      <CustomConnect />
     </div>
   )
 }

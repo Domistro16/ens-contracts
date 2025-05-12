@@ -149,7 +149,7 @@ export default function Names() {
                 return (
                   <li
                     key={domain.name + idx}
-                    className="flex items-center justify-between py-4 px-4 hover:bg-neutral-700 rounded-md transition-colors cursor-pointer"
+                    className="flex items-center justify-between py-4 md:px-4 hover:bg-neutral-700 rounded-md transition-colors cursor-pointer"
                     onClick={() => {
                       navigate(
                         `/resolve/${domain.name.replace(/\.creator$/, '')}`,
@@ -164,7 +164,7 @@ export default function Names() {
                         <p className={`${statusClass} text-sm`}>{statusText}</p>
                       </div>
                     </div>
-                    <div className="flex space-x-2">
+                    <div className="flex flex-col md:flex-row gap-2">
                       <WrappedBadge name={domain.name} tag={'Manager'} />
                       <WrappedBadge name={domain.name} tag={'Owner'} />
                     </div>

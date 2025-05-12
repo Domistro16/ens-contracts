@@ -13,6 +13,7 @@ import Unwrap from './unwrap'
 import ChangeResolver from './changeResolver'
 import Wrap from './wrap'
 import { MobileNav } from './mobilenav'
+import { FastForwardIcon } from '@heroicons/react/solid'
 
 const resolveAbi = [
   {
@@ -614,7 +615,7 @@ const Resolve = () => {
                     className="bg-[#FF7000] flex p-2 md:px-4 md:py-2 rounded-lg mt-2 text-[12px] md:text-sm cursor-pointer font-bold"
                     onClick={handleRenewal}
                   >
-                    ▶️ Extend
+                    <FastForwardIcon className='h-5 w-5 mr-1' /> Extend
                   </button>
                 </div>
               </div>

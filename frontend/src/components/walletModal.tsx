@@ -60,7 +60,7 @@ export function WalletModal({
 
       {/* Address */}
       {name == '' ? (
-        <h3 className="mt-4 text-center text-lg font-semibold text-gray-900">
+        <h3 className="mt-4 text-center text-xl font-bold text-gray-900">
           {short(address)}
         </h3>
       ) : (
@@ -97,7 +97,9 @@ export function WalletModal({
           ''
         )}
         <button
-          onClick={() => {disconnect()}}
+          onClick={() => {
+            disconnect()
+          }}
           className="flex flex-col items-center justify-center rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 cursor-pointer hover:scale-105 duration-200"
         >
           <LogoutIcon className=" h-5 w-5 text-gray-500" />
