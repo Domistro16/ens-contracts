@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useReadContract } from 'wagmi'
+import { useAccount, useReadContract } from 'wagmi'
 import { IdentificationIcon, MenuIcon } from "@heroicons/react/outline";
 import { CustomConnect } from './connectButton';
 const abi = [
@@ -39,6 +39,7 @@ export default function Nav() {
   const [showBox, setShowBox] = useState(false)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const boxRef = useRef<HTMLDivElement | null>(null)
+  const {isDisconnected, isConnected, address} = useAccount();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -132,14 +133,16 @@ export default function Nav() {
       </div>
 
       <div className="flex items-center space-x-6">
-        <div
-          className="text-gray-400 font-bold hidden md:flex items-center hover:text-white duration-200 cursor-pointer max-w-max gap-3 flex-nowrap"
-          onClick={() => navigate(`/mynames`)}
-        >
-          <IdentificationIcon className="w-7 h-7 flex-shrink-0" />
-          <span className="w-full inline-flex max-w-max"> My Names </span>
-        </div>
-         <MenuIcon className="h-5 w-5 text-gray-400 font-bold" />
+        {!isDisconnected && isConnected && address && (
+          <div
+            className="text-gray-400 font-bold hidden md:flex items-center hover:text-white duration-200 cursor-pointer max-w-max gap-3 flex-nowrap"
+            onClick={() => navigate(`/mynames`)}
+          >
+            <IdentificationIcon className="w-7 h-7 flex-shrink-0" />
+            <span className="w-full inline-flex max-w-max"> My Names </span>
+          </div>
+        )}
+        <MenuIcon className="h-5 w-5 text-gray-400 font-bold" />
         <CustomConnect />
       </div>
     </header>

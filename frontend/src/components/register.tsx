@@ -20,6 +20,7 @@ import Modal from 'react-modal'
 import { buildTextRecords } from '../hooks/setText'
 import { useEstimateENSFees } from '../hooks/gasEstimation'
 import { MobileNav } from './mobilenav'
+import TransakWidget from './transakPay'
 
 const PriceAbi = [
   {
@@ -728,7 +729,8 @@ const Register = () => {
                   </button>
                 </div>
               </div>
-              <div className="flex items-center justify-center">
+              <div className="flex items-center justify-center gap-2">
+                <TransakWidget label={label as string} owner={owner} duration={seconds} reverse={isPrimary}/>
                 <button
                   className="px-5 py-3 bg-[#FFF700] text-neutral-900 font-semibold mt-5 rounded-xl cursor-pointer hover:bg-[#B3AE00] transition-all duration-300 flex items-center"
                   onClick={() => {
@@ -736,7 +738,7 @@ const Register = () => {
                   }}
                   disabled={isLoading}
                 >
-                  Next
+                  Pay with BNB
                 </button>
               </div>
               {isLoading && <RegistrationModal message={message} />}

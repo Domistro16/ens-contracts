@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useReadContract } from 'wagmi'
+import { useAccount, useReadContract } from 'wagmi'
 import { useNavigate } from 'react-router-dom'
 import { CustomConnect } from './connectButton'
 import { MobileNav } from './mobilenav'
@@ -28,6 +28,7 @@ const abi = [
 
 export default function Home() {
   const navigate = useNavigate()
+  const {isDisconnected, address, isConnected} = useAccount();
   const [available, setAvailable] = useState('')
   const [search, setSearch] = useState('')
   const { data, isPending } = useReadContract({
@@ -99,6 +100,7 @@ export default function Home() {
       <header className="w-full flex justify-between items-center px-4 md:px-10 mx-auto">
         <div className="text-xl font-bold text-[#FFB000]">CreatorNames</div>
         <div className="flex items-center md:space-x-6">
+          {!isDisconnected && isConnected && address &&
           <div
             className="text-gray-400 font-bold hidden md:flex items-center hover:text-white duration-200 cursor-pointer max-w-max gap-1 flex-nowrap"
             onClick={() => navigate(`/mynames`)}
@@ -106,6 +108,7 @@ export default function Home() {
             <IdentificationIcon className="w-7 h-7 flex-shrink-0" />
             <span className="w-full inline-flex max-w-max"> My Names </span>
           </div>
+}
           <MenuIcon className="h-5 w-5 text-gray-400 font-bold" />
           <div className="hidden md:flex">
             {' '}

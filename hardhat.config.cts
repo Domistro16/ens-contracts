@@ -82,6 +82,20 @@ const config = {
       chainId: 56,
       accounts: real_accounts,
     },
+    neondevnet: {
+      url: 'https://devnet.neonevm.org',
+      accounts: real_accounts,
+      chainId: 245022926,
+      allowUnlimitedContractSize: false,
+      tags: ['test', 'legacy', 'use_root'],
+      gas: 30000000,
+    },
+    neonmainnet: {
+      url: 'https://neon-proxy-mainnet.solana.p2p.org',
+      accounts: real_accounts,
+      chainId: 245022934,
+      allowUnlimitedContractSize: false,
+    },
   },
   mocha: {},
   solidity: {
@@ -94,7 +108,6 @@ const config = {
             runs: 1200,
           },
         },
-        
       },
       // for DummyOldResolver contract
       {
@@ -107,11 +120,10 @@ const config = {
           },
         },
       },
-      
     ],
     overrides: {
-      "contracts/wrapper/NameWrapper.sol": {
-        version: "0.8.17",
+      'contracts/wrapper/NameWrapper.sol': {
+        version: '0.8.17',
         settings: {
           viaIR: true, // ONLY enable viaIR for this contract
           optimizer: {
@@ -146,7 +158,7 @@ const config = {
     owner: {
       default: 1,
       56: '0x04A1ceEBdEB45E055772e1cbAd48bb738E7414Fa',
-      97: '0x2A0D7311fA7e9aC2890CFd8219b2dEf0c206E79B'
+      97: '0x2A0D7311fA7e9aC2890CFd8219b2dEf0c206E79B',
     },
   },
   external: {

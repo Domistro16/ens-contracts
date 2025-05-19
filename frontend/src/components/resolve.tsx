@@ -637,7 +637,7 @@ const Resolve = () => {
                           key={item.key}
                           className="bg-gray-900 inline-block px-3 py-1 mt-2 text-sm rounded-full"
                         >
-                          <span className="text-gray-400 mr-1 ">
+                          <span className="text-gray-400 mr-1 font-bold ">
                             {item.key}
                           </span>{' '}
                           {item.value}
@@ -659,7 +659,7 @@ const Resolve = () => {
                           key={item.key}
                           className="bg-gray-900 inline-block px-3 py-1 mt-2 text-sm rounded-full"
                         >
-                          <span className="text-gray-400 mr-1 ">
+                          <span className="text-gray-400 mr-1 font-bold">
                             {item.key}
                           </span>{' '}
                           {item.value}
@@ -676,7 +676,7 @@ const Resolve = () => {
                     Addresses:
                   </div>
                   <div className="bg-gray-900 inline-block px-3 py-1 mt-2 rounded-full">
-                    <span className="text-gray-400 mr-1 ">bsc</span>{' '}
+                    <span className="text-gray-400 mr-1 font-bold">bsc</span>{' '}
                     {!isPending ? shortenAddress(address as string) : ''}
                   </div>
                 </div>
@@ -686,33 +686,49 @@ const Resolve = () => {
                 {wrapped == true ? (
                   <div className="flex flex-wrap gap-2 text-sm mt-2">
                     <div className="bg-gray-900 px-3 py-1 rounded-full">
-                      <span className="text-gray-400 mr-1">owner </span>{' '}
+                      <span className="text-gray-400 mr-1 font-bold">
+                        owner{' '}
+                      </span>{' '}
                       {!wLoading ? shortenAddress(`${wrappedOwner}`) : ''}
                     </div>
                     <div className="bg-gray-900 px-3 py-1 rounded-full">
-                      <span className="text-gray-400 mr-1">expiry </span>{' '}
+                      <span className="text-gray-400 mr-1 font-bold">
+                        expiry{' '}
+                      </span>{' '}
                       {expiry}
                     </div>
                     <div className="bg-gray-900 px-3 py-1 rounded-full">
-                      <span className="text-gray-400 mr-1">parent</span> creator
+                      <span className="text-gray-400 mr-1 font-bold">
+                        parent
+                      </span>{' '}
+                      creator
                     </div>
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2 text-sm mt-2">
                     <div className="bg-gray-900 px-3 py-1 rounded-full">
-                      <span className="text-gray-400 mr-1">manager </span>{' '}
+                      <span className="text-gray-400 mr-1 font-bold">
+                        manager{' '}
+                      </span>{' '}
                       {!managerLoading ? shortenAddress(manager as string) : ''}
                     </div>
                     <div className="bg-gray-900 px-3 py-1 rounded-full">
-                      <span className="text-gray-400 mr-1">owner </span>{' '}
+                      <span className="text-gray-400 mr-1 font-bold">
+                        owner{' '}
+                      </span>{' '}
                       {!ownerLoading ? shortenAddress(owner as string) : ''}
                     </div>
                     <div className="bg-gray-900 px-3 py-1 rounded-full">
-                      <span className="text-gray-400 mr-1">expiry </span>{' '}
+                      <span className="text-gray-400 mr-1 font-bold">
+                        expiry{' '}
+                      </span>{' '}
                       {expiry}
                     </div>
                     <div className="bg-gray-900 px-3 py-1 rounded-full">
-                      <span className="text-gray-400 mr-1">parent</span> creator
+                      <span className="text-gray-400 mr-1 font-bold">
+                        parent
+                      </span>{' '}
+                      creator
                     </div>
                   </div>
                 )}
@@ -742,7 +758,7 @@ const Resolve = () => {
                         key={item.key}
                         className="bg-gray-900 px-3 py-1 mt-2 text-sm rounded-full flex"
                       >
-                        <div className="text-gray-400 mr-1 w-30">
+                        <div className="text-gray-400 mr-1 w-30 font-bold">
                           {item.key}
                         </div>{' '}
                         <div> {item.value} </div>
@@ -763,7 +779,9 @@ const Resolve = () => {
                   </div>
                   <div className="flex flex-col gap-2">
                     <div className="bg-gray-900 px-3 py-1 mt-2 text-sm rounded-full flex items-center">
-                      <div className="text-gray-400 mr-1 w-30">bsc</div>
+                      <div className="text-gray-400 mr-1 w-30 font-bold">
+                        bsc
+                      </div>
                       <div className="break-all">{address as string}</div>
                     </div>
                   </div>
@@ -856,7 +874,7 @@ const Resolve = () => {
               </div>
               <div className="rounded-xl bg-neutral-800 mt-5 border-[0.5px] border-neutral-500 p-4 flex md:justify-center justify-left">
                 <div className="grid md:grid-cols-2 grid-cols-1">
-                  <div className="text-left md:px-6 md:border-r-1 border-b-1 py-6 border-neutral-500 w-full">
+                  <div className="text-left md:px-6 md:border-r-1 border-b-1 md:border-b-0 py-6 border-neutral-500 w-full">
                     <div className="font-bold text-lg">Name Expires</div>
                     <div className="text-[13px] font-semibold">
                       {expiry}

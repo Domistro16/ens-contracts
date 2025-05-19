@@ -10,7 +10,7 @@ const func: DeployFunction = async function (hre) {
   if (network.tags.legacy) {
     const contract = await viem.deploy('LegacyENSRegistry', [], {
       client: owner,
-      artifact: await deployments.getArtifact('ENSRegistry'),
+      artifact: await deployments.getArtifact('ENSRegistry')
     })
 
     const legacyRegistry = await viem.getContract('LegacyENSRegistry', owner)
