@@ -95,20 +95,20 @@ export default function Home() {
     }
   }
   return (
-    <div className="min-h-screen text-white flex flex-col items-center">
+    <div className="text-white flex flex-col items-center pb-15 md:pb-0">
       {/* Header */}
       <header className="w-full flex justify-between items-center px-4 md:px-10 mx-auto">
         <div className="text-xl font-bold text-[#FFB000]">CreatorNames</div>
         <div className="flex items-center md:space-x-6">
-          {!isDisconnected && isConnected && address &&
-          <div
-            className="text-gray-400 font-bold hidden md:flex items-center hover:text-white duration-200 cursor-pointer max-w-max gap-1 flex-nowrap"
-            onClick={() => navigate(`/mynames`)}
-          >
-            <IdentificationIcon className="w-7 h-7 flex-shrink-0" />
-            <span className="w-full inline-flex max-w-max"> My Names </span>
-          </div>
-}
+          {!isDisconnected && isConnected && address && (
+            <div
+              className="text-gray-400 font-bold hidden md:flex items-center hover:text-white duration-200 cursor-pointer max-w-max gap-1 flex-nowrap"
+              onClick={() => navigate(`/mynames`)}
+            >
+              <IdentificationIcon className="w-7 h-7 flex-shrink-0" />
+              <span className="w-full inline-flex max-w-max"> My Names </span>
+            </div>
+          )}
           <MenuIcon className="h-5 w-5 text-gray-400 font-bold" />
           <div className="hidden md:flex">
             {' '}

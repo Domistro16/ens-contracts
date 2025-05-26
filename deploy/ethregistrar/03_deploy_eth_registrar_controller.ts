@@ -11,7 +11,7 @@ const func: DeployFunction = async function (hre) {
 
   const registrar = await viem.getContract('BaseRegistrarImplementation', owner)
   const priceOracle = await viem.getContract(
-    'ExponentialPremiumPriceOracle',
+    'TokenPriceOracle',
     owner,
   )
   const reverseRegistrar = await viem.getContract('ReverseRegistrar', owner)
@@ -84,7 +84,7 @@ func.tags = ['ethregistrar', 'ETHRegistrarController']
 func.dependencies = [
   'ENSRegistry',
   'BaseRegistrarImplementation',
-  'ExponentialPremiumPriceOracle',
+  'TokenPriceOracle',
   'ReverseRegistrar',
   'NameWrapper',
   'OwnedResolver',

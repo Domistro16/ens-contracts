@@ -3,7 +3,6 @@ import Nav from './nav'
 import DatePicker from 'react-datepicker'
 import { Check } from 'lucide-react'
 import { intervalToDuration, startOfDay } from 'date-fns'
-import Controller from '../../../deployments/testnet/ETHRegistrarController.json'
 import { useAccount } from 'wagmi'
 import { useWriteContract, useReadContract } from 'wagmi'
 import {
@@ -18,10 +17,325 @@ import { useParams, useNavigate } from 'react-router'
 import Countdown from 'react-countdown'
 import Modal from 'react-modal'
 import { buildTextRecords } from '../hooks/setText'
-import { useEstimateENSFees } from '../hooks/gasEstimation'
+import { useEstimateENSFees, useEthersSigner } from '../hooks/gasEstimation'
 import { MobileNav } from './mobilenav'
 import TransakWidget from './transakPay'
-
+import { ethers } from 'ethers'
+const ERC20_ABI = [
+  {
+    constant: false,
+    inputs: [
+      {
+        internalType: 'address',
+        name: 'spender',
+        type: 'address',
+      },
+      {
+        internalType: 'uint256',
+        name: 'amount',
+        type: 'uint256',
+      },
+    ],
+    name: 'approve',
+    outputs: [
+      {
+        internalType: 'bool',
+        name: '',
+        type: 'bool',
+      },
+    ],
+    payable: false,
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+]
+/* const Registrar = [
+  {
+    inputs: [
+      {
+        internalType: 'string',
+        name: 'name',
+        type: 'string',
+      },
+      {
+        internalType: 'address',
+        name: 'owner',
+        type: 'address',
+      },
+      {
+        internalType: 'uint256',
+        name: 'duration',
+        type: 'uint256',
+      },
+      {
+        internalType: 'bytes32',
+        name: 'secret',
+        type: 'bytes32',
+      },
+      {
+        internalType: 'address',
+        name: 'resolver',
+        type: 'address',
+      },
+      {
+        internalType: 'bytes[]',
+        name: 'data',
+        type: 'bytes[]',
+      },
+      {
+        internalType: 'bool',
+        name: 'reverseRecord',
+        type: 'bool',
+      },
+      {
+        internalType: 'uint16',
+        name: 'fuses',
+        type: 'uint16',
+      },
+      {
+        internalType: 'address',
+        name: 'token',
+        type: 'address',
+      },
+      {
+        internalType: 'uint256',
+        name: 'amountIn',
+        type: 'uint256',
+      },
+      {
+        internalType: 'uint256',
+        name: 'minBnbOut',
+        type: 'uint256',
+      },
+      {
+        internalType: 'uint24',
+        name: 'poolFee',
+        type: 'uint24',
+      },
+    ],
+    name: 'registerWithToken',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+] */
+const Controller = [
+  {
+    inputs: [
+      {
+        internalType: 'string',
+        name: 'name',
+        type: 'string',
+      },
+      {
+        internalType: 'address',
+        name: 'owner',
+        type: 'address',
+      },
+      {
+        internalType: 'uint256',
+        name: 'duration',
+        type: 'uint256',
+      },
+      {
+        internalType: 'bytes32',
+        name: 'secret',
+        type: 'bytes32',
+      },
+      {
+        internalType: 'address',
+        name: 'resolver',
+        type: 'address',
+      },
+      {
+        internalType: 'bytes[]',
+        name: 'data',
+        type: 'bytes[]',
+      },
+      {
+        internalType: 'bool',
+        name: 'reverseRecord',
+        type: 'bool',
+      },
+      {
+        internalType: 'uint16',
+        name: 'ownerControlledFuses',
+        type: 'uint16',
+      },
+      {
+        internalType: 'string',
+        name: 'token',
+        type: 'string',
+      },
+      {
+        internalType: 'address',
+        name: 'tokenAddress',
+        type: 'address',
+      },
+    ],
+    name: 'registerWithToken',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'string',
+        name: 'name',
+        type: 'string',
+      },
+      {
+        internalType: 'uint256',
+        name: 'duration',
+        type: 'uint256',
+      },
+      {
+        internalType: 'string',
+        name: 'token',
+        type: 'string',
+      },
+    ],
+    name: 'rentPriceToken',
+    outputs: [
+      {
+        components: [
+          {
+            internalType: 'uint256',
+            name: 'base',
+            type: 'uint256',
+          },
+          {
+            internalType: 'uint256',
+            name: 'premium',
+            type: 'uint256',
+          },
+        ],
+        internalType: 'struct IPriceOracle.Price',
+        name: 'price',
+        type: 'tuple',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'string',
+        name: 'name',
+        type: 'string',
+      },
+      {
+        internalType: 'uint256',
+        name: 'duration',
+        type: 'uint256',
+      },
+    ],
+    name: 'rentPrice',
+    outputs: [
+      {
+        components: [
+          {
+            internalType: 'uint256',
+            name: 'base',
+            type: 'uint256',
+          },
+          {
+            internalType: 'uint256',
+            name: 'premium',
+            type: 'uint256',
+          },
+        ],
+        internalType: 'struct IPriceOracle.Price',
+        name: 'price',
+        type: 'tuple',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'string',
+        name: 'name',
+        type: 'string',
+      },
+    ],
+    name: 'available',
+    outputs: [
+      {
+        internalType: 'bool',
+        name: '',
+        type: 'bool',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'string',
+        name: 'name',
+        type: 'string',
+      },
+      {
+        internalType: 'address',
+        name: 'owner',
+        type: 'address',
+      },
+      {
+        internalType: 'uint256',
+        name: 'duration',
+        type: 'uint256',
+      },
+      {
+        internalType: 'bytes32',
+        name: 'secret',
+        type: 'bytes32',
+      },
+      {
+        internalType: 'address',
+        name: 'resolver',
+        type: 'address',
+      },
+      {
+        internalType: 'bytes[]',
+        name: 'data',
+        type: 'bytes[]',
+      },
+      {
+        internalType: 'bool',
+        name: 'reverseRecord',
+        type: 'bool',
+      },
+      {
+        internalType: 'uint16',
+        name: 'ownerControlledFuses',
+        type: 'uint16',
+      },
+    ],
+    name: 'register',
+    outputs: [],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'bytes32',
+        name: 'commitment',
+        type: 'bytes32',
+      },
+    ],
+    name: 'commit',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+]
 const PriceAbi = [
   {
     inputs: [],
@@ -80,6 +394,7 @@ const addrResolver = [
 ]
 
 const Register = () => {
+  const signer = useEthersSigner()
   const navigate = useNavigate()
   const { label } = useParams<string>()
   const [years, setYears] = useState(1)
@@ -92,7 +407,10 @@ const Register = () => {
   const [message, setMessage] = useState('')
   const [next, setNext] = useState(0)
   const [isOpen, setIsOpen] = useState(true)
+  const [useToken, setUseToken] = useState(false)
+  const [token, setToken] = useState<`0x${string}`>('0x')
   const { data: commithash, writeContractAsync } = useWriteContract()
+  const { writeContractAsync: approve } = useWriteContract()
 
   const {
     data: registerhash,
@@ -132,16 +450,29 @@ const Register = () => {
   const [done, setDone] = useState(false)
 
   const { data: latest, isPending: loading } = useReadContract({
-    address: '0x98e9FdF05313A49D95A44ff3563EA3ba05Ce551E', // Replace with actual contract address
-    abi: Controller.abi as any, // Replace with actual ABI
+    address: '0x03f5d42d71ef2873ceaf6d4b62dd1ac563d0adfd', // Replace with actual contract address
+    abi: Controller as any, // Replace with actual ABI
     functionName: 'rentPrice',
     args: [label as string, seconds],
+  })
+  const { data: usd1TokenData, isPending: tokenLoading } = useReadContract({
+    address: '0x03f5d42d71ef2873ceaf6d4b62dd1ac563d0adfd', // Replace with actual contract address
+    abi: Controller as any, // Replace with actual ABI
+    functionName: 'rentPriceToken',
+    args: [label as string, seconds, 'usd1'],
+  })
+  const { data: cakeTokenData, isPending: caketokenLoading } = useReadContract({
+    address: '0x03f5d42d71ef2873ceaf6d4b62dd1ac563d0adfd', // Replace with actual contract address
+    abi: Controller as any, // Replace with actual ABI
+    functionName: 'rentPriceToken',
+    args: [label as string, seconds, 'cake'],
   })
   const { data: priceData } = useReadContract({
     address: '0x2514895c72f50D8bd4B4F9b1110F0D6bD2c97526', // Replace with actual contract address
     abi: PriceAbi as any, // Replace with actual ABI
     functionName: 'latestRoundData',
   })
+
   const { fees, loading: estimateLoading } = useEstimateENSFees({
     name: `${label}`,
     owner: address as `0x${string}`,
@@ -161,13 +492,39 @@ const Register = () => {
   }, [fees, priceData])
 
   const price = useMemo(() => {
+    // Safe access to nested values
+    console.log(usd1TokenData)
+    let usd1priceInBNB = 0
+    let cakepriceInBNB = 0
+    if (!tokenLoading) {
+      const { base, premium } = (usd1TokenData as any) || {
+        base: 0,
+        premium: 0,
+      }
+      usd1priceInBNB = (Number(base) + Number(premium)) / 1e18 // Convert to readable
+    }
+    if (!caketokenLoading) {
+      const { base, premium } = (cakeTokenData as any) || {
+        base: 0,
+        premium: 0,
+      }
+      cakepriceInBNB = (Number(base) + Number(premium)) / 1e18 // Convert to readable
+    }
+
     const { base } = (latest as any) || { base: 0 }
     const [, answer, , ,] = (priceData as any) || [0, 0, 0, 0, 0]
     const bnbPrice = Number(answer) / 1e8 // Chainlink ETH/USD has 8 decimals
     const costInEth = Number(base) / 1e18 // your base is in wei
     const usdCost = costInEth * bnbPrice
-    return { bnb: costInEth.toFixed(4), usd: usdCost.toFixed(2) }
-  }, [latest, priceData, seconds])
+    const usd1cost = usd1priceInBNB
+    const cakecost = cakepriceInBNB
+    return {
+      bnb: costInEth.toFixed(4),
+      usd: usdCost.toFixed(2),
+      usd1: usd1cost.toFixed(2),
+      cake: cakecost.toFixed(2),
+    }
+  }, [latest, priceData, seconds, usd1TokenData])
 
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -284,7 +641,7 @@ const Register = () => {
   const [newRecords, setNewRecords] = useState<
     { key: string; value: string }[]
   >([])
-
+  console.log(useToken)
   const commit = async () => {
     const secretBytes = crypto.getRandomValues(new Uint8Array(32))
     const secretGenerated = bytesToHex(secretBytes) as `0x${string}`
@@ -313,6 +670,7 @@ const Register = () => {
       validTextRecords,
       namehash(`${label as string}.creator`),
     )
+    console.log(owner)
     const addrEncoded = encodeFunctionData({
       abi: addrResolver,
       functionName: 'setAddr',
@@ -320,7 +678,7 @@ const Register = () => {
     })
     const fullData = [...builtData, addrEncoded]
     setCommitData(fullData)
-    const resolver = '0xF90F11ddD972e661170836e9E3970BBE398988D8'
+    const resolver = '0x23018a4f97cb131fadd72747f3e658423518645e'
     try {
       const labelHash = keccak256(toBytes(label || ''))
       const encoded = encodeAbiParameters(
@@ -348,9 +706,9 @@ const Register = () => {
       const commitment = keccak256(encoded)
       setMessage('Committing Registration')
       await writeContractAsync({
-        address: '0x98e9FdF05313A49D95A44ff3563EA3ba05Ce551E',
+        address: '0x03f5d42d71ef2873ceaf6d4b62dd1ac563d0adfd',
         account: address,
-        abi: Controller.abi,
+        abi: Controller,
         functionName: 'commit',
         args: [commitment],
       })
@@ -362,32 +720,203 @@ const Register = () => {
       setIsLoading(false)
     }
   }
-
   const register = async () => {
     setIsLoading(true)
-    const resolver = '0xF90F11ddD972e661170836e9E3970BBE398988D8'
+    const resolver = '0x23018a4f97cb131fadd72747f3e658423518645e'
     try {
+      let value: Number
       const { base, premium } = latest as { base: bigint; premium: bigint }
-      await registerContract({
-        address: '0x98e9FdF05313A49D95A44ff3563EA3ba05Ce551E',
-        account: address,
-        abi: Controller.abi,
-        functionName: 'register',
-        args: [
-          label,
-          owner,
-          BigInt(seconds),
-          secret,
-          resolver,
-          commitData,
-          isPrimary,
-          0,
-        ],
-        value: base + premium,
-      })
 
-      setMessage('Registration Successful')
-      setIsOpen(false)
+      if (token == '0xFa60D973F7642B748046464e165A65B7323b0DEE') {
+        const { base, premium } = (cakeTokenData as any) || {
+          base: 0,
+          premium: 0,
+        }
+        value = Number(base) + Number(premium) // Convert to readable
+      } else {
+        const { base, premium } = (usd1TokenData as any) || {
+          base: 0,
+          premium: 0,
+        }
+        value = Number(base) + Number(premium) // Convert to readable
+      }
+      /*  const options = {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          addresses: [
+            {
+              network: 'bnb-mainnet',
+              address: '0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82',
+            },
+          ],
+        }),
+      }
+
+      const res = await fetch(
+        `https://api.g.alchemy.com/prices/v1/docs-demo/tokens/by-address`,
+        options,
+      )
+      const jsonResponse = await res.json() // ✅ Parse response as JSON
+
+      console.log(jsonResponse) // Log full response to debug
+
+      // Safe access to nested values
+      const priceInBNB = jsonResponse?.data?.[0]?.prices?.[0]?.value */
+      /*  console.log(value)
+      const amount = Number(value) / 1e18 / (cakePrice / bnbPrice)
+      console.log(amount)
+      const totalAmount = parseEther(amount.toString()) */
+      const totalAmount = value
+      console.log(totalAmount)
+        const controller = new ethers.Contract(
+          '0x03f5d42d71ef2873ceaf6d4b62dd1ac563d0adfd',
+          Controller,
+          signer,
+        )
+      if (!useToken) {
+        try {
+          await controller.callStatic.register(
+            label,
+            address,
+            BigInt(seconds),
+            secret,
+            resolver,
+            commitData,
+            isPrimary,
+            0,
+          )
+        } catch (e: any) {
+          console.error('Revert error name:', e.errorName)
+          console.error('Revert reason   :', e.data)
+        }
+        await registerContract({
+          address: '0x03f5d42d71ef2873ceaf6d4b62dd1ac563d0adfd',
+          abi: Controller,
+          functionName: 'register',
+          args: [
+            label,
+            address,
+            BigInt(seconds),
+            secret,
+            resolver,
+            commitData,
+            isPrimary,
+            0,
+          ],
+          value: base + premium,
+        })
+
+        setMessage('Registration Successful')
+        setIsOpen(false)
+      } else {
+        // 1) Select the pool fee tier where there’s depth:
+        /*  const poolFee = 100 // 0.25%
+
+        // 2) Call registerWithToken:
+        await approve({
+          address: token,
+          abi: ERC20_ABI,
+          functionName: 'approve',
+          args: ['0x672293b34279bac2f31bdb265b066879fb891712', totalAmount],
+        })
+
+        const paymaster = new ethers.Contract(
+          '0x672293b34279bac2f31bdb265b066879fb891712',
+          Registrar,
+          signer,
+        )
+
+        try {
+          await paymaster.callStatic.registerWithToken(
+            label,
+            address,
+            BigInt(seconds),
+            secret,
+            resolver,
+            commitData,
+            isPrimary,
+            0,
+            token,
+            totalAmount,
+            0,
+            100,
+          )
+        } catch (e: any) {
+          console.error('Revert error name:', e.errorName)
+          console.error('Revert reason   :', e.data)
+        }
+        await registerContract({
+          address: '0x672293b34279bac2f31bdb265b066879fb891712',
+          abi: Registrar,
+          functionName: 'registerWithToken',
+          args: [
+            label,
+            address,
+            BigInt(seconds),
+            secret,
+            resolver,
+            commitData,
+            isPrimary,
+            0,
+            token,
+            totalAmount,
+            0,
+            poolFee,
+          ],
+        })
+
+        setMessage('Registration Successful')
+        setIsOpen(false) */
+
+        await approve({
+          address: token,
+          abi: ERC20_ABI,
+          functionName: 'approve',
+          args: ['0x03f5d42d71ef2873ceaf6d4b62dd1ac563d0adfd', totalAmount ],
+        })
+          await new Promise((r) => setTimeout(r, 10000))
+     
+        try {
+          await controller.callStatic.registerWithToken(
+            label,
+            address,
+            BigInt(seconds),
+            secret,
+            resolver,
+            commitData,
+            isPrimary,
+            0,
+            'cake',
+            token,
+          )
+        } catch (e: any) {
+          console.error('Revert error name:', e.errorName)
+          console.error('Revert reason   :', e.data)
+        }
+        await registerContract({
+          address: '0x03f5d42d71ef2873ceaf6d4b62dd1ac563d0adfd',
+          abi: Controller,
+          functionName: 'registerWithToken',
+          args: [
+            label,
+            address,
+            BigInt(seconds),
+            secret,
+            resolver,
+            commitData,
+            isPrimary,
+            0,
+            'cake',
+            token,
+          ],
+        })
+        setMessage('Registration Successful')
+        setIsOpen(false)
+      }
     } catch (error) {
       setMessage('Registration Failed')
       console.error('Error during Registration', error)
@@ -396,8 +925,8 @@ const Register = () => {
   }
 
   const { data: available } = useReadContract({
-    address: '0x98e9FdF05313A49D95A44ff3563EA3ba05Ce551E',
-    abi: Controller.abi as any,
+    address: '0x03f5d42d71ef2873ceaf6d4b62dd1ac563d0adfd',
+    abi: Controller as any,
     functionName: 'available',
     args: [label as string],
   })
@@ -413,7 +942,7 @@ const Register = () => {
 
   console.log(isPrimary)
   return (
-    <div>
+    <div className="mb-15 md:mb-0">
       <Nav />
       <div className="flex flex-col mx-auto px-2 md:px-30 lg:px-60 md:mt-5">
         <div className="">
@@ -728,9 +1257,69 @@ const Register = () => {
                     />
                   </button>
                 </div>
+                <div className="flex mt-5 items-center">
+                  <div>
+                    <h1 className="text-lg font-semibold">
+                      Pay with Cake ({price.cake} $CAKE)
+                    </h1>
+                  </div>
+                  <div className="flex grow-1"></div>
+                  <button
+                    onClick={() => {
+                      setUseToken(!useToken)
+                      setToken('0xFa60D973F7642B748046464e165A65B7323b0DEE')
+                    }}
+                    className={`flex items-center justify-center w-10 h-10
+                     rounded-full transition-colors duration-300 border-6 border-gray-200 ${
+                       useToken &&
+                       token == '0xFa60D973F7642B748046464e165A65B7323b0DEE'
+                         ? 'bg-black'
+                         : 'bg-gray-300'
+                     }`}
+                  >
+                    <Check
+                      className={`w-5 h-5 text-white transition-opacity duration-200  ${
+                        useToken &&
+                        token == '0xFa60D973F7642B748046464e165A65B7323b0DEE'
+                          ? 'opacity-100'
+                          : 'opacity-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+                <div className="flex mt-5 items-center">
+                  <div>
+                    <h1 className="text-lg font-semibold">
+                      Pay with USD1 ({price.usd1} $USD1)
+                    </h1>
+                  </div>
+                  <div className="flex grow-1"></div>
+                  <button
+                    onClick={() => {
+                      setUseToken(!useToken)
+                      setToken('0xa')
+                    }}
+                    className={`flex items-center justify-center w-10 h-10
+                     rounded-full transition-colors duration-300 border-6 border-gray-200 ${
+                       useToken && token == '0xa' ? 'bg-black' : 'bg-gray-300'
+                     }`}
+                  >
+                    <Check
+                      className={`w-5 h-5 text-white transition-opacity duration-200  ${
+                        useToken && token == '0xa' ? 'opacity-100' : 'opacity-0'
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
               <div className="flex items-center justify-center gap-2">
-                <TransakWidget label={label as string} owner={owner} duration={seconds} reverse={isPrimary}/>
+                <TransakWidget
+                  label={label as string}
+                  owner={owner}
+                  duration={seconds}
+                  reverse={isPrimary}
+                  price={Number(estimateUsd) + Number(price.usd)}
+                />
                 <button
                   className="px-5 py-3 bg-[#FFF700] text-neutral-900 font-semibold mt-5 rounded-xl cursor-pointer hover:bg-[#B3AE00] transition-all duration-300 flex items-center"
                   onClick={() => {
@@ -888,7 +1477,7 @@ const Register = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className='space-y-1'>
+                    <div className="space-y-1">
                       <div className="flex">
                         {date ? (
                           <div className="text-sm flex font-semibold text-gray-400 grow-1">

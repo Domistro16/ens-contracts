@@ -3,9 +3,7 @@ import { createWalletClient, http, defineChain, createPublicClient } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import type { Chain, Address } from 'viem'
 import { bscTestnet } from 'viem/chains'
-import ENSRegistrarPaymasterArtifact from '../artifacts/contracts/ethregistrar/CreatorRegistrarPaymaster.sol/CreatorRegistrarPaymaster.json'
-
-
+import OracleArtifact from '../artifacts/contracts/ethregistrar/TokenPriceOracle.sol/TokenPriceOracle.json'
 
 // 2) Initialize account from private key
 const account = privateKeyToAccount(process.env.DEPLOYER_KEY as `0x${string}`)
@@ -21,17 +19,22 @@ const publicClient = createPublicClient({
   chain: bscTestnet,
   transport: http(),
 })
-
+let oracleAddress: Address = '0x2514895c72f50D8bd4B4F9b1110F0D6bD2c97526'
+let cakeAddress: Address = '0x81faeDDfeBc2F8Ac524327d70Cf913001732224C'
+let usd1Address: Address = '0xEca2605f0BCF2BA5966372C99837b1F182d3D620'
 // 4) Deploy the ENSRegistrarPaymaster contract
 async function main() {
   console.log('deploying')
   const txHash = await client.deployContract({
-    abi: ENSRegistrarPaymasterArtifact.abi,
-    bytecode: ENSRegistrarPaymasterArtifact.bytecode as `0x${string}`,
+    abi: OracleArtifact.abi,
+    bytecode: OracleArtifact.bytecode as `0x${string}`,
     args: [
-      '0x1b81D678ffb9C0263b24A97847620C99d213eB14',
-      '0x98e9FdF05313A49D95A44ff3563EA3ba05Ce551E',
-      '0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd',
+      oracleAddress,
+      cakeAddress,
+      usd1Address,
+      [0n, 0n, 20294266869609n, 5073566717402n, 158548959919n],
+      100000000000000000000000000n,
+      21n,
     ],
   })
 

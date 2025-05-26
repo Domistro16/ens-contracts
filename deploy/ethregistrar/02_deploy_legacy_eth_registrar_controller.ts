@@ -8,7 +8,7 @@ const func: DeployFunction = async function (hre) {
   const { owner } = await viem.getNamedClients()
 
   const registrar = await viem.getContract('BaseRegistrarImplementation') // as owner
-  const priceOracle = await viem.getContract('ExponentialPremiumPriceOracle')
+  const priceOracle = await viem.getContract('TokenPriceOracle')
   const reverseRegistrar = await viem.getContract('ReverseRegistrar') // as owner
 
   const controller = await viem.deploy(
@@ -57,7 +57,7 @@ func.dependencies = [
   'registry',
   'wrapper',
   'LegacyPublicResolver',
-  'ExponentialPremiumPriceOracle',
+  'TokenPriceOracle',
   'ReverseRegistrar',
 ]
 

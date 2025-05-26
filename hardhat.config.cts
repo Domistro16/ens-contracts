@@ -10,6 +10,7 @@ import dotenv from 'dotenv'
 import 'hardhat-abi-exporter'
 import 'hardhat-contract-sizer'
 import 'hardhat-deploy'
+import '@nomicfoundation/hardhat-ethers'
 import { HardhatUserConfig } from 'hardhat/config'
 
 import('@ensdomains/hardhat-chai-matchers-viem')
@@ -120,17 +121,21 @@ const config = {
           },
         },
       },
-    ],
-    overrides: {
-      'contracts/wrapper/NameWrapper.sol': {
-        version: '0.8.17',
+      {
+        version: '0.7.6',
         settings: {
-          viaIR: true, // ONLY enable viaIR for this contract
+          viaIR: true,
           optimizer: {
             enabled: true,
             runs: 1200,
           },
         },
+      },
+    ],
+    overrides: {
+       "node_modules/@uniswap/v3-periphery/**": { version: "0.7.6" },
+      'contracts/ethregistrar/IETHRegistrarController.sol': {
+        version: '0.8.17',
       },
     },
   },

@@ -15,6 +15,13 @@ import Wrap from './wrap'
 import { MobileNav } from './mobilenav'
 import { FastForwardIcon } from '@heroicons/react/solid'
 import { Avatar } from './useAvatar'
+import { RiTelegramFill } from 'react-icons/ri'
+import { FaXTwitter, FaYoutube } from 'react-icons/fa6'
+import { IoMailSharp } from 'react-icons/io5'
+import { FaRedditAlien } from 'react-icons/fa6'
+import { IoLogoWhatsapp } from 'react-icons/io'
+import { FaSnapchatGhost, FaGithub } from 'react-icons/fa'
+import { SiBnbchain } from 'react-icons/si'
 
 const resolveAbi = [
   {
@@ -241,11 +248,11 @@ const Resolve = () => {
     'com.reddit',
     'com.github',
     'com.discord',
-    'email',
     'com.youtube',
     'org.telegram',
     'com.snapchat',
     'com.tiktok',
+    'email',
   ]
   const otherKeys = ['phone', 'url', 'avatar']
   const textKeys = [
@@ -544,7 +551,7 @@ const Resolve = () => {
   return (
     <div>
       <Nav />
-      <div className="flex flex-col mx-auto p-2 md:px-30 lg:px-60 md:mt-5">
+      <div className="flex flex-col mx-auto p-2 mb-5 md:px-30 lg:px-60 md:mt-5">
         <div className="">
           <h2 className="font-bold text-2xl text-white">
             {label as string}.creator
@@ -633,15 +640,60 @@ const Resolve = () => {
                     </div>
                     <div className="flex flex-wrap gap-2 ">
                       {accounts.map((item) => (
-                        <div
+                        <a
                           key={item.key}
-                          className="bg-gray-900 inline-block px-3 py-1 mt-2 text-sm rounded-full"
+                          className="bg-gray-900 inline-block px-3 py-1 mt-2 text-sm rounded-full hover:bg-gray-950 delay-200 duration-200 transition-all hover:scale-105"
+                          href={
+                            item.key == 'com.twitter'
+                              ? `https://x.com/${item.value}`
+                              : item.key == 'org.telegram'
+                              ? `https://t.me/${item.value}`
+                              : item.key == 'com.reddit'
+                              ? `https://reddit.com/user/${item.value}`
+                              : item.key == 'com.whatsapp'
+                              ? `https://wa.me/${item.value}`
+                              : item.key == 'com.snapchat'
+                              ? `https://snapchat.com/add/${item.value}`
+                              : item.key == 'com.github'
+                              ? `https://github.com/${item.value}`
+                              : item.key == 'com.youtube'
+                              ? `https://x.com/${item.value}`
+                              : item.key == 'email'
+                              ? `mailto:${item.value}`
+                              : item.key == 'com.tiktok'
+                              ? `tiktok.com/${item.value}`
+                              : ''
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
                         >
-                          <span className="text-gray-400 mr-1 font-bold ">
-                            {item.key}
-                          </span>{' '}
-                          {item.value}
-                        </div>
+                          <div className="flex items-center">
+                            <span className="mr-2 font-bold text-xl">
+                              {item.key == 'com.twitter' ? (
+                                <FaXTwitter color="white" />
+                              ) : item.key == 'org.telegram' ? (
+                                <RiTelegramFill color="white" />
+                              ) : item.key == 'com.reddit' ? (
+                                <FaRedditAlien color="white" />
+                              ) : item.key == 'com.whatsapp' ? (
+                                <IoLogoWhatsapp color="white" />
+                              ) : item.key == 'com.snapchat' ? (
+                                <FaSnapchatGhost />
+                              ) : item.key == 'com.github' ? (
+                                <FaGithub color="white" />
+                              ) : item.key == 'com.youtube' ? (
+                                <FaYoutube color="white" />
+                              ) : item.key == 'email' ? (
+                                <IoMailSharp color="white" />
+                              ) : item.key == 'com.tiktok' ? (
+                                ''
+                              ) : (
+                                ''
+                              )}
+                            </span>
+                            {item.value}
+                          </div>
+                        </a>
                       ))}
                     </div>
                   </div>
@@ -657,7 +709,7 @@ const Resolve = () => {
                       {others.map((item) => (
                         <div
                           key={item.key}
-                          className="bg-gray-900 inline-block px-3 py-1 mt-2 text-sm rounded-full"
+                          className="bg-gray-900 inline-block px-3 py-1 mt-2 text-sm rounded-full hover:bg-gray-950 delay-200 duration-200 transition-all hover:scale-105"
                         >
                           <span className="text-gray-400 mr-1 font-bold">
                             {item.key}
@@ -675,9 +727,13 @@ const Resolve = () => {
                   <div className="font-semibold text-gray-300 ml-1">
                     Addresses:
                   </div>
-                  <div className="bg-gray-900 inline-block px-3 py-1 mt-2 rounded-full">
-                    <span className="text-gray-400 mr-1 font-bold">bsc</span>{' '}
-                    {!isPending ? shortenAddress(address as string) : ''}
+                  <div className="text-sm bg-gray-900 inline-block px-3 py-1 mt-2 rounded-full hover:bg-gray-950 delay-200 duration-200 transition-all hover:scale-105 cursor-pointer flex">
+                    <div className="flex items-center">
+                      <span className="text-gray-400 mr-2 font-bold text-xl">
+                        <SiBnbchain />
+                      </span>{' '}
+                      {!isPending ? shortenAddress(address as string) : ''}
+                    </div>
                   </div>
                 </div>
                 <div className="text-sm text-blue-500 cursor-pointer font-bold ml-1">
@@ -685,19 +741,19 @@ const Resolve = () => {
                 </div>
                 {wrapped == true ? (
                   <div className="flex flex-wrap gap-2 text-sm mt-2">
-                    <div className="bg-gray-900 px-3 py-1 rounded-full">
+                    <div className="bg-gray-900 px-3 py-1 rounded-full hover:bg-gray-950 delay-200 duration-200 transition-all hover:scale-105">
                       <span className="text-gray-400 mr-1 font-bold">
                         owner{' '}
                       </span>{' '}
                       {!wLoading ? shortenAddress(`${wrappedOwner}`) : ''}
                     </div>
-                    <div className="bg-gray-900 px-3 py-1 rounded-full">
+                    <div className="bg-gray-900 px-3 py-1 rounded-full hover:bg-gray-950 delay-200 duration-200 transition-all hover:scale-105">
                       <span className="text-gray-400 mr-1 font-bold">
                         expiry{' '}
                       </span>{' '}
                       {expiry}
                     </div>
-                    <div className="bg-gray-900 px-3 py-1 rounded-full">
+                    <div className="bg-gray-900 px-3 py-1 rounded-full hover:bg-gray-950 delay-200 duration-200 transition-all hover:scale-105">
                       <span className="text-gray-400 mr-1 font-bold">
                         parent
                       </span>{' '}
@@ -706,25 +762,25 @@ const Resolve = () => {
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2 text-sm mt-2">
-                    <div className="bg-gray-900 px-3 py-1 rounded-full">
+                    <div className="bg-gray-900 px-3 py-1 rounded-full hover:bg-gray-950 delay-200 duration-200 transition-all hover:scale-105">
                       <span className="text-gray-400 mr-1 font-bold">
                         manager{' '}
                       </span>{' '}
                       {!managerLoading ? shortenAddress(manager as string) : ''}
                     </div>
-                    <div className="bg-gray-900 px-3 py-1 rounded-full">
+                    <div className="bg-gray-900 px-3 py-1 rounded-full hover:bg-gray-950 delay-200 duration-200 transition-all hover:scale-105">
                       <span className="text-gray-400 mr-1 font-bold">
                         owner{' '}
                       </span>{' '}
                       {!ownerLoading ? shortenAddress(owner as string) : ''}
                     </div>
-                    <div className="bg-gray-900 px-3 py-1 rounded-full">
+                    <div className="bg-gray-900 px-3 py-1 rounded-full hover:bg-gray-950 delay-200 duration-200 transition-all hover:scale-105">
                       <span className="text-gray-400 mr-1 font-bold">
                         expiry{' '}
                       </span>{' '}
                       {expiry}
                     </div>
-                    <div className="bg-gray-900 px-3 py-1 rounded-full">
+                    <div className="bg-gray-900 px-3 py-1 rounded-full hover:bg-gray-950 delay-200 duration-200 transition-all hover:scale-105">
                       <span className="text-gray-400 mr-1 font-bold">
                         parent
                       </span>{' '}
@@ -756,7 +812,7 @@ const Resolve = () => {
                     {texts.map((item) => (
                       <div
                         key={item.key}
-                        className="bg-gray-900 px-3 py-1 mt-2 text-sm rounded-full flex"
+                        className="bg-gray-900 px-3 py-1 mt-2 text-sm rounded-full flex "
                       >
                         <div className="text-gray-400 mr-1 w-30 font-bold">
                           {item.key}
@@ -835,7 +891,7 @@ const Resolve = () => {
                     <div className="px-2 py-4 text-xl font-bold text-white border-b-1 border-neutral-500 flex items-center">
                       <div>BSC Record:</div>
                       <div className="text-sm font-semibold ml-5">
-                        {address as string}
+                        {shortenAddress(address as string)}
                       </div>
                     </div>
                   </div>
@@ -873,9 +929,9 @@ const Resolve = () => {
                 )}
               </div>
               <div className="rounded-xl bg-neutral-800 mt-5 border-[0.5px] border-neutral-500 p-4 flex md:justify-center justify-left">
-                <div className="grid md:grid-cols-2 grid-cols-1">
+                <div className=" grid md:grid-cols-2  w-full">
                   <div className="text-left md:px-6 md:border-r-1 border-b-1 md:border-b-0 py-6 border-neutral-500 w-full">
-                    <div className="font-bold text-lg">Name Expires</div>
+                    <div className="font-bold text-lg w-full">Name Expires</div>
                     <div className="text-[13px] font-semibold">
                       {expiry}
                       <span className="text-gray-400 ml-2 font-normal">
@@ -905,7 +961,7 @@ const Resolve = () => {
                   key={key}
                   className="flex items-center justify-between p-4 mt-3 bg-neutral-700 rounded-lg"
                 >
-                  <div>
+                  <div className='max-w-[80%] md:max-w-full'>
                     <div className="font-medium text-white">{label}</div>
                     <div className="text-sm text-neutral-400">
                       {description}

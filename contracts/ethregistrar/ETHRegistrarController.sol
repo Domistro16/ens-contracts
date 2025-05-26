@@ -14,6 +14,10 @@ import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {INameWrapper} from "../wrapper/INameWrapper.sol";
 import {ERC20Recoverable} from "../utils/ERC20Recoverable.sol";
+import {TokenPriceOracle} from "./TokenPriceOracle.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+using SafeERC20 for IERC20;
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 error CommitmentTooNew(bytes32 commitment);
 error CommitmentTooOld(bytes32 commitment);
@@ -38,10 +42,11 @@ contract ETHRegistrarController is
     using Address for address;
 
     uint256 public constant MIN_REGISTRATION_DURATION = 28 days;
-    bytes32 private constant ETH_NODE = 0x4f2c0fc83d175c423d55ddf2fef3b9b38af479fac3adb42afb02778397a27454;
+    bytes32 private constant ETH_NODE =
+        0x4f2c0fc83d175c423d55ddf2fef3b9b38af479fac3adb42afb02778397a27454;
     uint64 private constant MAX_EXPIRY = type(uint64).max;
     BaseRegistrarImplementation immutable base;
-    IPriceOracle public immutable prices;
+    TokenPriceOracle public immutable prices;
     uint256 public immutable minCommitmentAge;
     uint256 public immutable maxCommitmentAge;
     ReverseRegistrar public immutable reverseRegistrar;
@@ -66,7 +71,7 @@ contract ETHRegistrarController is
 
     constructor(
         BaseRegistrarImplementation _base,
-        IPriceOracle _prices,
+        TokenPriceOracle _prices,
         uint256 _minCommitmentAge,
         uint256 _maxCommitmentAge,
         ReverseRegistrar _reverseRegistrar,
@@ -92,10 +97,31 @@ contract ETHRegistrarController is
     function rentPrice(
         string memory name,
         uint256 duration
-    ) public view override virtual returns (IPriceOracle.Price memory price) {
-        require(duration == 0 || duration >= MIN_REGISTRATION_DURATION, "Invalid duration");
+    ) public view virtual override returns (IPriceOracle.Price memory price) {
+        require(
+            duration == 0 || duration >= MIN_REGISTRATION_DURATION,
+            "Invalid duration"
+        );
         bytes32 label = keccak256(bytes(name));
         price = prices.price(name, base.nameExpires(uint256(label)), duration);
+    }
+
+    function rentPriceToken(
+        string memory name,
+        uint256 duration,
+        string memory token
+    ) public view virtual returns (IPriceOracle.Price memory price) {
+        require(
+            duration == 0 || duration >= MIN_REGISTRATION_DURATION,
+            "Invalid duration"
+        );
+        bytes32 label = keccak256(bytes(name));
+        price = prices.priceToken(
+            name,
+            base.nameExpires(uint256(label)),
+            duration,
+            token
+        );
     }
 
     function valid(string memory name) public pure returns (bool) {
@@ -113,7 +139,7 @@ contract ETHRegistrarController is
         uint256 duration,
         bytes32 secret,
         address resolver,
-        bytes[] calldata data,
+        bytes[] memory data,
         bool reverseRecord,
         uint16 ownerControlledFuses
     ) public pure override returns (bytes32) {
@@ -205,6 +231,76 @@ contract ETHRegistrarController is
         }
     }
 
+    function registerWithToken(
+        string memory name,
+        address owner,
+        uint256 duration,
+        bytes32 secret,
+        address resolver,
+        bytes[] memory data,
+        bool reverseRecord,
+        uint16 ownerControlledFuses,
+        string memory token,
+        address tokenAddress
+    ) public {
+        IPriceOracle.Price memory price = rentPriceToken(name, duration, token);
+        require(
+            IERC20(tokenAddress).allowance(msg.sender, address(this)) >=
+                price.base + price.premium,
+            "Insufficient ERC20 allowance"
+        );
+
+        if (
+            IERC20(tokenAddress).balanceOf(msg.sender) <
+            price.base + price.premium
+        ) {
+            revert InsufficientValue();
+        }
+        IERC20(tokenAddress).safeTransferFrom(
+            msg.sender,
+            address(this),
+            price.base + price.premium
+        );
+        _consumeCommitment(
+            name,
+            duration,
+            makeCommitment(
+                name,
+                owner,
+                duration,
+                secret,
+                resolver,
+                data,
+                reverseRecord,
+                ownerControlledFuses
+            )
+        );
+
+        uint256 expires = nameWrapper.registerAndWrapETH2LD(
+            name,
+            owner,
+            duration,
+            resolver,
+            ownerControlledFuses
+        );
+
+        if (data.length > 0) {
+            _setRecords(resolver, keccak256(bytes(name)), data);
+        }
+
+        if (reverseRecord) {
+            _setReverseRecord(name, resolver, msg.sender);
+        }
+
+        emit NameRegistered(
+            name,
+            keccak256(bytes(name)),
+            owner,
+            price.base,
+            price.premium,
+            expires
+        );
+    }
     function renew(
         string calldata name,
         uint256 duration
@@ -224,8 +320,39 @@ contract ETHRegistrarController is
         emit NameRenewed(name, labelhash, msg.value, expires);
     }
 
+    function renewTokens(
+        string calldata name,
+        uint256 duration,
+        string memory token,
+        address tokenAddress
+    ) external {
+        bytes32 labelhash = keccak256(bytes(name));
+        uint256 tokenId = uint256(labelhash);
+        IPriceOracle.Price memory price = rentPriceToken(name, duration, token);
+        if (
+            IERC20(tokenAddress).balanceOf(msg.sender) <
+            price.base + price.premium
+        ) {
+            revert InsufficientValue();
+        }
+        IERC20(tokenAddress).safeTransferFrom(
+            msg.sender,
+            address(this),
+            price.base + price.premium
+        );
+        uint256 expires = nameWrapper.renew(tokenId, duration);
+
+        emit NameRenewed(name, labelhash, price.base + price.premium, expires);
+    }
+
     function withdraw() public {
         payable(owner()).transfer(address(this).balance);
+    }
+    function withdrawTokens(address tokenAddress) public {
+        IERC20(tokenAddress).safeTransfer(
+            owner(),
+            IERC20(tokenAddress).balanceOf(address(this))
+        );
     }
 
     function supportsInterface(
@@ -258,7 +385,7 @@ contract ETHRegistrarController is
 
         delete (commitments[commitment]);
 
-        if (duration != 0 && duration < MIN_REGISTRATION_DURATION ) {
+        if (duration != 0 && duration < MIN_REGISTRATION_DURATION) {
             revert DurationTooShort(duration);
         }
     }
@@ -266,7 +393,7 @@ contract ETHRegistrarController is
     function _setRecords(
         address resolverAddress,
         bytes32 label,
-        bytes[] calldata data
+        bytes[] memory data
     ) internal {
         // use hardcoded .eth namehash
         bytes32 nodehash = keccak256(abi.encodePacked(ETH_NODE, label));

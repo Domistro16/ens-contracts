@@ -30,6 +30,24 @@ contract StaticBulkRenewal is IBulkRenewal {
             }
         }
     }
+     function rentPriceToken(
+        string[] calldata names,
+        uint256 duration,
+        string memory token
+    ) external view returns (uint256 total) {
+        uint256 length = names.length;
+        for (uint256 i = 0; i < length; ) {
+            IPriceOracle.Price memory price = controller.rentPriceToken(
+                names[i],
+                duration,
+                token
+            );
+            unchecked {
+                ++i;
+                total += (price.base + price.premium);
+            }
+        }
+    }
 
     function renewAll(
         string[] calldata names,
@@ -51,6 +69,28 @@ contract StaticBulkRenewal is IBulkRenewal {
         }
         // Send any excess funds back
         payable(msg.sender).transfer(address(this).balance);
+    }
+    function renewAllWithToken(
+        string[] calldata names,
+        uint256 duration,
+        string memory token,
+        address tokenAddress
+    ) external payable  {
+        uint256 length = names.length;
+        uint256 total;
+        for (uint256 i = 0; i < length; ) {
+            IPriceOracle.Price memory price = controller.rentPriceToken(
+                names[i],
+                duration,
+                token
+            );
+            uint256 totalPrice = price.base + price.premium;
+            controller.renewTokens(names[i], duration, token, tokenAddress);
+            unchecked {
+                ++i;
+                total += totalPrice;
+            }
+        }
     }
 
     function supportsInterface(

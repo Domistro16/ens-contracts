@@ -201,11 +201,13 @@ function TransakWidget({
   owner,
   duration,
   reverse,
+  price,
 }: {
   label: string
   owner: `0x${string}`
   duration: number
   reverse: boolean
+  price: number
 }) {
   const signer = useEthersSigner()
   const [transakInstance, setTransakInstance] = useState<Transak | null>(null)
@@ -221,7 +223,8 @@ function TransakWidget({
       widgetHeight: '500px',
       widgetWidth: '500px',
       walletAddress: owner,
-      defaultFiatCurrency: 'USD'
+      defaultFiatCurrency: 'USD',
+      defaultFiatAmount: price
     })
 
     setTransakInstance(instance)

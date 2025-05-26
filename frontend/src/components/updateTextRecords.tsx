@@ -201,6 +201,7 @@ const Update = ({ texts, label, owner, resolverAddress, setIsOpen, isOpen }: Upd
               className="p-3 bg-[#FFF700] w-full rounded-lg text-black font-semibold cursor-pointer"
               onClick={() => {
                 setNext((prev) => prev + 1)
+                update()
               }}
             >
               Next
