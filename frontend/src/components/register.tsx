@@ -21,6 +21,8 @@ import { useEstimateENSFees, useEthersSigner } from '../hooks/gasEstimation'
 import { MobileNav } from './mobilenav'
 import TransakWidget from './transakPay'
 import { ethers } from 'ethers'
+import { constants } from '../constant'
+
 const ERC20_ABI = [
   {
     constant: false,
@@ -450,25 +452,25 @@ const Register = () => {
   const [done, setDone] = useState(false)
 
   const { data: latest, isPending: loading } = useReadContract({
-    address: '0x03f5d42d71ef2873ceaf6d4b62dd1ac563d0adfd', // Replace with actual contract address
+    address: constants.Controller, // Replace with actual contract address
     abi: Controller as any, // Replace with actual ABI
     functionName: 'rentPrice',
     args: [label as string, seconds],
   })
   const { data: usd1TokenData, isPending: tokenLoading } = useReadContract({
-    address: '0x03f5d42d71ef2873ceaf6d4b62dd1ac563d0adfd', // Replace with actual contract address
+    address: constants.Controller,
     abi: Controller as any, // Replace with actual ABI
     functionName: 'rentPriceToken',
     args: [label as string, seconds, 'usd1'],
   })
   const { data: cakeTokenData, isPending: caketokenLoading } = useReadContract({
-    address: '0x03f5d42d71ef2873ceaf6d4b62dd1ac563d0adfd', // Replace with actual contract address
+    address: constants.Controller,
     abi: Controller as any, // Replace with actual ABI
     functionName: 'rentPriceToken',
     args: [label as string, seconds, 'cake'],
   })
   const { data: priceData } = useReadContract({
-    address: '0x2514895c72f50D8bd4B4F9b1110F0D6bD2c97526', // Replace with actual contract address
+    address: constants.Controller,
     abi: PriceAbi as any, // Replace with actual ABI
     functionName: 'latestRoundData',
   })
@@ -678,7 +680,7 @@ const Register = () => {
     })
     const fullData = [...builtData, addrEncoded]
     setCommitData(fullData)
-    const resolver = '0x23018a4f97cb131fadd72747f3e658423518645e'
+    const resolver = constants.PublicResolver
     try {
       const labelHash = keccak256(toBytes(label || ''))
       const encoded = encodeAbiParameters(
@@ -706,7 +708,7 @@ const Register = () => {
       const commitment = keccak256(encoded)
       setMessage('Committing Registration')
       await writeContractAsync({
-        address: '0x03f5d42d71ef2873ceaf6d4b62dd1ac563d0adfd',
+        address: constants.Controller,
         account: address,
         abi: Controller,
         functionName: 'commit',
@@ -722,7 +724,7 @@ const Register = () => {
   }
   const register = async () => {
     setIsLoading(true)
-    const resolver = '0x23018a4f97cb131fadd72747f3e658423518645e'
+    const resolver = constants.PublicResolver
     try {
       let value: Number
       const { base, premium } = latest as { base: bigint; premium: bigint }
@@ -772,11 +774,11 @@ const Register = () => {
       const totalAmount = parseEther(amount.toString()) */
       const totalAmount = value
       console.log(totalAmount)
-        const controller = new ethers.Contract(
-          '0x03f5d42d71ef2873ceaf6d4b62dd1ac563d0adfd',
-          Controller,
-          signer,
-        )
+      const controller = new ethers.Contract(
+        constants.Controller,
+        Controller,
+        signer,
+      )
       if (!useToken) {
         try {
           await controller.callStatic.register(
@@ -794,7 +796,7 @@ const Register = () => {
           console.error('Revert reason   :', e.data)
         }
         await registerContract({
-          address: '0x03f5d42d71ef2873ceaf6d4b62dd1ac563d0adfd',
+          address: constants.Controller,
           abi: Controller,
           functionName: 'register',
           args: [
@@ -876,10 +878,10 @@ const Register = () => {
           address: token,
           abi: ERC20_ABI,
           functionName: 'approve',
-          args: ['0x03f5d42d71ef2873ceaf6d4b62dd1ac563d0adfd', totalAmount ],
+          args: [constants.Controller, totalAmount],
         })
-          await new Promise((r) => setTimeout(r, 10000))
-     
+        await new Promise((r) => setTimeout(r, 2000))
+
         try {
           await controller.callStatic.registerWithToken(
             label,
@@ -898,7 +900,7 @@ const Register = () => {
           console.error('Revert reason   :', e.data)
         }
         await registerContract({
-          address: '0x03f5d42d71ef2873ceaf6d4b62dd1ac563d0adfd',
+          address: constants.Controller,
           abi: Controller,
           functionName: 'registerWithToken',
           args: [
@@ -925,7 +927,7 @@ const Register = () => {
   }
 
   const { data: available } = useReadContract({
-    address: '0x03f5d42d71ef2873ceaf6d4b62dd1ac563d0adfd',
+    address: constants.Controller,
     abi: Controller as any,
     functionName: 'available',
     args: [label as string],

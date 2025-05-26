@@ -69,23 +69,16 @@ const approve = [
   },
 ]
 
-const Wrap = ({
-  label,
-  setIsOpen,
-  isOpen,
-}: UpdateProps) => {
-const {address: owner} = useAccount() 
+const Wrap = ({ label, setIsOpen, isOpen }: UpdateProps) => {
+  const { address: owner } = useAccount()
   const {
     data: wrapHash,
     error: wrapError,
     isPending: wrapPending,
     writeContractAsync: wrapContract,
   } = useWriteContract()
-   const {
-     data: approveHash,
-     writeContractAsync: approveContract,
-   } = useWriteContract()
-
+  const { data: approveHash, writeContractAsync: approveContract } =
+    useWriteContract()
 
   const [next, setNext] = useState(0)
 
@@ -96,39 +89,36 @@ const {address: owner} = useAccount()
 
   const resolver = `0xF90F11ddD972e661170836e9E3970BBE398988D8`
 
-const [info, setInfo] = useState('')
-const [hash, setHash] = useState('')
-
+  const [info, setInfo] = useState('')
+  const [hash, setHash] = useState('')
 
   const wrap = async () => {
     console.log(label, owner, resolver)
     const labelhash = keccak256(toBytes(label as string))
-    try{
-
-        setInfo('Approve the Wrapper Contract to send .creator name tokens from your wallet')
-        await approveContract({
-          abi: approve,
-          address: '0xb4c95f28f762e7b42dcd6e108bb8c7fcf90cb413',
-          functionName: 'approve',
-          args: ['0x501CB529399486684f94c6f59F1b1617202DDE18', labelhash],
-        })
-        setHash(approveHash as string)
-        setInfo(
-          'Wrap Name',
-        )
-        await wrapContract({
-            abi: wrapETH2LD,
-            address: '0x501CB529399486684f94c6f59F1b1617202DDE18' ,
-            functionName: 'wrapETH2LD',
-            args: [label, owner, 0, resolver]
-        })
-        setHash(wrapHash as string)
-    }catch(error){
-        console.log(error);
-        console.log(wrapError);
+    try {
+      setInfo(
+        'Approve the Wrapper Contract to send .creator name tokens from your wallet',
+      )
+      await approveContract({
+        abi: approve,
+        address: '0xb4c95f28f762e7b42dcd6e108bb8c7fcf90cb413',
+        functionName: 'approve',
+        args: ['0x501CB529399486684f94c6f59F1b1617202DDE18', labelhash],
+      })
+      setHash(approveHash as string)
+      setInfo('Wrap Name')
+      await wrapContract({
+        abi: wrapETH2LD,
+        address: '0x501CB529399486684f94c6f59F1b1617202DDE18',
+        functionName: 'wrapETH2LD',
+        args: [label, owner, 0, resolver],
+      })
+      setHash(wrapHash as string)
+    } catch (error) {
+      console.log(error)
+      console.log(wrapError)
     }
   }
-
 
   return (
     <Modal
@@ -167,7 +157,7 @@ const [hash, setHash] = useState('')
             </button>
           </div>
         </div>
-      ) : next == 1 ?  (
+      ) : next == 1 ? (
         <div className="p-8 rounded-2xl bg-white dark:bg-neutral-900 shadow-xl relative w-[450px] mx-auto flex flex-col gap-6">
           <button
             onClick={onRequestClose}
@@ -195,21 +185,21 @@ const [hash, setHash] = useState('')
 
             <div className="flex justify-between items-center border border-gray-200 dark:border-gray-700 rounded-lg p-3">
               <div className="text-gray-500 text-sm">Action</div>
-              <div className="font-bold text-black dark:text-white">
-                {info}
-              </div>
+              <div className="font-bold text-black dark:text-white">{info}</div>
             </div>
             {!wrapPending && wrapHash && (
               <div className="flex justify-between items-center border border-gray-200 dark:border-gray-700 rounded-lg p-3">
                 <div className="text-gray-500 text-sm w-20">hash</div>
                 <div className="font-bold text-black dark:text-white flex-wrap break-all text-sm">
-                    {hash}
+                  {hash}
                 </div>
               </div>
             )}
           </div>
         </div>
-      ) : ''}
+      ) : (
+        ''
+      )}
     </Modal>
   )
 }

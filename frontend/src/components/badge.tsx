@@ -1,5 +1,7 @@
 import { namehash } from 'viem'
 import { useReadContract } from 'wagmi'
+import {constants} from '../constant'
+
 
 const isWrappeda = [
   {
@@ -28,7 +30,7 @@ function isWrapped(name: string) {
   const { data: wrapped } = useReadContract({
     abi: isWrappeda,
     functionName: 'isWrapped',
-    address: '0x501CB529399486684f94c6f59F1b1617202DDE18',
+    address: constants.NameWrapper,
     args: [node],
   })
   return wrapped

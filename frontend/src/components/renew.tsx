@@ -6,6 +6,8 @@ import Controller from '../../../deployments/testnet/ETHRegistrarController.json
 import DatePicker from 'react-datepicker'
 import { useEstimateENSFees } from '../hooks/gasEstimation'
 import { zeroAddress } from 'viem'
+import {constants} from '../constant'
+
 
 interface RenewProps {
   expires: bigint
@@ -113,7 +115,7 @@ const Renew = ({ expires, label, setIsOpen, isOpen, number }: RenewProps) => {
   const [bnb, setBnb] = useState(true)
 
   const { data: latest, isPending: loading } = useReadContract({
-    address: '0x98e9FdF05313A49D95A44ff3563EA3ba05Ce551E', // Replace with actual contract address
+    address: constants.Controller, // Replace with actual contract address
     abi: Controller.abi as any, // Replace with actual ABI
     functionName: 'rentPrice',
     args: [label as string, seconds],

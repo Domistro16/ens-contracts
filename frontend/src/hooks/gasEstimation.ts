@@ -4,6 +4,7 @@ import { providers } from 'ethers'
 import { useMemo, useCallback, useState, useEffect } from 'react'
 import type { Account, Chain, Client, Transport } from 'viem'
 import { Config, useConnectorClient } from 'wagmi'
+import { constants } from '../constant'
 
 export function clientToSigner(client: Client<Transport, Chain, Account>) {
   const { account, chain, transport } = client
@@ -151,7 +152,7 @@ export function useEstimateENSFees({
 
     try {
       const controller = new ethers.Contract(
-        '0x98e9FdF05313A49D95A44ff3563EA3ba05Ce551E',
+        constants.Controller,
         controllerAbi,
         signer,
       )

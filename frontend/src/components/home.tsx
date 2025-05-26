@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom'
 import { CustomConnect } from './connectButton'
 import { MobileNav } from './mobilenav'
 import { IdentificationIcon, MenuIcon } from '@heroicons/react/outline'
+import {constants} from '../constant'
+
 const abi = [
   {
     inputs: [
@@ -32,7 +34,7 @@ export default function Home() {
   const [available, setAvailable] = useState('')
   const [search, setSearch] = useState('')
   const { data, isPending } = useReadContract({
-    address: '0x98e9FdF05313A49D95A44ff3563EA3ba05Ce551E',
+    address: constants.Controller,
     functionName: 'available',
     abi: abi,
     args: [search],

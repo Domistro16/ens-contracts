@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { namehash } from 'viem'
 import { useReadContract } from 'wagmi'
+import {constants} from '../constant'
 
 const resolverAbi = [
   {
@@ -55,7 +56,7 @@ export function Avatar({ name, className }: { name: string, className?: string})
 
   const node = namehash(name)
   const { data} = useReadContract({
-    address: '0xF90F11ddD972e661170836e9E3970BBE398988D8',
+    address: constants.PublicResolver,
     abi: resolverAbi,
     functionName: 'text',
     args: [node, 'avatar'],

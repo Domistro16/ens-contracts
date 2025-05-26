@@ -1,4 +1,5 @@
 import { useReadContract } from 'wagmi'
+import { constants } from '../constant'
 
 interface UseENSNameProps {
   owner: `0x${string}`
@@ -55,7 +56,7 @@ export function useENSName({ owner }: UseENSNameProps) {
     isPending: nodeLoading,
     error: nodeError,
   } = useReadContract({
-    address: '0x078E09a9584c3Ec7DF706db42685D4eedf456FC9',
+    address: constants.ReverseRegistrar,
     abi: nodeAbi as any,
     functionName: 'node',
     args: owner ? [owner] : undefined,
@@ -67,7 +68,7 @@ export function useENSName({ owner }: UseENSNameProps) {
     isPending: nameLoading,
     error: nameError,
   } = useReadContract({
-    address: '0xF90F11ddD972e661170836e9E3970BBE398988D8',
+    address: constants.PublicResolver,
     abi: nameAbi as any,
     functionName: 'name',
     args: node ? [node] : undefined,

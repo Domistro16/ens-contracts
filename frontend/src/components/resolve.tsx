@@ -22,6 +22,7 @@ import { FaRedditAlien } from 'react-icons/fa6'
 import { IoLogoWhatsapp } from 'react-icons/io'
 import { FaSnapchatGhost, FaGithub } from 'react-icons/fa'
 import { SiBnbchain } from 'react-icons/si'
+import { constants } from '../constant'
 
 const resolveAbi = [
   {
@@ -274,7 +275,7 @@ const Resolve = () => {
   const node = namehash(`${label}.creator`)
   const id = keccak256(label as any)
   const { data: available } = useReadContract({
-    address: '0x98e9FdF05313A49D95A44ff3563EA3ba05Ce551E',
+    address: constants.Controller,
     abi: availableAbi,
     functionName: 'available',
     args: [label as string],
@@ -282,14 +283,14 @@ const Resolve = () => {
   const { data: wrapped } = useReadContract({
     abi: isWrapped,
     functionName: 'isWrapped',
-    address: '0x501CB529399486684f94c6f59F1b1617202DDE18',
+    address: constants.NameWrapper,
     args: [node],
   })
   console.log(wrapped)
   const { data, isPending: wLoading } = useReadContract({
     abi: getData,
     functionName: 'getData',
-    address: '0x501CB529399486684f94c6f59F1b1617202DDE18',
+    address: constants.NameWrapper,
     args: [node],
   })
   const { data: expires } = useReadContract({
@@ -313,7 +314,7 @@ const Resolve = () => {
   const { data: manager, isPending: managerLoading } = useReadContract({
     abi: ensOwner,
     functionName: 'owner',
-    address: '0xC33387F371067b1Bdc48E694bf30EDB8deF7d4A0',
+    address: constants.Registry,
     args: [node],
   })
 
@@ -321,7 +322,7 @@ const Resolve = () => {
     useReadContract({
       abi: resolveAbi,
       functionName: 'resolver',
-      address: '0xC33387F371067b1Bdc48E694bf30EDB8deF7d4A0',
+      address: constants.Registry,
       args: [node],
     })
   const resolver = useMemo(() => {

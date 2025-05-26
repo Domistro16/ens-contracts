@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { namehash } from 'viem'
 import { useWriteContract } from 'wagmi'
 import Modal from 'react-modal'
+import {constants} from '../constant'
+
 
 interface ResolverProps {
   label: string
@@ -57,7 +59,7 @@ const ChangeResolver = ({
       try {
         await setResolverContract({
           abi: setResolverAbi,
-          address: '0x501CB529399486684f94c6f59F1b1617202DDE18',
+          address: constants.NameWrapper,
           functionName: 'setResolver',
           args: [namehash(`${label}.creator`), resolver],
         })
@@ -69,7 +71,7 @@ const ChangeResolver = ({
       try {
         await setResolverContract({
           abi: setResolverAbi,
-          address: '0xC33387F371067b1Bdc48E694bf30EDB8deF7d4A0',
+          address: constants.Registry,
           functionName: 'setResolver',
           args: [namehash(`${label}.creator`), resolver],
         })

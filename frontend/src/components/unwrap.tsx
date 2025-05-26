@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { keccak256, toBytes } from 'viem'
 import { useAccount, useWriteContract } from 'wagmi'
 import Modal from 'react-modal'
+import { constants } from '../constant'
 
 interface UpdateProps {
   label: string
@@ -12,37 +13,33 @@ interface UpdateProps {
 Modal.setAppElement('#root')
 
 const unwrapETH2LD = [
-   {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "labelhash",
-          "type": "bytes32"
-        },
-        {
-          "internalType": "address",
-          "name": "registrant",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "controller",
-          "type": "address"
-        }
-      ],
-      "name": "unwrapETH2LD",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
+  {
+    inputs: [
+      {
+        internalType: 'bytes32',
+        name: 'labelhash',
+        type: 'bytes32',
+      },
+      {
+        internalType: 'address',
+        name: 'registrant',
+        type: 'address',
+      },
+      {
+        internalType: 'address',
+        name: 'controller',
+        type: 'address',
+      },
+    ],
+    name: 'unwrapETH2LD',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
 ]
 
-const Unwrap = ({
-  label,
-  setIsOpen,
-  isOpen,
-}: UpdateProps) => {
-const {address: owner} = useAccount() 
+const Unwrap = ({ label, setIsOpen, isOpen }: UpdateProps) => {
+  const { address: owner } = useAccount()
   const {
     data: unwrapHash,
     error: unwrapError,
@@ -60,16 +57,16 @@ const {address: owner} = useAccount()
 
   const unwrap = async () => {
     const labelhash = keccak256(toBytes(label))
-    try{
-        await unwrapContract({
-            abi: unwrapETH2LD,
-            address: '0x501CB529399486684f94c6f59F1b1617202DDE18' ,
-            functionName: 'unwrapETH2LD',
-            args: [labelhash, address, manager]
-        })
-    }catch(error){
-        console.log(error);
-        console.log(unwrapError);
+    try {
+      await unwrapContract({
+        abi: unwrapETH2LD,
+        address: constants.NameWrapper,
+        functionName: 'unwrapETH2LD',
+        args: [labelhash, address, manager],
+      })
+    } catch (error) {
+      console.log(error)
+      console.log(unwrapError)
     }
   }
 
