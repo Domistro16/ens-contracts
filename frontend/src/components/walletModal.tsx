@@ -6,7 +6,6 @@ import { useAccount } from 'wagmi'
 import { useDisconnect } from 'wagmi'
 import { useRef } from 'react'
 import { useWeb3AuthDisconnect } from '@web3auth/modal/react'
-import { CodeSquare } from 'lucide-react'
 
 ReactModal.setAppElement('#root') // accessibility
 
@@ -20,7 +19,6 @@ interface WalletModalProps {
 export function WalletModal({
   isOpen,
   onRequestClose,
-  address,
   name,
   balance,
 }: WalletModalProps) {

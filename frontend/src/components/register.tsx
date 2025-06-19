@@ -22,7 +22,6 @@ import { MobileNav } from './mobilenav'
 import TransakWidget from './transakPay'
 import { ethers } from 'ethers'
 import { constants } from '../constant'
-import { usePrepareTransactionRequest } from 'wagmi'
 
 const ERC20_ABI = [
   {
@@ -466,7 +465,7 @@ const Register = () => {
   const [avatar, setAvatar] = useState('')
   const [wait, setWait] = useState(60)
   const [done, setDone] = useState(false)
-  const [lifetime, setLifetime] = useState(false)
+  const lifetime = false
 
   const { data: latest, isPending: loading } = useReadContract({
     address: constants.Controller, // Replace with actual contract address
@@ -779,7 +778,7 @@ const Register = () => {
             commitData,
             isPrimary,
             0,
-            lifetime
+            lifetime,
           )
         } catch (e: any) {
           console.error('Revert error name:', e.errorName)
@@ -798,7 +797,7 @@ const Register = () => {
             commitData,
             isPrimary,
             0,
-            lifetime
+            lifetime,
           ],
           value: base + premium,
         })
