@@ -27,7 +27,6 @@ export const client = new ApolloClient({
 })
 
 function BootStrap() {
-
   const queryClient = new QueryClient()
   const web3authContextConfig: Web3AuthContextConfig = {
     web3AuthOptions: web3AuthOptions,
@@ -57,7 +56,7 @@ function BootStrap() {
       iframe.onload = () => {
         iframe.contentWindow?.postMessage(
           JSON.stringify({ type: 'GET_SESSION' }),
-          'http://localhost:5174',
+          'https://level3auth.vercel.app',
         )
       }
     }
@@ -69,7 +68,7 @@ function BootStrap() {
     return (
       <iframe
         ref={iframeRef}
-        src="http://localhost:5174/sync"
+        src="https://level3auth.vercel.app/sync"
         style={{ display: 'none' }}
         title="session-sync"
       />
