@@ -18,6 +18,7 @@ import {TokenPriceOracle} from "./TokenPriceOracle.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 using SafeERC20 for IERC20;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ReferralController} from "./ReferralController.sol";
 
 error CommitmentTooNew(bytes32 commitment);
 error CommitmentTooOld(bytes32 commitment);
@@ -51,8 +52,11 @@ contract ETHRegistrarController is
     uint256 public immutable maxCommitmentAge;
     ReverseRegistrar public immutable reverseRegistrar;
     INameWrapper public immutable nameWrapper;
-
+    ReferralController public immutable referralController;
+    address public infoFi;
     mapping(bytes32 => uint256) public commitments;
+    address public backendWallet;
+    uint256 public untrackedInfoFi;
 
     event NameRegistered(
         string name,
@@ -69,6 +73,11 @@ contract ETHRegistrarController is
         uint256 expires
     );
 
+    modifier onlyBackend() {
+        require(msg.sender == backendWallet, "Not Backend");
+        _;
+    }
+
     constructor(
         BaseRegistrarImplementation _base,
         TokenPriceOracle _prices,
@@ -76,7 +85,9 @@ contract ETHRegistrarController is
         uint256 _maxCommitmentAge,
         ReverseRegistrar _reverseRegistrar,
         INameWrapper _nameWrapper,
-        ENS _ens
+        ENS _ens,
+        address _infoFi,
+        ReferralController _referralController
     ) ReverseClaimer(_ens, msg.sender) {
         if (_maxCommitmentAge <= _minCommitmentAge) {
             revert MaxCommitmentAgeTooLow();
@@ -92,25 +103,34 @@ contract ETHRegistrarController is
         maxCommitmentAge = _maxCommitmentAge;
         reverseRegistrar = _reverseRegistrar;
         nameWrapper = _nameWrapper;
+        infoFi = _infoFi;
+        referralController = _referralController;
     }
 
     function rentPrice(
         string memory name,
-        uint256 duration
+        uint256 duration,
+        bool lifetime
     ) public view virtual override returns (IPriceOracle.Price memory price) {
         require(
             duration == 0 || duration >= MIN_REGISTRATION_DURATION,
             "Invalid duration"
         );
         bytes32 label = keccak256(bytes(name));
-        price = prices.price(name, base.nameExpires(uint256(label)), duration);
+        price = prices.price(
+            name,
+            base.nameExpires(uint256(label)),
+            duration,
+            lifetime
+        );
     }
 
     function rentPriceToken(
         string memory name,
         uint256 duration,
-        string memory token
-    ) public view virtual returns (IPriceOracle.Price memory price) {
+        string memory token,
+        bool lifetime
+    ) public view virtual override returns (IPriceOracle.Price memory price) {
         require(
             duration == 0 || duration >= MIN_REGISTRATION_DURATION,
             "Invalid duration"
@@ -120,7 +140,8 @@ contract ETHRegistrarController is
             name,
             base.nameExpires(uint256(label)),
             duration,
-            token
+            token,
+            lifetime
         );
     }
 
@@ -141,7 +162,8 @@ contract ETHRegistrarController is
         address resolver,
         bytes[] memory data,
         bool reverseRecord,
-        uint16 ownerControlledFuses
+        uint16 ownerControlledFuses,
+        bool lifetime
     ) public pure override returns (bytes32) {
         bytes32 label = keccak256(bytes(name));
         if (data.length > 0 && resolver == address(0)) {
@@ -157,7 +179,8 @@ contract ETHRegistrarController is
                     resolver,
                     data,
                     reverseRecord,
-                    ownerControlledFuses
+                    ownerControlledFuses,
+                    lifetime
                 )
             );
     }
@@ -170,16 +193,18 @@ contract ETHRegistrarController is
     }
 
     function register(
-        string calldata name,
+        string memory name,
         address owner,
         uint256 duration,
         bytes32 secret,
         address resolver,
-        bytes[] calldata data,
+        bytes[] memory data,
         bool reverseRecord,
-        uint16 ownerControlledFuses
+        uint16 ownerControlledFuses,
+        bool lifetime,
+        string memory referree
     ) public payable override {
-        IPriceOracle.Price memory price = rentPrice(name, duration);
+        IPriceOracle.Price memory price = rentPrice(name, duration, lifetime);
         if (msg.value < price.base + price.premium) {
             revert InsufficientValue();
         }
@@ -195,7 +220,8 @@ contract ETHRegistrarController is
                 resolver,
                 data,
                 reverseRecord,
-                ownerControlledFuses
+                ownerControlledFuses,
+                lifetime
             )
         );
 
@@ -213,6 +239,7 @@ contract ETHRegistrarController is
 
         if (reverseRecord) {
             _setReverseRecord(name, resolver, msg.sender);
+            referralController.setReferree(keccak256(bytes(name)), owner);
         }
 
         emit NameRegistered(
@@ -223,15 +250,31 @@ contract ETHRegistrarController is
             price.premium,
             expires
         );
-
         if (msg.value > (price.base + price.premium)) {
             payable(msg.sender).transfer(
                 msg.value - (price.base + price.premium)
             );
         }
+        address receiver = referralController.referrees(
+            keccak256(bytes(referree))
+        );
+
+        referralController.settlementRegister(
+            referree,
+            name,
+            owner,
+            price,
+            receiver
+        );
+        (bool ok, ) = payable(infoFi).call{
+            value: (price.base + price.premium) -
+                ((price.base + price.premium) * 35) /
+                100
+        }("");
+        require(ok, "Payment to infoFi failed");
     }
 
-    function registerWithToken(
+    function registerWithCard(
         string memory name,
         address owner,
         uint256 duration,
@@ -240,10 +283,75 @@ contract ETHRegistrarController is
         bytes[] memory data,
         bool reverseRecord,
         uint16 ownerControlledFuses,
-        string memory token,
-        address tokenAddress
-    ) public {
-        IPriceOracle.Price memory price = rentPriceToken(name, duration, token);
+        bool lifetime,
+        string memory referree
+    ) public onlyBackend{
+        IPriceOracle.Price memory price = rentPrice(name, duration, lifetime);
+
+        _consumeCommitment(
+            name,
+            duration,
+            makeCommitment(
+                name,
+                owner,
+                duration,
+                secret,
+                resolver,
+                data,
+                reverseRecord,
+                ownerControlledFuses,
+                lifetime
+            )
+        );
+
+        uint256 expires = nameWrapper.registerAndWrapETH2LD(
+            name,
+            owner,
+            duration,
+            resolver,
+            ownerControlledFuses
+        );
+
+        if (data.length > 0) {
+            _setRecords(resolver, keccak256(bytes(name)), data);
+        }
+
+        if (reverseRecord) {
+            _setReverseRecord(name, resolver, owner);
+            referralController.setReferree(keccak256(bytes(name)), owner);
+        }
+
+        emit NameRegistered(
+            name,
+            keccak256(bytes(name)),
+            owner,
+            price.base,
+            price.premium,
+            expires
+        );
+        address receiver = referralController.referrees(
+            keccak256(bytes(referree))
+        );
+
+        referralController.settlementRegister(
+            referree,
+            name,
+            owner,
+            price,
+            receiver
+        );
+
+        untrackedInfoFi += (((price.base + price.premium) * 35) / 100);
+    }
+
+    function resetInfoFi () external onlyOwner {
+        untrackedInfoFi = 0;
+    }
+
+    function _tokenTransfer(
+        address tokenAddress,
+        IPriceOracle.Price memory price
+    ) internal {
         require(
             IERC20(tokenAddress).allowance(msg.sender, address(this)) >=
                 price.base + price.premium,
@@ -261,53 +369,125 @@ contract ETHRegistrarController is
             address(this),
             price.base + price.premium
         );
-        _consumeCommitment(
-            name,
-            duration,
-            makeCommitment(
-                name,
-                owner,
-                duration,
-                secret,
-                resolver,
-                data,
-                reverseRecord,
-                ownerControlledFuses
-            )
-        );
+    }
 
-        uint256 expires = nameWrapper.registerAndWrapETH2LD(
-            name,
-            owner,
-            duration,
-            resolver,
-            ownerControlledFuses
-        );
-
+    function _internalRecordsCall(
+        string memory name,
+        bytes[] memory data,
+        address owner,
+        address resolver,
+        bool reverseRecord
+    ) internal {
         if (data.length > 0) {
             _setRecords(resolver, keccak256(bytes(name)), data);
         }
 
         if (reverseRecord) {
             _setReverseRecord(name, resolver, msg.sender);
+            referralController.setReferree(keccak256(bytes(name)), owner);
         }
+    }
+
+    function registerWithToken(
+        RegisterParams memory registerParams,
+        TokenParams memory tokenParams,
+        bool lifetime,
+        string memory referree
+    ) external override {
+        _consumeCommitment(
+            registerParams.name,
+            registerParams.duration,
+            makeCommitment(
+                registerParams.name,
+                registerParams.owner,
+                registerParams.duration,
+                registerParams.secret,
+                registerParams.resolver,
+                registerParams.data,
+                registerParams.reverseRecord,
+                registerParams.ownerControlledFuses,
+                lifetime
+            )
+        );
+
+        IPriceOracle.Price memory price = rentPriceToken(
+            registerParams.name,
+            registerParams.duration,
+            tokenParams.token,
+            lifetime
+        );
+
+        uint256 expires = nameWrapper.registerAndWrapETH2LD(
+            registerParams.name,
+            registerParams.owner,
+            registerParams.duration,
+            registerParams.resolver,
+            registerParams.ownerControlledFuses
+        );
+
+        _internalRecordsCall(
+            registerParams.name,
+            registerParams.data,
+            registerParams.owner,
+            registerParams.resolver,
+            registerParams.reverseRecord
+        );
+        _tokenTransfer(
+            tokenParams.tokenAddress,
+            rentPriceToken(
+                registerParams.name,
+                registerParams.duration,
+                tokenParams.token,
+                lifetime
+            )
+        );
 
         emit NameRegistered(
-            name,
-            keccak256(bytes(name)),
-            owner,
-            price.base,
-            price.premium,
+            registerParams.name,
+            keccak256(bytes(registerParams.name)),
+            registerParams.owner,
+            rentPriceToken(
+                registerParams.name,
+                registerParams.duration,
+                tokenParams.token,
+                lifetime
+            ).base,
+            rentPriceToken(
+                registerParams.name,
+                registerParams.duration,
+                tokenParams.token,
+                lifetime
+            ).premium,
             expires
         );
+        referralController.settlementRegisterWithToken(
+            referree,
+            registerParams.name,
+            registerParams.owner,
+            rentPriceToken(
+                registerParams.name,
+                registerParams.duration,
+                tokenParams.token,
+                lifetime
+            ),
+            tokenParams.tokenAddress
+        );
+        IERC20(tokenParams.tokenAddress).safeTransferFrom(
+            address(this),
+            infoFi,
+            ((price.base + price.premium) * 35) / 100
+        );
     }
+
     function renew(
         string calldata name,
-        uint256 duration
-    ) external payable override {
+        uint256 duration,
+        bool lifetime
+    ) external payable {
         bytes32 labelhash = keccak256(bytes(name));
         uint256 tokenId = uint256(labelhash);
-        IPriceOracle.Price memory price = rentPrice(name, duration);
+        IPriceOracle.Price memory price = rentPrice(name, duration, lifetime);
+        string memory referree = referralController.referredBy(labelhash);
         if (msg.value < price.base) {
             revert InsufficientValue();
         }
@@ -316,19 +496,40 @@ contract ETHRegistrarController is
         if (msg.value > price.base) {
             payable(msg.sender).transfer(msg.value - price.base);
         }
-
         emit NameRenewed(name, labelhash, msg.value, expires);
+        if (
+            referralController.referrees(keccak256(bytes(referree))) !=
+            address(0)
+        ) {
+            address receiver = referralController.referrees(
+                keccak256(bytes(referree))
+            );
+            referralController.settlement(price, receiver);
+        }
+        (bool ok, ) = payable(infoFi).call{
+            value: (price.base + price.premium) -
+                ((price.base + price.premium) * 35) /
+                100
+        }("");
+        require(ok, "Payment to infoFi failed");
     }
 
     function renewTokens(
         string calldata name,
         uint256 duration,
         string memory token,
-        address tokenAddress
-    ) external {
+        address tokenAddress,
+        bool lifetime
+    ) external override {
         bytes32 labelhash = keccak256(bytes(name));
         uint256 tokenId = uint256(labelhash);
-        IPriceOracle.Price memory price = rentPriceToken(name, duration, token);
+        string memory referree = referralController.referredBy(labelhash);
+        IPriceOracle.Price memory price = rentPriceToken(
+            name,
+            duration,
+            token,
+            lifetime
+        );
         if (
             IERC20(tokenAddress).balanceOf(msg.sender) <
             price.base + price.premium
@@ -343,11 +544,31 @@ contract ETHRegistrarController is
         uint256 expires = nameWrapper.renew(tokenId, duration);
 
         emit NameRenewed(name, labelhash, price.base + price.premium, expires);
+
+        if (
+            referralController.referrees(keccak256(bytes(referree))) !=
+            address(0)
+        ) {
+            address receiver = referralController.referrees(
+                keccak256(bytes(referree))
+            );
+            referralController.settlementWithToken(
+                price,
+                receiver,
+                tokenAddress
+            );
+        }
+        IERC20(tokenAddress).safeTransferFrom(
+            address(this),
+            infoFi,
+            ((price.base + price.premium) * 35) / 100
+        );
     }
 
     function withdraw() public {
         payable(owner()).transfer(address(this).balance);
     }
+
     function withdrawTokens(address tokenAddress) public {
         IERC20(tokenAddress).safeTransfer(
             owner(),

@@ -16,13 +16,15 @@ contract StaticBulkRenewal is IBulkRenewal {
 
     function rentPrice(
         string[] calldata names,
-        uint256 duration
+        uint256 duration,
+        bool lifetime
     ) external view override returns (uint256 total) {
         uint256 length = names.length;
         for (uint256 i = 0; i < length; ) {
             IPriceOracle.Price memory price = controller.rentPrice(
                 names[i],
-                duration
+                duration,
+                lifetime
             );
             unchecked {
                 ++i;
@@ -33,14 +35,16 @@ contract StaticBulkRenewal is IBulkRenewal {
      function rentPriceToken(
         string[] calldata names,
         uint256 duration,
-        string memory token
+        string memory token,
+        bool lifetime
     ) external view returns (uint256 total) {
         uint256 length = names.length;
         for (uint256 i = 0; i < length; ) {
             IPriceOracle.Price memory price = controller.rentPriceToken(
                 names[i],
                 duration,
-                token
+                token,
+                lifetime
             );
             unchecked {
                 ++i;
@@ -51,17 +55,19 @@ contract StaticBulkRenewal is IBulkRenewal {
 
     function renewAll(
         string[] calldata names,
-        uint256 duration
+        uint256 duration,
+        bool lifetime
     ) external payable override {
         uint256 length = names.length;
         uint256 total;
         for (uint256 i = 0; i < length; ) {
             IPriceOracle.Price memory price = controller.rentPrice(
                 names[i],
-                duration
+                duration,
+                lifetime
             );
             uint256 totalPrice = price.base + price.premium;
-            controller.renew{value: totalPrice}(names[i], duration);
+            controller.renew{value: totalPrice}(names[i], duration, lifetime);
             unchecked {
                 ++i;
                 total += totalPrice;
@@ -74,7 +80,8 @@ contract StaticBulkRenewal is IBulkRenewal {
         string[] calldata names,
         uint256 duration,
         string memory token,
-        address tokenAddress
+        address tokenAddress,
+        bool lifetime
     ) external payable  {
         uint256 length = names.length;
         uint256 total;
@@ -82,10 +89,11 @@ contract StaticBulkRenewal is IBulkRenewal {
             IPriceOracle.Price memory price = controller.rentPriceToken(
                 names[i],
                 duration,
-                token
+                token,
+                lifetime
             );
             uint256 totalPrice = price.base + price.premium;
-            controller.renewTokens(names[i], duration, token, tokenAddress);
+            controller.renewTokens(names[i], duration, token, tokenAddress, lifetime);
             unchecked {
                 ++i;
                 total += totalPrice;

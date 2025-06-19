@@ -38,7 +38,7 @@ async function main() {
   // Addresses of already deployed contracts
   const registryAddress = '0xc33387f371067b1bdc48e694bf30edb8def7d4a0'
   const nameWrapperAddress = '0x501CB529399486684f94c6f59F1b1617202DDE18'
-  const controllerAddress = '0x03f5d42d71ef2873ceaf6d4b62dd1ac563d0adfd'
+  const controllerAddress = '0xf3f80539300db138288874a9b54d4444e949be45'
   const reverseRegistrarAddress = '0x078E09a9584c3Ec7DF706db42685D4eedf456FC9'
 
   // Deploy PublicResolver

@@ -33,14 +33,16 @@ contract BulkRenewal is IBulkRenewal {
 
     function rentPrice(
         string[] calldata names,
-        uint256 duration
+        uint256 duration,
+        bool lifetime
     ) external view override returns (uint256 total) {
         ETHRegistrarController controller = getController();
         uint256 length = names.length;
         for (uint256 i = 0; i < length; ) {
             IPriceOracle.Price memory price = controller.rentPrice(
                 names[i],
-                duration
+                duration,
+                lifetime
             );
             unchecked {
                 ++i;
@@ -51,7 +53,8 @@ contract BulkRenewal is IBulkRenewal {
 
     function renewAll(
         string[] calldata names,
-        uint256 duration
+        uint256 duration,
+        bool lifetime
     ) external payable override {
         ETHRegistrarController controller = getController();
         uint256 length = names.length;
@@ -59,10 +62,11 @@ contract BulkRenewal is IBulkRenewal {
         for (uint256 i = 0; i < length; ) {
             IPriceOracle.Price memory price = controller.rentPrice(
                 names[i],
-                duration
+                duration,
+                lifetime
             );
             uint256 totalPrice = price.base + price.premium;
-            controller.renew{value: totalPrice}(names[i], duration);
+            controller.renew{value: totalPrice}(names[i], duration, lifetime);
             unchecked {
                 ++i;
                 total += totalPrice;

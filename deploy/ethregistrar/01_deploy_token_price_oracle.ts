@@ -13,7 +13,7 @@ const func: DeployFunction = async function (hre) {
     oracleAddress,
     cakeAddress,
     usd1Address,
-    [0n, 0n, 20294266869609n, 5073566717402n, 158548959919n],
+    [0n, 3170979198377n, 1585489599188n, 792744799594n, 317097919838n],
     100000000000000000000000000n,
     21n,
   ])

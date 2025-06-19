@@ -25,23 +25,33 @@ contract TokenPriceOracle is ExponentialPremiumPriceOracle {
         string calldata name,
         uint256 expires,
         uint256 duration,
-        string memory token
+        string memory token,
+        bool lifetime
     ) external view returns (IPriceOracle.Price memory) {
         uint256 len = name.strlen();
         uint256 basePrice;
 
-        if (len >= 5) {
+        if (len >= 5 && lifetime) {
+            basePrice = price5Letter * 31536000 * 4;
+        } else if (len == 4 && lifetime) {
+            basePrice = price4Letter * 31536000 * 4;
+        } else if (len == 3 && lifetime) {
+            basePrice = price3Letter * 31536000 * 6;
+        } else if (len == 2 && lifetime) {
+            basePrice = price2Letter * 31536000 * 10;
+        } else if (len == 1 && lifetime) {
+            basePrice = price1Letter * 31536000;
+        } else if (len >= 5 && lifetime == false) { 
             basePrice = price5Letter * duration;
-        } else if (len == 4) {
+        } else if (len == 4 && lifetime == false) {
             basePrice = price4Letter * duration;
-        } else if (len == 3) {
+        } else if (len == 3 && lifetime == false) {
             basePrice = price3Letter * duration;
-        } else if (len == 2) {
+        } else if (len == 2 && lifetime == false) {
             basePrice = price2Letter * duration;
         } else {
             basePrice = price1Letter * duration;
         }
-
         if(keccak256(bytes(token)) == keccak256(bytes("cake"))){
                  return
             IPriceOracle.Price({

@@ -17,6 +17,7 @@ interface IPriceOracle {
     function price(
         string calldata name,
         uint256 expires,
-        uint256 duration
+        uint256 duration,
+        bool lifetime
     ) external view returns (Price calldata);
 }

@@ -134,8 +134,14 @@ const config = {
     ],
     overrides: {
        "node_modules/@uniswap/v3-periphery/**": { version: "0.7.6" },
-      'contracts/ethregistrar/IETHRegistrarController.sol': {
+      'contracts/ethregistrar/ETHRegistrarController.sol': {
         version: '0.8.17',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 1200,
+          },
+        }
       },
     },
   },
