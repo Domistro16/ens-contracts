@@ -36,9 +36,10 @@ function BootStrap() {
 
   useEffect(() => {
     function onMessage(e: MessageEvent) {
+      console.log(e.data)
       if (
         e.origin !== 
-        'https://level3auth.vercel.app/'
+        'https://level3auth.vercel.app'
       )
         return
       const msg = JSON.parse(e.data)
