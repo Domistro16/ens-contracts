@@ -37,7 +37,7 @@ function BootStrap() {
   useEffect(() => {
     function onMessage(e: MessageEvent) {
       if (
-        e.origin !== 'http://localhost:5174' ||
+        e.origin !== 
         'https://level3auth.vercel.app/'
       )
         return
