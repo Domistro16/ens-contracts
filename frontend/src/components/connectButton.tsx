@@ -74,7 +74,7 @@ export const CustomConnect = () => {
                       name={name == '' ? account?.address as string : name as string}
                       className="w-8 h-8"
                     />
-                    {name ? (
+                    {name  ? (
                       <div className="hidden md:flex">{name as string}</div>
                     ) : (
                       <div className="hidden md:flex">

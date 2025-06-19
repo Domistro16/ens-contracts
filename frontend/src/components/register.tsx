@@ -22,6 +22,7 @@ import { MobileNav } from './mobilenav'
 import TransakWidget from './transakPay'
 import { ethers } from 'ethers'
 import { constants } from '../constant'
+import { usePrepareTransactionRequest } from 'wagmi'
 
 const ERC20_ABI = [
   {
@@ -197,6 +198,11 @@ const Controller = [
         name: 'token',
         type: 'string',
       },
+      {
+        internalType: 'bool',
+        name: 'lifetime',
+        type: 'bool',
+      },
     ],
     name: 'rentPriceToken',
     outputs: [
@@ -232,6 +238,11 @@ const Controller = [
         internalType: 'uint256',
         name: 'duration',
         type: 'uint256',
+      },
+      {
+        internalType: 'bool',
+        name: 'lifetime',
+        type: 'bool',
       },
     ],
     name: 'rentPrice',
@@ -317,6 +328,11 @@ const Controller = [
         internalType: 'uint16',
         name: 'ownerControlledFuses',
         type: 'uint16',
+      },
+      {
+        internalType: 'bool',
+        name: 'lifetime',
+        type: 'bool',
       },
     ],
     name: 'register',
@@ -450,27 +466,28 @@ const Register = () => {
   const [avatar, setAvatar] = useState('')
   const [wait, setWait] = useState(60)
   const [done, setDone] = useState(false)
+  const [lifetime, setLifetime] = useState(false)
 
   const { data: latest, isPending: loading } = useReadContract({
     address: constants.Controller, // Replace with actual contract address
     abi: Controller as any, // Replace with actual ABI
     functionName: 'rentPrice',
-    args: [label as string, seconds],
+    args: [label as string, seconds, lifetime],
   })
   const { data: usd1TokenData, isPending: tokenLoading } = useReadContract({
     address: constants.Controller,
     abi: Controller as any, // Replace with actual ABI
     functionName: 'rentPriceToken',
-    args: [label as string, seconds, 'usd1'],
+    args: [label as string, seconds, 'usd1', lifetime],
   })
   const { data: cakeTokenData, isPending: caketokenLoading } = useReadContract({
     address: constants.Controller,
     abi: Controller as any, // Replace with actual ABI
     functionName: 'rentPriceToken',
-    args: [label as string, seconds, 'cake'],
+    args: [label as string, seconds, 'cake', lifetime],
   })
   const { data: priceData } = useReadContract({
-    address: constants.Controller,
+    address: '0x2514895c72f50D8bd4B4F9b1110F0D6bD2c97526',
     abi: PriceAbi as any, // Replace with actual ABI
     functionName: 'latestRoundData',
   })
@@ -526,7 +543,7 @@ const Register = () => {
       usd1: usd1cost.toFixed(2),
       cake: cakecost.toFixed(2),
     }
-  }, [latest, priceData, seconds, usd1TokenData])
+  }, [latest, priceData, seconds, usd1TokenData, cakeTokenData])
 
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -693,16 +710,18 @@ const Register = () => {
           { type: 'bytes[]' }, // data
           { type: 'bool' }, // reverseRecord
           { type: 'uint16' }, // fuses
+          { type: 'bool' }, // lifetime
         ],
         [
           labelHash,
           owner,
-          BigInt(seconds),
+          BigInt(seconds) * 1000n,
           secretGenerated,
           resolver,
           fullData,
           isPrimary,
           0,
+          lifetime,
         ],
       )
       const commitment = keccak256(encoded)
@@ -742,36 +761,6 @@ const Register = () => {
         }
         value = Number(base) + Number(premium) // Convert to readable
       }
-      /*  const options = {
-        method: 'POST',
-        headers: {
-          accept: 'application/json',
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({
-          addresses: [
-            {
-              network: 'bnb-mainnet',
-              address: '0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82',
-            },
-          ],
-        }),
-      }
-
-      const res = await fetch(
-        `https://api.g.alchemy.com/prices/v1/docs-demo/tokens/by-address`,
-        options,
-      )
-      const jsonResponse = await res.json() // ✅ Parse response as JSON
-
-      console.log(jsonResponse) // Log full response to debug
-
-      // Safe access to nested values
-      const priceInBNB = jsonResponse?.data?.[0]?.prices?.[0]?.value */
-      /*  console.log(value)
-      const amount = Number(value) / 1e18 / (cakePrice / bnbPrice)
-      console.log(amount)
-      const totalAmount = parseEther(amount.toString()) */
       const totalAmount = value
       console.log(totalAmount)
       const controller = new ethers.Contract(
@@ -784,12 +773,13 @@ const Register = () => {
           await controller.callStatic.register(
             label,
             address,
-            BigInt(seconds),
+            BigInt(seconds * 1000),
             secret,
             resolver,
             commitData,
             isPrimary,
             0,
+            lifetime
           )
         } catch (e: any) {
           console.error('Revert error name:', e.errorName)
@@ -802,12 +792,13 @@ const Register = () => {
           args: [
             label,
             address,
-            BigInt(seconds),
+            BigInt(seconds * 1000),
             secret,
             resolver,
             commitData,
             isPrimary,
             0,
+            lifetime
           ],
           value: base + premium,
         })
@@ -815,65 +806,6 @@ const Register = () => {
         setMessage('Registration Successful')
         setIsOpen(false)
       } else {
-        // 1) Select the pool fee tier where there’s depth:
-        /*  const poolFee = 100 // 0.25%
-
-        // 2) Call registerWithToken:
-        await approve({
-          address: token,
-          abi: ERC20_ABI,
-          functionName: 'approve',
-          args: ['0x672293b34279bac2f31bdb265b066879fb891712', totalAmount],
-        })
-
-        const paymaster = new ethers.Contract(
-          '0x672293b34279bac2f31bdb265b066879fb891712',
-          Registrar,
-          signer,
-        )
-
-        try {
-          await paymaster.callStatic.registerWithToken(
-            label,
-            address,
-            BigInt(seconds),
-            secret,
-            resolver,
-            commitData,
-            isPrimary,
-            0,
-            token,
-            totalAmount,
-            0,
-            100,
-          )
-        } catch (e: any) {
-          console.error('Revert error name:', e.errorName)
-          console.error('Revert reason   :', e.data)
-        }
-        await registerContract({
-          address: '0x672293b34279bac2f31bdb265b066879fb891712',
-          abi: Registrar,
-          functionName: 'registerWithToken',
-          args: [
-            label,
-            address,
-            BigInt(seconds),
-            secret,
-            resolver,
-            commitData,
-            isPrimary,
-            0,
-            token,
-            totalAmount,
-            0,
-            poolFee,
-          ],
-        })
-
-        setMessage('Registration Successful')
-        setIsOpen(false) */
-
         await approve({
           address: token,
           abi: ERC20_ABI,
@@ -886,7 +818,7 @@ const Register = () => {
           await controller.callStatic.registerWithToken(
             label,
             address,
-            BigInt(seconds),
+            BigInt(seconds) * 1000n,
             secret,
             resolver,
             commitData,
@@ -906,7 +838,7 @@ const Register = () => {
           args: [
             label,
             address,
-            BigInt(seconds),
+            BigInt(seconds) * 1000n,
             secret,
             resolver,
             commitData,

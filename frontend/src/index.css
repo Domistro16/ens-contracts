@@ -11,7 +11,7 @@
 }
 
 body{
-  @apply bg-neutral-900 text-white px-2 py-8 font-gilroy
+  @apply bg-neutral-900 text-white px-2 pt-8 font-gilroy
 }
 .react-datepicker__input-container input {
   caret-color: transparent;  /* hides the blinking caret */

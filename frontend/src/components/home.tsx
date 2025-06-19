@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom'
 import { CustomConnect } from './connectButton'
 import { MobileNav } from './mobilenav'
 import { IdentificationIcon, MenuIcon } from '@heroicons/react/outline'
-import {constants} from '../constant'
+import { constants } from '../constant'
+import LogInButton from './loginButton'
 
 const abi = [
   {
@@ -30,7 +31,7 @@ const abi = [
 
 export default function Home() {
   const navigate = useNavigate()
-  const {isDisconnected, address, isConnected} = useAccount();
+  const { isDisconnected, address, isConnected } = useAccount()
   const [available, setAvailable] = useState('')
   const [search, setSearch] = useState('')
   const { data, isPending } = useReadContract({
@@ -98,6 +99,11 @@ export default function Home() {
   }
   return (
     <div className="text-white flex flex-col items-center pb-15 md:pb-0">
+      <iframe
+        src="https://localhost:5174/sync"
+        title="auth-session-sync"
+        style={{ display: 'none' }}
+      />
       {/* Header */}
       <header className="w-full flex justify-between items-center px-4 md:px-10 mx-auto">
         <div className="text-xl font-bold text-[#FFB000]">CreatorNames</div>
@@ -114,7 +120,7 @@ export default function Home() {
           <MenuIcon className="h-5 w-5 text-gray-400 font-bold" />
           <div className="hidden md:flex">
             {' '}
-            <CustomConnect />{' '}
+            {isConnected ? <CustomConnect /> : <LogInButton />}
           </div>
         </div>
       </header>

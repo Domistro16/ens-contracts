@@ -4,6 +4,7 @@ import { useAccount, useReadContract } from 'wagmi'
 import { IdentificationIcon, MenuIcon } from "@heroicons/react/outline";
 import { CustomConnect } from './connectButton';
 import {constants} from '../constant'
+import LogInButton from './loginButton';
 
 const abi = [
   {
@@ -145,7 +146,11 @@ export default function Nav() {
           </div>
         )}
         <MenuIcon className="h-5 w-5 text-gray-400 font-bold" />
-        <CustomConnect />
+        {isConnected ? 
+       ( <CustomConnect />) : (
+        <LogInButton />
+       )
+}
       </div>
     </header>
   )

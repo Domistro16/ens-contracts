@@ -1,10 +1,31 @@
 import { useReadContract } from 'wagmi'
 import { constants } from '../constant'
+import { useMemo } from 'react'
 
 interface UseENSNameProps {
   owner: `0x${string}`
 }
-
+const resolveAbi = [
+  {
+    inputs: [
+      {
+        internalType: 'bytes32',
+        name: 'node',
+        type: 'bytes32',
+      },
+    ],
+    name: 'resolver',
+    outputs: [
+      {
+        internalType: 'address',
+        name: '',
+        type: 'address',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+]
 const nodeAbi = [
   {
     inputs: [
@@ -62,13 +83,28 @@ export function useENSName({ owner }: UseENSNameProps) {
     args: owner ? [owner] : undefined,
   })
 
+  const { data: resolverResponse, isPending: resolverLoading } =
+    useReadContract({
+      abi: resolveAbi,
+      functionName: 'resolver',
+      address: constants.Registry,
+      args: [node],
+    })
+  const resolver = useMemo(() => {
+    if (!resolverLoading && resolverResponse) {
+      return resolverResponse as `0x${string}`
+    } else {
+      return '' as `0x${string}`
+    }
+  }, [resolverLoading, resolverResponse])
+
   // 3️⃣ PublicResolver.name()
   const {
     data: resolvedName,
     isPending: nameLoading,
     error: nameError,
   } = useReadContract({
-    address: constants.PublicResolver,
+    address: resolver,
     abi: nameAbi as any,
     functionName: 'name',
     args: node ? [node] : undefined,

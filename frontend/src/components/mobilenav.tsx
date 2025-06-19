@@ -2,6 +2,7 @@ import { CustomConnect } from './connectButton'
 import { useAccount } from 'wagmi'
 import { IdentificationIcon, SearchIcon } from '@heroicons/react/outline' // or any icon you like
 import { useNavigate } from 'react-router-dom'
+import LogInButton from './loginButton'
 
 export const MobileNav = () => {
   const { isConnected } = useAccount()
@@ -40,7 +41,7 @@ export const MobileNav = () => {
       )}
 
       {/* Your custom connect button */}
-      <CustomConnect />
+      {isConnected ? <CustomConnect /> : <LogInButton />}
     </div>
   )
 }

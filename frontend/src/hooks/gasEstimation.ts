@@ -32,14 +32,61 @@ const controllerAbi = [
   {
     inputs: [
       {
-        internalType: 'bytes32',
-        name: 'commitment',
-        type: 'bytes32',
+        internalType: 'string',
+        name: 'name',
+        type: 'string',
+      },
+      {
+        internalType: 'uint256',
+        name: 'duration',
+        type: 'uint256',
+      },
+      {
+        internalType: 'bool',
+        name: 'lifetime',
+        type: 'bool',
       },
     ],
-    name: 'commit',
-    outputs: [],
-    stateMutability: 'nonpayable',
+    name: 'rentPrice',
+    outputs: [
+      {
+        components: [
+          {
+            internalType: 'uint256',
+            name: 'base',
+            type: 'uint256',
+          },
+          {
+            internalType: 'uint256',
+            name: 'premium',
+            type: 'uint256',
+          },
+        ],
+        internalType: 'struct IPriceOracle.Price',
+        name: 'price',
+        type: 'tuple',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'string',
+        name: 'name',
+        type: 'string',
+      },
+    ],
+    name: 'available',
+    outputs: [
+      {
+        internalType: 'bool',
+        name: '',
+        type: 'bool',
+      },
+    ],
+    stateMutability: 'view',
     type: 'function',
   },
   {
@@ -84,6 +131,11 @@ const controllerAbi = [
         name: 'ownerControlledFuses',
         type: 'uint16',
       },
+      {
+        internalType: 'bool',
+        name: 'lifetime',
+        type: 'bool',
+      },
     ],
     name: 'register',
     outputs: [],
@@ -93,37 +145,14 @@ const controllerAbi = [
   {
     inputs: [
       {
-        internalType: 'string',
-        name: 'name',
-        type: 'string',
-      },
-      {
-        internalType: 'uint256',
-        name: 'duration',
-        type: 'uint256',
+        internalType: 'bytes32',
+        name: 'commitment',
+        type: 'bytes32',
       },
     ],
-    name: 'rentPrice',
-    outputs: [
-      {
-        components: [
-          {
-            internalType: 'uint256',
-            name: 'base',
-            type: 'uint256',
-          },
-          {
-            internalType: 'uint256',
-            name: 'premium',
-            type: 'uint256',
-          },
-        ],
-        internalType: 'struct IPriceOracle.Price',
-        name: 'price',
-        type: 'tuple',
-      },
-    ],
-    stateMutability: 'view',
+    name: 'commit',
+    outputs: [],
+    stateMutability: 'nonpayable',
     type: 'function',
   },
 ]
@@ -173,6 +202,7 @@ export function useEstimateENSFees({
           { type: 'bytes[]' }, // data
           { type: 'bool' }, // reverseRecord
           { type: 'uint16' }, // fuses
+          { type: 'bool' }, // lifetime
         ],
         [
           labelHash,
@@ -183,6 +213,7 @@ export function useEstimateENSFees({
           dummyData,
           false,
           0,
+          true
         ],
       )
       const commitment = keccak256(encoded)
@@ -192,7 +223,7 @@ export function useEstimateENSFees({
         commitment,
       )
       // 3️⃣ get price and total value
-      const { base, premium } = await controller.rentPrice(name, duration)
+      const { base, premium } = await controller.rentPrice(name, duration, true)
       const totalValue: BigNumber = base.add(premium)
       // 4️⃣ estimate register gas
       let gasRegister: BigNumber
@@ -206,6 +237,7 @@ export function useEstimateENSFees({
           dummyData,
           false,
           0,
+          true,
           { value: totalValue },
         )
       } catch (error: any) {

@@ -13,15 +13,6 @@ export default defineConfig({
     },
   }, */
   plugins: [
-    nodePolyfills({
-      // enable Buffer & process globals
-      globals: {
-        Buffer: true,
-        process: true,
-      },
-      // allow imports like "import fs from 'fs'" if you ever need them
-      protocolImports: true,
-    }),
     react(),
     tailwindcss(),
     ,
