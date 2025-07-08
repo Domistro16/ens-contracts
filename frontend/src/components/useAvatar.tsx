@@ -62,6 +62,16 @@ export function Avatar({ name, className }: { name: string, className?: string})
     args: [node, 'avatar'],
   })
 
+    console.log(data)
+
+    const getCID = () => {
+      if (typeof data != 'string') return;
+      const parts = data.split('/ipfs/')
+      const cid = parts[1]?.split('/')[0]
+
+      return cid
+    }
+
     const gradient = useMemo(() => {
       // take last 8 hex chars of node, parse as int
       const tail = node.slice(-8)
@@ -74,7 +84,7 @@ export function Avatar({ name, className }: { name: string, className?: string})
     <>
       {data ? (
         <img
-          src={data as string}
+          src={`https://ipfs.io/ipfs/${getCID()}`}
           alt="Avatar"
           className={`${className} rounded-full`}
         />

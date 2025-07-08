@@ -8,29 +8,36 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract ReferralController is Ownable {
     // Mapping from referral code to referrer address
-    uint16 private constant TIER1 = 10;
+    uint16 private constant TIER1 = 2;
     uint16 private constant TIER2 = 15;
+    uint16 private constant TIER3 = 20;
     uint256 private constant PCT1 = 15;
     uint256 private constant PCT2 = 20;
     uint256 private constant PCT3 = 25;
     mapping(address => bool) public controllers;
     mapping(bytes32 => uint256) public commitments;
     mapping(bytes32 => address) public referrees;
+    mapping(bytes32 => uint256) public expirydates;
     mapping(address => bytes32[]) public referrals;
     mapping(bytes32 => string) public referredBy;
     mapping(address => uint256) public nativeEarnings;
     mapping(address => mapping(address => uint256)) public tokenEarnings;
-    
+
     bytes32[] public referralCodes;
     uint256 public untrackedEarnings;
-    uint256 public snapshotEarnings;
+    uint256 public snapshotUntrackedEarnings;
+    mapping(address => uint256) public snapshotNativeEarnings;
+    mapping(address => mapping(address => uint256))
+        public snapshotTokenEarnings;
+    uint256 public trackedNativeEarnings;
+    mapping(address => uint256) public trackedTokenEarnings;
 
     event ReferralCodeAdded(string indexed code, address indexed referrer);
     event WithdrawalDispersed(address indexed);
     modifier onlyControllerOrOwner() {
         require(
-            controllers[msg.sender] || owner() == msg.sender,
-            "Not a controller or Owner"
+            controllers[msg.sender] || msg.sender == owner(),
+            "Not a controller or owner"
         );
         _;
     }
@@ -44,36 +51,32 @@ contract ReferralController is Ownable {
         string memory referree,
         string memory name,
         address owner,
-        IPriceOracle.Price memory price,
+        uint256 amount,
         address receiver
-    ) external onlyControllerOrOwner{
+    ) external payable onlyControllerOrOwner {
         // If the referree is already registered, we can use it
+
         require(
             receiver != address(0) && receiver != owner,
             "Invalid receiver address"
         );
-        bool codeContains;
-        for (uint256 i = 0; i < referralCodes.length; i++) {
-            if (referralCodes[i] == keccak256(bytes(name))) {
-                codeContains = true;
+        if (expirydates[keccak256(bytes(referree))] > block.timestamp) {
+            bool contains;
+            for (uint256 i = 0; i < referrals[receiver].length; i++) {
+                if (referrals[receiver][i] == keccak256(bytes(name))) {
+                    contains = true;
+                    break;
+                }
             }
-        }
-        if (!codeContains) {
-            referralCodes.push(keccak256(bytes(name)));
-            emit ReferralCodeAdded(name, owner);
-        }
-        bool contains;
-        for (uint256 i = 0; i < referrals[receiver].length; i++) {
-            if (referrals[receiver][i] == keccak256(bytes(name))) {
-                contains = true;
+            if (contains == false) {
+                referrals[receiver].push(keccak256(bytes(name)));
+                referredBy[keccak256(bytes(name))] = referree;
+                _applyNativeReward(receiver, amount, false);
+            } else {
+                _applyNativeReward(receiver, amount, false);
             }
-        }
-        if (contains == false) {
-            referrals[receiver].push(keccak256(bytes(name)));
-            referredBy[keccak256(bytes(name))] = referree;
-            _applyNativeReward(receiver, price.base + price.premium);
         } else {
-            _applyNativeReward(receiver, price.base + price.premium);
+            payable(Ownable.owner()).transfer(amount);
         }
     }
 
@@ -81,89 +84,15 @@ contract ReferralController is Ownable {
         string memory referree,
         string memory name,
         address owner,
-        IPriceOracle.Price memory price,
+        uint256 amount,
         address receiver
-    ) external onlyControllerOrOwner{
+    ) external onlyControllerOrOwner {
         // If the referree is already registered, we can use it
         require(
             receiver != address(0) && receiver != owner,
             "Invalid receiver address"
         );
-        bool codeContains;
-        for (uint256 i = 0; i < referralCodes.length; i++) {
-            if (referralCodes[i] == keccak256(bytes(name))) {
-                codeContains = true;
-            }
-        }
-        if (!codeContains) {
-            referralCodes.push(keccak256(bytes(name)));
-            emit ReferralCodeAdded(name, owner);
-        }
-        bool contains;
-        for (uint256 i = 0; i < referrals[receiver].length; i++) {
-            if (referrals[receiver][i] == keccak256(bytes(name))) {
-                contains = true;
-            }
-        }
-        if (contains == false) {
-            referrals[receiver].push(keccak256(bytes(name)));
-            referredBy[keccak256(bytes(name))] = referree;
-            _applyNativeReward(receiver, price.base + price.premium);
-            untrackedEarnings += (price.base + price.premium);
-        } else {
-            _applyNativeReward(receiver, price.base + price.premium);
-        }
-    }
-
-    /// @notice Only your controller or admin should be able to call this!
-    function setReferree(
-        bytes32 code,
-        address who
-    ) external onlyControllerOrOwner {
-        referrees[code] = who;
-        emit ReferralCodeAdded(string(abi.encodePacked(code)), who);
-    }
-
-    function settlement(
-        IPriceOracle.Price memory price,
-        address receiver
-    ) external onlyControllerOrOwner{
-        // If the referree is already registered, we can use it
-        require(receiver != address(0), "Invalid receiver address");
-        _applyNativeReward(receiver, price.base + price.premium);
-        untrackedEarnings += (price.base + price.premium);
-    }
-
-    function settlementWithToken(
-        IPriceOracle.Price memory price,
-        address receiver,
-        address tokenAddress
-    ) external onlyControllerOrOwner{
-        // If the referree is already registered, we can use it
-        _applyTokenReward(receiver, tokenAddress, price.base + price.premium);
-    }
-
-    function settlementRegisterWithToken(
-        string memory referree,
-        string memory name,
-        address owner,
-        IPriceOracle.Price memory price,
-        address tokenAddress
-    ) external onlyControllerOrOwner{
-        // If the referree is already registered, we can use it
-        // Implement token settlement logic here if needed
-        bool codeContains;
-        for (uint256 i = 0; i < referralCodes.length; i++) {
-            if (referralCodes[i] == keccak256(bytes(name))) {
-                codeContains = true;
-            }
-        }
-        if (!codeContains) {
-            referralCodes.push(keccak256(bytes(name)));
-            emit ReferralCodeAdded(name, owner);
-        }
-        address receiver = referrees[keccak256(bytes(referree))];
-        if (receiver != address(0) && receiver != owner) {
+        if (expirydates[keccak256(bytes(referree))] > block.timestamp) {
             bool contains;
             for (uint256 i = 0; i < referrals[receiver].length; i++) {
                 if (referrals[receiver][i] == keccak256(bytes(name))) {
@@ -173,31 +102,118 @@ contract ReferralController is Ownable {
             if (contains == false) {
                 referrals[receiver].push(keccak256(bytes(name)));
                 referredBy[keccak256(bytes(name))] = referree;
-                _applyTokenReward(
-                    receiver,
-                    tokenAddress,
-                    price.base + price.premium
-                );
+                _applyNativeReward(receiver, amount, true);
             } else {
-                _applyTokenReward(
-                    receiver,
-                    tokenAddress,
-                    price.base + price.premium
-                );
+                _applyNativeReward(receiver, amount, true);
             }
         }
     }
 
-    function withdrawAllNativeEarnings() external onlyOwner {
-        uint256 length = referralCodes.length;
-        for (uint256 i = 0; i < length; ) {
-            bytes32 code = referralCodes[i];
-            address referrer = referrees[code];
-            uint256 earnings = nativeEarnings[referrer];
-            if (earnings > 0) {
-                nativeEarnings[referrer] = 0;
-                (bool ok, ) = payable(referrer).call{value: earnings}("");
-                require(ok, "Payment failed");
+    /// @notice Only your controller or admin should be able to call this!
+    function setReferree(
+        bytes32 code,
+        address who,
+        uint256 duration
+    ) external onlyControllerOrOwner {
+        require(code != bytes32(0), "Invalid referral code");
+        require(who != address(0), "Invalid referree address");
+        require(
+            referrees[code] == address(0),
+            "Referral code already registered"
+        );
+        address prevReferree = referrees[code];
+        if (prevReferree != address(0)) {
+            referrals[prevReferree] = new bytes32[](0);
+        }
+        referrees[code] = who;
+        referralCodes.push(code);
+        expirydates[code] = duration;
+    }
+
+    function settlementCard(
+        uint256 amount,
+        address receiver,
+        string memory referree
+    ) external onlyControllerOrOwner {
+        // If the referree is already registered, we can use it
+        if (expirydates[keccak256(bytes(referree))] > block.timestamp) {
+            require(receiver != address(0), "Invalid receiver address");
+            _applyNativeReward(receiver, amount, true);
+        }
+    }
+
+    function settlement(
+        uint256 amount,
+        address receiver,
+        string memory referree
+    ) external payable onlyControllerOrOwner {
+        // If the referree is already registered, we can use it
+        if (expirydates[keccak256(bytes(referree))] > block.timestamp) {
+            require(receiver != address(0), "Invalid receiver address");
+            _applyNativeReward(receiver, amount, false);
+        } else {
+            payable(Ownable.owner()).transfer(amount);
+        }
+    }
+
+    function settlementWithToken(
+        uint256 amount,
+        address receiver,
+        address tokenAddress,
+        string memory referree
+    ) external onlyControllerOrOwner {
+        // If the referree is already registered, we can use it
+        if (expirydates[keccak256(bytes(referree))] > block.timestamp) {
+            require(receiver != address(0), "Invalid receiver address");
+            _applyTokenReward(receiver, tokenAddress, amount);
+        } else {
+            IERC20(tokenAddress).safeTransfer(Ownable.owner(), amount);
+        }
+    }
+
+    function settlementRegisterWithToken(
+        string memory referree,
+        string memory name,
+        address owner,
+        uint256 amount,
+        address tokenAddress
+    ) external onlyControllerOrOwner {
+        // If the referree is already registered, we can use it
+        // Implement token settlement logic here if needed
+        if (expirydates[keccak256(bytes(referree))] > block.timestamp) {
+            address receiver = referrees[keccak256(bytes(referree))];
+            if (receiver != address(0) && receiver != owner) {
+                bool contains;
+                for (uint256 i = 0; i < referrals[receiver].length; i++) {
+                    if (referrals[receiver][i] == keccak256(bytes(name))) {
+                        contains = true;
+                    }
+                }
+                if (contains == false) {
+                    referrals[receiver].push(keccak256(bytes(name)));
+                    referredBy[keccak256(bytes(name))] = referree;
+                    _applyTokenReward(receiver, tokenAddress, amount);
+                } else {
+                    _applyTokenReward(receiver, tokenAddress, amount);
+                }
+            }
+        } else {
+            // If the referree is not registered, we can transfer the amount to the owner
+            IERC20(tokenAddress).safeTransfer(Ownable.owner(), amount);
+        }
+    }
+
+    function withdrawAllNativeEarnings(uint256 batch) external onlyOwner {
+        for (uint256 i = 0; i < batch; ) {
+            bytes32 code = referralCodes[batch];
+            if (block.timestamp < expirydates[code]) {
+                address referrer = referrees[code];
+                uint256 earnings = nativeEarnings[referrer];
+                if (earnings > 0) {
+                    (bool ok, ) = payable(referrer).call{value: earnings}("");
+                    require(ok, "Payment failed");
+                    nativeEarnings[referrer] = 0;
+                }
             }
             unchecked {
                 ++i;
@@ -213,21 +229,24 @@ contract ReferralController is Ownable {
     }
 
     function withdrawAllTokenEarnings(
-        address[] memory tokenAddresses
+        address[] memory tokenAddresses,
+        uint256 batch
     ) external onlyOwner {
-        uint256 length = referralCodes.length;
         uint256 tokenLength = tokenAddresses.length;
-        require(length > 0, "No referral codes registered");
         for (uint256 j = 0; j < tokenLength; ) {
             address tokenAddress = tokenAddresses[j];
-            for (uint256 i = 0; i < length; ) {
+            for (uint256 i = 0; i < batch; ) {
                 bytes32 code = referralCodes[i];
-                address referrer = referrees[code];
-                uint256 earnings = tokenEarnings[referrer][tokenAddress];
-                require(earnings > 0, "No earnings to withdraw");
-                tokenEarnings[referrer][tokenAddress] = 0;
-                // Assuming the token follows ERC20 standard
-                IERC20(tokenAddress).safeTransfer(referrer, earnings);
+                if (block.timestamp < expirydates[code]) {
+                    address referrer = referrees[code];
+                    uint256 earnings = tokenEarnings[referrer][tokenAddress];
+                    require(earnings > 0, "No earnings to withdraw");
+                    if (earnings > 0) {
+                        // Assuming the token follows ERC20 standard
+                        IERC20(tokenAddress).safeTransfer(referrer, earnings);
+                        tokenEarnings[referrer][tokenAddress] = 0;
+                    }
+                }
                 unchecked {
                     ++i;
                 }
@@ -255,16 +274,37 @@ contract ReferralController is Ownable {
         return tokenEarnings[referrer][tokenAddress];
     }
 
-    function _rewardPct(uint256 numReferrals) private pure returns (uint256) {
-        if (numReferrals < TIER1) return PCT1;
-        if (numReferrals < TIER2) return PCT2;
-        return PCT3;
+    function getCodes() external view returns (uint256) {
+        return referralCodes.length;
+    }
+    function updateReferralCode(
+        bytes32 code,
+        uint256 newExpiry
+    ) external onlyControllerOrOwner {
+        require(expirydates[code] > 0, "Referral code does not exist");
+        expirydates[code] = newExpiry;
     }
 
-    function _applyNativeReward(address receiver, uint256 amount) private {
+    function _rewardPct(uint256 numReferrals) public pure returns (uint256) {
+        if (numReferrals >= TIER3) return PCT3;
+        if (numReferrals >= TIER2) return PCT2;
+        if (numReferrals >= TIER1) return PCT1;
+        return 0; // No reward for less than TIER1 referrals
+    }
+
+    function _applyNativeReward(
+        address receiver,
+        uint256 amount,
+        bool isFiat
+    ) private {
         nativeEarnings[receiver] +=
             (amount * _rewardPct(referrals[receiver].length)) /
             100;
+        if (isFiat) {
+            untrackedEarnings +=
+                (amount * _rewardPct(referrals[receiver].length)) /
+                100;
+        }
     }
 
     function _applyTokenReward(
@@ -277,7 +317,42 @@ contract ReferralController is Ownable {
             100;
     }
 
-    function balance() public view returns(uint256) {
+    function balance() public view returns (uint256) {
         return address(this).balance;
+    }
+
+    function tokenBalance(
+        address tokenAddress
+    ) public view returns (uint256) {
+        return IERC20(tokenAddress).balanceOf(address(this));
+    }
+
+    function getUntracked() public view returns (uint256) {
+        return untrackedEarnings;
+    }
+
+    function createSnapshot(
+        address[] memory tokenAddresses
+    ) external onlyOwner {
+        snapshotUntrackedEarnings = untrackedEarnings;
+        for (uint256 i = 0; i < referralCodes.length; i++) {
+            bytes32 code = referralCodes[i];
+            address referrer = referrees[code];
+            snapshotNativeEarnings[referrer] = nativeEarnings[referrer];
+        }
+        for (uint256 j = 0; j < tokenAddresses.length; j++) {
+            address tokenAddress = tokenAddresses[j];
+            for (uint256 i = 0; i < referralCodes.length; i++) {
+                bytes32 code = referralCodes[i];
+                address referrer = referrees[code];
+                snapshotTokenEarnings[referrer][tokenAddress] = tokenEarnings[
+                    referrer
+                ][tokenAddress];
+            }
+        }
+    }
+
+    function getSnapshotEarnings() public view returns (uint256) {
+        return snapshotUntrackedEarnings;
     }
 }

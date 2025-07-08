@@ -37,11 +37,7 @@ function BootStrap() {
   useEffect(() => {
     function onMessage(e: MessageEvent) {
       console.log(e.data)
-      if (
-        e.origin !== 
-        'https://level3auth.vercel.app'
-      )
-        return
+      if (e.origin !== 'https://auth.level3labs.fun') return
       const msg = JSON.parse(e.data)
       if (msg.type === 'SESSION_DATA') {
         Object.entries(msg.payload).forEach(([k, v]) => {
@@ -57,7 +53,7 @@ function BootStrap() {
       iframe.onload = () => {
         iframe.contentWindow?.postMessage(
           JSON.stringify({ type: 'GET_SESSION' }),
-          'https://level3auth.vercel.app',
+          'https://auth.level3labs.fun',
         )
       }
     }
@@ -69,7 +65,7 @@ function BootStrap() {
     return (
       <iframe
         ref={iframeRef}
-        src="https://level3auth.vercel.app/sync"
+        src="https://auth.level3labs.fun/"
         style={{ display: 'none' }}
         title="session-sync"
       />

@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import { namehash, encodeFunctionData} from 'viem'
+import { namehash, encodeFunctionData } from 'viem'
 import { buildTextRecords } from '../hooks/setText'
 import { useWriteContract } from 'wagmi'
 import Modal from 'react-modal'
+import axios from 'axios'
+import { FaPlus, FaTrash } from 'react-icons/fa6'
 
 interface UpdateProps {
   texts: { key: string; value: string }[]
@@ -11,6 +13,7 @@ interface UpdateProps {
   resolverAddress: `0x${string}`
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>
   isOpen: boolean
+  image: string
 }
 
 Modal.setAppElement('#root')
@@ -62,7 +65,15 @@ const multiCall = [
   },
 ]
 
-const Update = ({ texts, label, owner, resolverAddress, setIsOpen, isOpen }: UpdateProps) => {
+const Update = ({
+  texts,
+  label,
+  owner,
+  resolverAddress,
+  setIsOpen,
+  isOpen,
+  image
+}: UpdateProps) => {
   const [textRecords, setTextRecords] = useState([...texts])
   const {
     data: registerhash,
@@ -72,15 +83,77 @@ const Update = ({ texts, label, owner, resolverAddress, setIsOpen, isOpen }: Upd
   } = useWriteContract()
 
   const [address, setOwner] = useState('')
+  const [preview, setPreview] = useState<string | ArrayBuffer | null>(image)
+  const [loading, setLoading] = useState(false)
+  const [file, setFile] = useState<File>() 
+  const [confirmed, setConfirmed] = useState(false)
+  const [avatar, setAvatar] = useState<string>()
+
+  const handleFileChange = (e: Event) => {
+    const input = e.target as HTMLInputElement
+    const file = input.files?.[0]
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader()
+      setFile(file)
+      reader.onload = (event) => {
+        if (event.target) {
+          setPreview(event.target.result)
+        }
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const createInput = () => {
+    const i = document.createElement('input')
+    i.type = 'file'
+    i.accept = 'image/*' // optional, restrict to images
+    i.onchange = handleFileChange
+    i.click() // ✅ trigger the file picker
+  }
+
+  const uploadImage = async () => {
+    setLoading(true)
+    const formData = new FormData()
+    if (file) {
+      formData.append('file', file) // Attach the file as a Blob
+    } else {
+      throw new Error('File is null and cannot be uploaded.')
+    }
+    try {
+      const upload = await axios.post(
+        `${import.meta.env.VITE_API_URL}/nft/upload`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        },
+      )
+      setAvatar(upload.data.url)
+      setLoading(false)
+    } catch (error) {
+      console.log(error)
+      setLoading(false)
+    }
+  }
 
   function onRequestClose(): void {
     setIsOpen(false)
   }
 
   const update = async () => {
-    const validTextRecords = textRecords.filter(
+    let validTextRecords = textRecords.filter(
       (r) => r.key.trim() !== '' && r.value.trim() !== '',
     )
+
+    if (avatar !== '') {
+      validTextRecords == validTextRecords.filter((r) => r.key !== 'avatar')
+      validTextRecords.push({
+        key: 'avatar',
+        value: avatar as string,
+      })
+    }
 
     const builtData = buildTextRecords(
       validTextRecords,
@@ -128,8 +201,36 @@ const Update = ({ texts, label, owner, resolverAddress, setIsOpen, isOpen }: Upd
           <h1 className="text-3xl font-semibold text-[#FFF700] text-center">
             Update your Records
           </h1>
-          <div className="flex justify-center mt-5">
-            <div className="rounded-full w-30 h-30 bg-gray-600"></div>
+          <div className="flex justify-center mt-5 relative">
+            {!preview && !loading && (
+              <button
+                className="rounded-full w-30 h-30 bg-gray-600 cursor-pointer flex items-center justify-center"
+                onClick={createInput}
+              >
+                <FaPlus className="text-4xl text-gray-300" />
+              </button>
+            )}
+            {loading ? (
+              <div className="rounded-full w-30 h-30 bg-gray-900 animate-pulse"></div>
+            ) : (
+              ''
+            )}
+            {preview && !loading && (
+              <div className="rounded-full w-30 h-30 relative">
+                <img
+                  src={preview as string}
+                  className="rounded-full w-30 h-30 bg-gray-600 absolute"
+                />
+                <button
+                  className="rounded-full w-30 h-30 bg-black opacity-0 hover:opacity-75 cursor-pointer flex items-center justify-center absolute z-10"
+                  onClick={() => {
+                    setPreview(null)
+                  }}
+                >
+                  <FaTrash className="text-4xl text-gray-300" />
+                </button>
+              </div>
+            )}
           </div>
           <div className="mt-5 space-y-3 text-sm">
             <p className="font-semibold">bnb address</p>
@@ -141,42 +242,44 @@ const Update = ({ texts, label, owner, resolverAddress, setIsOpen, isOpen }: Upd
             />
           </div>
           <div className="mt-10">
-            {textRecords.map((record, index) => (
-              <div key={index} className="flex space-x-2 mb-3">
-                <input
-                  type="text"
-                  placeholder="Key (Format: com.youtube and not youtube.com)"
-                  className="w-1/2 p-3 bg-neutral-700 rounded-lg text-sm focus:outline-none"
-                  value={record.key}
-                  onChange={(e) => {
-                    const updated = [...textRecords]
-                    updated[index].key = e.target.value
-                    setTextRecords(updated)
-                  }}
-                />
-                <input
-                  type="text"
-                  placeholder="Value"
-                  className="w-1/2 p-3 bg-neutral-700 rounded-lg focus:outline-none"
-                  value={record.value}
-                  onChange={(e) => {
-                    const updated = [...textRecords]
-                    updated[index].value = e.target.value
-                    setTextRecords(updated)
-                  }}
-                />
-                <button
-                  className="text-red-500 hover:text-red-700 text-sm font-semibold"
-                  onClick={() => {
-                    const updated = [...textRecords]
-                    updated.splice(index, 1)
-                    setTextRecords(updated)
-                  }}
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
+            {textRecords
+              .filter((record) => record.key !== 'avatar')
+              .map((record, index) => (
+                <div key={index} className="flex space-x-2 mb-3">
+                  <input
+                    type="text"
+                    placeholder="Key (Format: com.youtube and not youtube.com)"
+                    className="w-1/2 p-3 bg-neutral-700 rounded-lg text-sm focus:outline-none"
+                    value={record.key}
+                    onChange={(e) => {
+                      const updated = [...textRecords]
+                      updated[index].key = e.target.value
+                      setTextRecords(updated)
+                    }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Value"
+                    className="w-1/2 p-3 bg-neutral-700 rounded-lg focus:outline-none"
+                    value={record.value}
+                    onChange={(e) => {
+                      const updated = [...textRecords]
+                      updated[index].value = e.target.value
+                      setTextRecords(updated)
+                    }}
+                  />
+                  <button
+                    className="text-red-500 hover:text-red-700 text-sm font-semibold"
+                    onClick={() => {
+                      const updated = [...textRecords]
+                      updated.splice(index, 1)
+                      setTextRecords(updated)
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
             <button
               className="px-4 py-2 bg-[#FFF700] text-black rounded-lg font-semibold hover:bg-[#B3AE00] mt-4"
               onClick={() => {
@@ -197,15 +300,26 @@ const Update = ({ texts, label, owner, resolverAddress, setIsOpen, isOpen }: Upd
             >
               Back
             </button>
-            <button
-              className="p-3 bg-[#FFF700] w-full rounded-lg text-black font-semibold cursor-pointer"
-              onClick={() => {
-                setNext((prev) => prev + 1)
-                update()
-              }}
-            >
-              Next
-            </button>
+            {file && !confirmed ? (
+              <button
+                className="p-3 bg-[#FFF700] w-full rounded-lg text-black font-semibold cursor-pointer"
+                onClick={async () => {
+                  await uploadImage()
+                  setConfirmed(true)
+                }}
+              >
+                Confirm Image
+              </button>
+            ) : (
+              <button
+                className="p-3 bg-[#FFF700] w-full rounded-lg text-black font-semibold cursor-pointer"
+                onClick={() => {
+                  setNext((prev) => prev + 1)
+                }}
+              >
+                Next
+              </button>
+            )}
           </div>
         </div>
       ) : (

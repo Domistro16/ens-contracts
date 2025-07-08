@@ -42,9 +42,13 @@ const config = {
       tags: ['test', 'legacy', 'use_root'],
       allowUnlimitedContractSize: true,
     },
+    level3chain: {
+      chainId: 7777771,
+      url: 'http://localhost:8545', // or your DigitalOcean-hosted endpoint
+      accounts: real_accounts,
+    },
     localhost: {
       url: 'http://127.0.0.1:8545/',
-      saveDeployments: false,
       tags: ['test', 'legacy', 'use_root'],
     },
     rinkeby: {
@@ -133,7 +137,7 @@ const config = {
       },
     ],
     overrides: {
-       "node_modules/@uniswap/v3-periphery/**": { version: "0.7.6" },
+      'node_modules/@uniswap/v3-periphery/**': { version: '0.7.6' },
       'contracts/ethregistrar/ETHRegistrarController.sol': {
         version: '0.8.17',
         settings: {
@@ -141,7 +145,7 @@ const config = {
             enabled: true,
             runs: 1200,
           },
-        }
+        },
       },
     },
   },
@@ -181,4 +185,4 @@ const config = {
   },
 } satisfies HardhatUserConfig
 
-export default config
+export default config;

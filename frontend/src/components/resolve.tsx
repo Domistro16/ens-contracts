@@ -23,6 +23,7 @@ import { IoLogoWhatsapp } from 'react-icons/io'
 import { FaSnapchatGhost, FaGithub } from 'react-icons/fa'
 import { SiBnbchain } from 'react-icons/si'
 import { constants } from '../constant'
+import SignIn from './Login'
 
 const resolveAbi = [
   {
@@ -274,7 +275,8 @@ const Resolve = () => {
 
   const node = namehash(`${label}.creator`)
   const id = keccak256(label as any)
-  const { data: available } = useReadContract({
+ 
+  const { data: available, isLoading: availableLoading } = useReadContract({
     address: constants.Controller,
     abi: availableAbi,
     functionName: 'available',
@@ -287,28 +289,28 @@ const Resolve = () => {
     args: [node],
   })
   console.log(wrapped)
-  const { data, isPending: wLoading } = useReadContract({
+  const { data, isLoading: wLoading } = useReadContract({
     abi: getData,
     functionName: 'getData',
     address: constants.NameWrapper,
     args: [node],
   })
-  const { data: expires } = useReadContract({
+  const { data: expires, isLoading: expiryLoading } = useReadContract({
     abi: expiresAbi,
     functionName: 'nameExpires',
-    address: '0xb4c95f28f762e7b42dcd6e108bb8c7fcf90cb413',
+    address: constants.BaseRegistrar,
     args: [id],
   })
-  const { data: gexpires } = useReadContract({
+  const { data: gexpires, isLoading: graceLoading } = useReadContract({
     abi: gExpiresAbi,
     functionName: 'nameExpires',
-    address: '0xB4C95f28F762E7B42dCd6E108BB8C7fCf90Cb413',
+    address: constants.BaseRegistrar,
     args: [id],
   })
   const { data: owner, isPending: ownerLoading } = useReadContract({
     abi: ownerOf,
     functionName: 'ownerOf',
-    address: '0xb4c95f28f762e7b42dcd6e108bb8c7fcf90cb413',
+    address: constants.NameWrapper,
     args: [id],
   })
   const { data: manager, isPending: managerLoading } = useReadContract({
@@ -339,21 +341,23 @@ const Resolve = () => {
     address: resolver,
     args: [node],
   })
-  const { records: others } = useTextRecords({
+  const { records: others, isLoading: othersLoading } = useTextRecords({
     resolverAddress: resolver,
     name: `${label}.creator`,
     keys: otherKeys,
   })
-  const { records: accounts } = useTextRecords({
+  const { records: accounts, isLoading: accountsLoading } = useTextRecords({
     resolverAddress: resolver,
     name: `${label}.creator`,
     keys: accountKeys,
   })
-  const { records: texts } = useTextRecords({
+  const { records: texts, isLoading: textsLoading } = useTextRecords({
     resolverAddress: resolver,
     name: `${label}.creator`,
     keys: textKeys,
   })
+
+  const navigate = useNavigate()
   useEffect(() => {
     document.title = `${label}.creator`
   }, [label])
@@ -362,7 +366,6 @@ const Resolve = () => {
       navigate('/')
     }
   }, [])
-  const navigate = useNavigate()
   useEffect(() => {
     if (available === true) {
       navigate('/register/' + label)
@@ -392,7 +395,7 @@ const Resolve = () => {
       )
       const tseSeconds = Number(gexpires)
       const gdate = new Date(tseSeconds * 1000)
-      gdate.setDate(gdate.getDate() + 90)
+      gdate.setDate(gdate.getDate() + 30)
       setGraceExpiry(
         gdate.toLocaleDateString('en-US', {
           month: 'long',
@@ -549,6 +552,35 @@ const Resolve = () => {
       setWrapOpen(true)
     }
   }
+  const getCID = (data: string) => {
+    const parts = data.split('/ipfs/')
+    const cid = parts[1]?.split('/')[0]
+    return `https://ipfs.io/ipfs/${cid}`
+  }
+
+  const img = useMemo(() => {
+    const avatar = others.find((record) => record.key === 'avatar')
+    return avatar ? getCID(avatar.value) : null
+  }, [others])
+  if (
+    availableLoading ||
+    wLoading ||
+    expiryLoading ||
+    graceLoading ||
+    resolverLoading ||
+    ownerLoading ||
+    managerLoading ||
+    textsLoading ||
+    accountsLoading ||
+    othersLoading
+  ) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-15 h-15 border-2 border-yellow-300 border-t-yellow-500 rounded-full animate-spin" />
+      </div>
+    )
+  }
+
   return (
     <div>
       <Nav />
@@ -613,7 +645,7 @@ const Resolve = () => {
                   className="w-15 h-15 md:w-24 md:h-24 mr-2 "
                 />
                 <div className="ml-1 md:ml-5 flex items-center w-[80%]">
-                  <div className="text-sm md:text-2xl font-bold grow-1">
+                  <div className="text-[12px] md:text-2xl font-bold grow-1">
                     {label}.creator
                     {texts
                       .filter((k) => k.key == 'description')
@@ -624,7 +656,7 @@ const Resolve = () => {
                       ))}
                   </div>
                   <button
-                    className="bg-[#FF7000] flex items-center p-2 md:px-4 md:py-2 rounded-lg mt-2 text-[12px] md:text-sm cursor-pointer font-bold"
+                    className="bg-[#FF7000] flex items-center p-1 md:px-4 md:py-2 rounded-lg mt-2 text-[12px] md:text-sm cursor-pointer font-bold"
                     onClick={handleRenewal}
                   >
                     <FastForwardIcon className="h-5 w-5 mr-1" /> Extend
@@ -710,12 +742,16 @@ const Resolve = () => {
                       {others.map((item) => (
                         <div
                           key={item.key}
-                          className="bg-gray-900 inline-block px-3 py-1 mt-2 text-sm rounded-full hover:bg-gray-950 delay-200 duration-200 transition-all hover:scale-105"
+                          className="bg-gray-900 max-w-full flex items-center px-3 py-1 mt-2 text-sm rounded-full hover:bg-gray-950 delay-200 duration-200 transition-all hover:scale-105"
                         >
-                          <span className="text-gray-400 mr-1 font-bold">
+                          <span className="text-gray-400 mr-2 font-bold">
                             {item.key}
-                          </span>{' '}
-                          {item.value}
+                          </span>
+                          <span className="break-words overflow-hidden text-ellipsis">
+                            {item.key === 'avatar'
+                              ? getCID(item.value)
+                              : item.value}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -813,12 +849,16 @@ const Resolve = () => {
                     {texts.map((item) => (
                       <div
                         key={item.key}
-                        className="bg-gray-900 px-3 py-1 mt-2 text-sm rounded-full flex "
+                        className="bg-gray-900 px-3 py-1 mt-2 text-sm rounded-full flex"
                       >
-                        <div className="text-gray-400 mr-1 w-30 font-bold">
+                        <span className="text-gray-400 mr-1 w-30 font-bold items-center flex">
                           {item.key}
-                        </div>{' '}
-                        <div> {item.value} </div>
+                        </span>{' '}
+                        <span className="break-words overflow-hidden text-ellipsis">
+                          {item.key === 'avatar'
+                            ? getCID(item.value)
+                            : item.value}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -853,9 +893,10 @@ const Resolve = () => {
                 texts={texts}
                 label={label as string}
                 owner={address as `0x${string}`}
-                resolverAddress={'0xF90F11ddD972e661170836e9E3970BBE398988D8'}
+                resolverAddress={constants.PublicResolver}
                 setIsOpen={setIsOpen}
                 isOpen={isOpen}
+                image={img ? img : ''}
               />
               {wrappedOwner == walletAddress || owner == walletAddress ? (
                 <button
@@ -962,7 +1003,7 @@ const Resolve = () => {
                   key={key}
                   className="flex items-center justify-between p-4 mt-3 bg-neutral-700 rounded-lg"
                 >
-                  <div className='max-w-[80%] md:max-w-full'>
+                  <div className="max-w-[80%] md:max-w-full">
                     <div className="font-medium text-white">{label}</div>
                     <div className="text-sm text-neutral-400">
                       {description}
@@ -1096,6 +1137,7 @@ const Resolve = () => {
         </div>
       </div>
       <MobileNav />
+      <SignIn />
     </div>
   )
 }

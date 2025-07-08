@@ -14,7 +14,7 @@ contract BaseRegistrarImplementation is ERC721, IBaseRegistrar, Ownable {
     bytes32 public baseNode;
     // A map of addresses that are authorised to register and renew names.
     mapping(address => bool) public controllers;
-    uint256 public constant GRACE_PERIOD = 90 days;
+    uint256 public constant GRACE_PERIOD = 30 days;
     uint256 public constant LIFETIME = type(uint256).max;
     bytes4 private constant INTERFACE_META_ID =
         bytes4(keccak256("supportsInterface(bytes4)"));
@@ -144,7 +144,7 @@ contract BaseRegistrarImplementation is ERC721, IBaseRegistrar, Ownable {
 
          uint256 expiration;
 
-        if (duration == 0) {
+        if (duration == 31536000000) {
             // Lifetime registration
             expiration = LIFETIME;
         } else {
@@ -162,9 +162,9 @@ contract BaseRegistrarImplementation is ERC721, IBaseRegistrar, Ownable {
             ens.setSubnodeOwner(baseNode, bytes32(id), owner);
         }
 
-        emit NameRegistered(id, owner, block.timestamp + duration);
+        emit NameRegistered(id, owner, expiration);
 
-        return block.timestamp + duration;
+        return expiration;
     }
 
     function renew(

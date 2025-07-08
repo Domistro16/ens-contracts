@@ -6,6 +6,7 @@ import { MobileNav } from './mobilenav'
 import { IdentificationIcon, MenuIcon } from '@heroicons/react/outline'
 import { constants } from '../constant'
 import LogInButton from './loginButton'
+import SignIn from './Login'
 
 const abi = [
   {
@@ -34,6 +35,7 @@ export default function Home() {
   const { isDisconnected, address, isConnected } = useAccount()
   const [available, setAvailable] = useState('')
   const [search, setSearch] = useState('')
+  const [loggedIn, setLoggedIn] = useState(false)
   const { data, isPending } = useReadContract({
     address: constants.Controller,
     functionName: 'available',
@@ -68,7 +70,7 @@ export default function Home() {
   useEffect(() => {
     if (search.includes('.')) {
       setAvailable('Invalid')
-    } else if (search.length < 3) {
+    } else if (search.length < 2) {
       setAvailable('Too Short')
     } else if (isPending) {
       setAvailable('Loading…')
@@ -120,7 +122,7 @@ export default function Home() {
           <MenuIcon className="h-5 w-5 text-gray-400 font-bold" />
           <div className="hidden md:flex">
             {' '}
-            {isConnected ? <CustomConnect /> : <LogInButton />}
+            {isConnected ? <CustomConnect /> : <LogInButton setLoggedIn={setLoggedIn}/>}
           </div>
         </div>
       </header>
@@ -170,6 +172,7 @@ export default function Home() {
           </div>
         </div>
       </main>
+      {loggedIn ? <SignIn /> : ''}
       <MobileNav />
     </div>
   )

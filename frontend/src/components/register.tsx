@@ -19,9 +19,65 @@ import Modal from 'react-modal'
 import { buildTextRecords } from '../hooks/setText'
 import { useEstimateENSFees, useEthersSigner } from '../hooks/gasEstimation'
 import { MobileNav } from './mobilenav'
-import TransakWidget from './transakPay'
 import { ethers } from 'ethers'
-import { constants } from '../constant'
+import { constants, Params, TokenParams } from '../constant'
+import UserForm from './userForm'
+import SignIn from './Login'
+import axios from 'axios'
+import { FaPlus, FaTrash } from 'react-icons/fa6'
+import { useENSName } from '../hooks/getPrimaryName'
+
+type RegisterParams = {
+  domain: string
+  duration: number
+  resolver: `0x${string}`
+  data: `0x${string}`[]
+  reverseRecord: boolean
+  ownerControlledFuses: number
+  lifetime: boolean
+  referree: string
+}
+
+const Referral = [
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: 'referrer',
+        type: 'address',
+      },
+    ],
+    name: 'totalNativeEarnings',
+    outputs: [
+      {
+        internalType: 'uint256',
+        name: '',
+        type: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: 'referrer',
+        type: 'address',
+      },
+    ],
+    name: 'totalReferrals',
+    outputs: [
+      {
+        internalType: 'uint256',
+        name: '',
+        type: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+]
 
 const ERC20_ABI = [
   {
@@ -48,6 +104,30 @@ const ERC20_ABI = [
     ],
     payable: false,
     stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: 'owner',
+        type: 'address',
+      },
+      {
+        internalType: 'address',
+        name: 'spender',
+        type: 'address',
+      },
+    ],
+    name: 'allowance',
+    outputs: [
+      {
+        internalType: 'uint256',
+        name: '',
+        type: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
     type: 'function',
   },
 ]
@@ -125,54 +205,78 @@ const Controller = [
   {
     inputs: [
       {
-        internalType: 'string',
-        name: 'name',
-        type: 'string',
+        components: [
+          {
+            internalType: 'string',
+            name: 'name',
+            type: 'string',
+          },
+          {
+            internalType: 'address',
+            name: 'owner',
+            type: 'address',
+          },
+          {
+            internalType: 'uint256',
+            name: 'duration',
+            type: 'uint256',
+          },
+          {
+            internalType: 'bytes32',
+            name: 'secret',
+            type: 'bytes32',
+          },
+          {
+            internalType: 'address',
+            name: 'resolver',
+            type: 'address',
+          },
+          {
+            internalType: 'bytes[]',
+            name: 'data',
+            type: 'bytes[]',
+          },
+          {
+            internalType: 'bool',
+            name: 'reverseRecord',
+            type: 'bool',
+          },
+          {
+            internalType: 'uint16',
+            name: 'ownerControlledFuses',
+            type: 'uint16',
+          },
+        ],
+        internalType: 'struct IETHRegistrarController.RegisterParams',
+        name: 'registerParams',
+        type: 'tuple',
       },
       {
-        internalType: 'address',
-        name: 'owner',
-        type: 'address',
-      },
-      {
-        internalType: 'uint256',
-        name: 'duration',
-        type: 'uint256',
-      },
-      {
-        internalType: 'bytes32',
-        name: 'secret',
-        type: 'bytes32',
-      },
-      {
-        internalType: 'address',
-        name: 'resolver',
-        type: 'address',
-      },
-      {
-        internalType: 'bytes[]',
-        name: 'data',
-        type: 'bytes[]',
+        components: [
+          {
+            internalType: 'string',
+            name: 'token',
+            type: 'string',
+          },
+          {
+            internalType: 'address',
+            name: 'tokenAddress',
+            type: 'address',
+          },
+        ],
+        internalType: 'struct IETHRegistrarController.TokenParams',
+        name: 'tokenParams',
+        type: 'tuple',
       },
       {
         internalType: 'bool',
-        name: 'reverseRecord',
+        name: 'lifetime',
         type: 'bool',
       },
       {
-        internalType: 'uint16',
-        name: 'ownerControlledFuses',
-        type: 'uint16',
-      },
-      {
         internalType: 'string',
-        name: 'token',
+        name: 'referree',
         type: 'string',
-      },
-      {
-        internalType: 'address',
-        name: 'tokenAddress',
-        type: 'address',
       },
     ],
     name: 'registerWithToken',
@@ -333,6 +437,11 @@ const Controller = [
         name: 'lifetime',
         type: 'bool',
       },
+      {
+        internalType: 'string',
+        name: 'referree',
+        type: 'string',
+      },
     ],
     name: 'register',
     outputs: [],
@@ -418,8 +527,11 @@ const Register = () => {
   const [currency, setCurrency] = useState<'BNB' | 'USD'>('BNB')
   const [bnb, setBnb] = useState(true)
   const now = useMemo(() => new Date(), [])
-  const [isPrimary, setIsPrimary] = useState(false)
+
   const { address } = useAccount()
+  const { name: myName } = useENSName({ owner: address as `0x${string}` })
+  const [isPrimary, setIsPrimary] = useState(myName ? false : true)
+
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [next, setNext] = useState(0)
@@ -428,6 +540,12 @@ const Register = () => {
   const [token, setToken] = useState<`0x${string}`>('0x')
   const { data: commithash, writeContractAsync } = useWriteContract()
   const { writeContractAsync: approve } = useWriteContract()
+
+  useEffect(() => {
+      if(!myName){
+        setIsPrimary(true);
+      }
+  }, [myName, isPrimary])
 
   const {
     data: registerhash,
@@ -465,7 +583,7 @@ const Register = () => {
   const [avatar, setAvatar] = useState('')
   const [wait, setWait] = useState(60)
   const [done, setDone] = useState(false)
-  const lifetime = false
+  const [lifetime, setLifetime] = useState(false)
 
   const { data: latest, isPending: loading } = useReadContract({
     address: constants.Controller, // Replace with actual contract address
@@ -473,6 +591,23 @@ const Register = () => {
     functionName: 'rentPrice',
     args: [label as string, seconds, lifetime],
   })
+  const { data: earn } = useReadContract({
+    address: '0x87431136A97Fb514F35f5eDfB49f737735027FFf', // Replace with actual contract address
+    abi: Referral as any, // Replace with actual ABI
+    functionName: 'totalNativeEarnings',
+    args: [address as `0x${string}`],
+  })
+
+  console.log('earnings', earn)
+
+  const { data: referrals } = useReadContract({
+    address: '0x87431136A97Fb514F35f5eDfB49f737735027FFf', // Replace with actual contract address
+    abi: Referral as any, // Replace with actual ABI
+    functionName: 'totalReferrals',
+    args: [address as `0x${string}`],
+  })
+
+  console.log('referrals', referrals)
   const { data: usd1TokenData, isPending: tokenLoading } = useReadContract({
     address: constants.Controller,
     abi: Controller as any, // Replace with actual ABI
@@ -593,6 +728,12 @@ const Register = () => {
     }
   }, [date, years])
 
+  useEffect(() => {
+    if (lifetime) {
+      setSeconds(31536000 * 1000)
+    }
+  }, [lifetime, years])
+
   const increment = () => {
     setYears((prev) => prev + 1)
   }
@@ -660,11 +801,8 @@ const Register = () => {
     { key: string; value: string }[]
   >([])
   console.log(useToken)
-  const commit = async () => {
-    const secretBytes = crypto.getRandomValues(new Uint8Array(32))
-    const secretGenerated = bytesToHex(secretBytes) as `0x${string}`
-    setSecret(secretGenerated)
 
+  const buildCommitData = () => {
     const textRecords = [
       { key: 'description', value: description },
       { key: 'avatar', value: avatar },
@@ -695,7 +833,13 @@ const Register = () => {
       args: [namehash(`${label}.creator`), owner],
     })
     const fullData = [...builtData, addrEncoded]
+    console.log(fullData)
     setCommitData(fullData)
+  }
+  const commit = async () => {
+    const secretBytes = crypto.getRandomValues(new Uint8Array(32))
+    const secretGenerated = bytesToHex(secretBytes) as `0x${string}`
+    setSecret(secretGenerated)
     const resolver = constants.PublicResolver
     try {
       const labelHash = keccak256(toBytes(label || ''))
@@ -713,11 +857,11 @@ const Register = () => {
         ],
         [
           labelHash,
-          owner,
-          BigInt(seconds) * 1000n,
+          address as `0x${string}`,
+          BigInt(seconds),
           secretGenerated,
           resolver,
-          fullData,
+          commitData,
           isPrimary,
           0,
           lifetime,
@@ -772,14 +916,17 @@ const Register = () => {
           await controller.callStatic.register(
             label,
             address,
-            BigInt(seconds * 1000),
+            BigInt(seconds),
             secret,
             resolver,
             commitData,
             isPrimary,
             0,
             lifetime,
+            '',
+            { value: base + premium },
           )
+          console.log('Static call successful') // Debugging line
         } catch (e: any) {
           console.error('Revert error name:', e.errorName)
           console.error('Revert reason   :', e.data)
@@ -791,13 +938,14 @@ const Register = () => {
           args: [
             label,
             address,
-            BigInt(seconds * 1000),
+            BigInt(seconds),
             secret,
             resolver,
             commitData,
             isPrimary,
             0,
             lifetime,
+            '',
           ],
           value: base + premium,
         })
@@ -813,39 +961,48 @@ const Register = () => {
         })
         await new Promise((r) => setTimeout(r, 2000))
 
+        const tokenContract = new ethers.Contract(token, ERC20_ABI, signer)
+        try {
+          const allowance = await tokenContract.allowance(
+            address as `0x${string}`,
+            constants.Controller,
+          )
+          console.log(allowance)
+        } catch (e: any) {
+          console.error('Error checking allowance:', e)
+        }
+
+        const params: Params = {
+          name: label as string,
+          owner: address as `0x${string}`,
+          duration: BigInt(seconds),
+          secret,
+          resolver,
+          data: commitData,
+          reverseRecord: isPrimary,
+          ownerControlledFuses: 0,
+        }
+        const tokenParams: TokenParams = {
+          token: 'cake',
+          tokenAddress: token as `0x${string}`,
+        }
         try {
           await controller.callStatic.registerWithToken(
-            label,
-            address,
-            BigInt(seconds) * 1000n,
-            secret,
-            resolver,
-            commitData,
-            isPrimary,
-            0,
-            'cake',
-            token,
+            params,
+            tokenParams,
+            lifetime,
+            '',
           )
         } catch (e: any) {
           console.error('Revert error name:', e.errorName)
           console.error('Revert reason   :', e.data)
         }
+
         await registerContract({
           address: constants.Controller,
           abi: Controller,
           functionName: 'registerWithToken',
-          args: [
-            label,
-            address,
-            BigInt(seconds) * 1000n,
-            secret,
-            resolver,
-            commitData,
-            isPrimary,
-            0,
-            'cake',
-            token,
-          ],
+          args: [params, tokenParams, lifetime, ''],
         })
         setMessage('Registration Successful')
         setIsOpen(false)
@@ -873,7 +1030,17 @@ const Register = () => {
     }
   }, [available, navigate])
 
-  console.log(isPrimary)
+  const registerParams: RegisterParams = {
+    domain: label as string,
+    duration: seconds, // number of years
+    resolver: constants.PublicResolver,
+    data: commitData, // extra on-chain args
+    reverseRecord: isPrimary,
+    ownerControlledFuses: 0,
+    lifetime: lifetime,
+    referree: 'desmond',
+  }
+  const [card, setCard] = useState(false)
   return (
     <div className="mb-15 md:mb-0">
       <Nav />
@@ -890,7 +1057,7 @@ const Register = () => {
                 <div className="rounded-full py-4 px-4  border-[0.5px] border-gray-400 mt-5 flex items-center relative">
                   <button
                     className="flex items-center justify-center text-3xl w-10 h-10 p-2  rounded-full border-[0.5px] cursor-pointer border-gray-400 bg-[#FFF700] disabled:bg-neutral-500 disabled:cursor-not-allowed text-neutral-900 "
-                    disabled={disable}
+                    disabled={disable || lifetime}
                     onClick={decrease}
                   >
                     -
@@ -899,26 +1066,32 @@ const Register = () => {
                     <div
                       className="text-3xl md:text-3xl text-[#FFF700] font-semibold grow-1 text-center hover:bg-[#807F00]  transition-all duration-300 rounded-full cursor-pointer mx-5"
                       onClick={() => {
-                        setInput(false)
+                        if (!lifetime) setInput(false)
                       }}
                     >
-                      <p className="opacity-90">
-                        {years} Year{years > 1 ? 's' : ''}
-                      </p>
+                      {lifetime ? (
+                        <p className="opacity-90">Lifetime Registration</p>
+                      ) : (
+                        <p className="opacity-90">
+                          {years} Year{years > 1 ? 's' : ''}
+                        </p>
+                      )}
                     </div>
                   ) : (
                     <input
                       ref={inputRef}
                       type="number"
                       min={1}
-                      className="text-3xl md:text-4xl w-30 md:w-full text-[#FFF700] font-semibold grow-1 text-center hover:bg-[#807F00]  transition-all duration-300 rounded-full cursor-pointer mx-5"
+                      className="text-3xl md:text-4xl w-30 md:w-full text-[#FFF700] font-semibold grow-1 text-center hover:bg-[#807F00] transition-all duration-300 rounded-full cursor-pointer mx-5"
                       value={years}
                       onChange={handleChange}
+                      disabled={lifetime}
                     />
                   )}
                   <button
-                    className="flex items-center justify-center text-3xl w-10 h-10 p-2 rounded-full bg-[#FFF700] border-[0.5px] border-gray-400 cursor-pointer text-neutral-900"
+                    className="flex items-center justify-center text-3xl w-10 h-10 p-2 rounded-full bg-[#FFF700] border-[0.5px] border-gray-400 cursor-pointer text-neutral-900 disabled:bg-neutral-500 disabled:cursor-not-allowed"
                     onClick={increment}
+                    disabled={lifetime}
                   >
                     +
                   </button>
@@ -928,7 +1101,7 @@ const Register = () => {
                   ref={containerRef}
                   className="rounded-full p-4 border-[0.5px] border-gray-400 mt-5 flex items-center hover:bg-[#807F00] cursor-pointer transition-all ease-in-out duration-300 relative"
                   onClick={() => {
-                    setPicker(true)
+                    if (!lifetime) setPicker(true)
                   }}
                 >
                   <DatePicker
@@ -941,6 +1114,7 @@ const Register = () => {
                     customInput={<div style={{ display: 'none' }} />}
                     popperPlacement="bottom-start"
                     className="z-50 mt-50"
+                    disabled={lifetime}
                     // ◀️ Custom wrapper for the calendar popper
                     calendarContainer={({ className, children }) => (
                       <div
@@ -964,7 +1138,7 @@ const Register = () => {
                   </button>
                 </div>
               )}
-              {date ? (
+              {date && !lifetime ? (
                 <p className="text-center mt-5 text-sm flex justify-center font-semibold">
                   {years} year{years > 1 ? 's' : ''} registration.{' '}
                   <span
@@ -976,7 +1150,7 @@ const Register = () => {
                     Pick by date
                   </span>
                 </p>
-              ) : (
+              ) : !date && !lifetime ? (
                 <p className="text-center mt-5 text-sm flex justify-center font-semibold">
                   {duration.years > 0
                     ? ` ${duration.years} year${duration.years > 1 ? 's' : ''}`
@@ -999,7 +1173,19 @@ const Register = () => {
                     Pick by Years
                   </span>
                 </p>
+              ) : (
+                ''
               )}
+              <p className="text-center mt-5 text-sm flex justify-center font-semibold">
+                <span
+                  className="text-[#FFF700] text-center ml-2 cursor-pointer"
+                  onClick={() => {
+                    setLifetime(!lifetime)
+                  }}
+                >
+                  Or would you like a lifetime registration?
+                </span>
+              </p>
               <div>
                 <div className="inline-flex bg-neutral-900 rounded-full p-1 mt-5">
                   {(['BNB', 'USD'] as const).map((curr) => {
@@ -1246,13 +1432,25 @@ const Register = () => {
                 </div>
               </div>
               <div className="flex items-center justify-center gap-2">
-                <TransakWidget
+                {/* <TransakWidget
                   label={label as string}
                   owner={owner}
                   duration={seconds}
                   reverse={isPrimary}
                   price={Number(estimateUsd) + Number(price.usd)}
-                />
+                /> */}
+
+                <button
+                  className="px-5 py-3 bg-[#FFF700] text-neutral-900 font-semibold mt-5 rounded-xl cursor-pointer hover:bg-[#B3AE00] transition-all duration-300 flex items-center"
+                  onClick={() => {
+                    setNext(1)
+                    setCard(true)
+                  }}
+                  disabled={isLoading}
+                >
+                  Pay with Fiat
+                </button>
+
                 <button
                   className="px-5 py-3 bg-[#FFF700] text-neutral-900 font-semibold mt-5 rounded-xl cursor-pointer hover:bg-[#B3AE00] transition-all duration-300 flex items-center"
                   onClick={() => {
@@ -1260,7 +1458,7 @@ const Register = () => {
                   }}
                   disabled={isLoading}
                 >
-                  Pay with BNB
+                  Pay with Wallet
                 </button>
               </div>
               {isLoading && <RegistrationModal message={message} />}
@@ -1280,6 +1478,7 @@ const Register = () => {
               setNext={setNext}
               textRecords={newRecords}
               setTextRecords={setNewRecords}
+              buildCommitData={buildCommitData}
             />
           ) : next == 2 ? (
             <div className="rounded-xl bg-neutral-800 px-5 md:px-10 py-5 mt-5 border-[0.5px] border-gray-400">
@@ -1494,14 +1693,16 @@ const Register = () => {
                   className="p-3 px-10 md:px-15 bg-[#FFF700]  rounded-lg text-black font-semibold cursor-pointer"
                   onClick={() => {
                     setNext((prev) => prev + 1)
-                    commit()
+                    if (!card) {
+                      commit()
+                    }
                   }}
                 >
                   Begin
                 </button>
               </div>
             </div>
-          ) : next == 3 ? (
+          ) : next == 3 && !card ? (
             <div className="bg-white dark:bg-neutral-900 p-8 rounded-2xl shadow-2xl  mx-auto mt-5 flex flex-col items-center gap-6 border-1 border-gray-300">
               <h2 className="text-2xl font-bold text-center text-neutral-800 dark:text-white">
                 Almost there
@@ -1571,6 +1772,8 @@ const Register = () => {
                 info="Start timer to register name"
               />
             </div>
+          ) : next == 3 && card ? (
+            <UserForm address={owner} registerParams={registerParams} />
           ) : next == 4 ? (
             <div className="bg-white dark:bg-neutral-900 p-8 rounded-2xl shadow-2xl  mx-auto mt-5 flex flex-col items-center gap-6 border-1 border-gray-300">
               <RegisterDetailsModal
@@ -1607,7 +1810,7 @@ const Register = () => {
                     <p className="text-gray-600 mb-6">
                       You are now the owner of{' '}
                       <span className="text-blue-500 font-semibold">
-                        {label}.eth
+                        {label}.creator
                       </span>
                     </p>
 
@@ -1678,6 +1881,7 @@ const Register = () => {
           )}
         </div>
       </div>
+      <SignIn />
       <MobileNav />
     </div>
   )
@@ -1712,6 +1916,7 @@ type SetupProps = {
   setTextRecords: React.Dispatch<
     React.SetStateAction<{ key: string; value: string }[]>
   >
+  buildCommitData: () => void
 }
 const SetupModal = ({
   owner,
@@ -1719,27 +1924,110 @@ const SetupModal = ({
   setDescription,
   setDiscord,
   setEmail,
-  setGithub,
-  setPhone,
   setTwitter,
   setWebsite,
+  setGithub,
+  setPhone,
+  setAvatar,
   setNext,
   textRecords,
   setTextRecords,
+  buildCommitData,
 }: SetupProps) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault()
     setOwner(e.target.value as `0x${string}`)
   }
+  const [preview, setPreview] = useState<string | ArrayBuffer | null>(null)
   const [more, setMore] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [file, setFile] = useState<File>()
+  const [confirmed, setConfirmed] = useState(false)
+
+  const handleFileChange = (e: Event) => {
+    const input = e.target as HTMLInputElement
+    const file = input.files?.[0]
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader()
+      setFile(file)
+      reader.onload = (event) => {
+        if (event.target) {
+          setPreview(event.target.result)
+        }
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const createInput = () => {
+    const i = document.createElement('input')
+    i.type = 'file'
+    i.accept = 'image/*' // optional, restrict to images
+    i.onchange = handleFileChange
+    i.click() // ✅ trigger the file picker
+  }
+
+  const uploadImage = async () => {
+    setLoading(true)
+    const formData = new FormData()
+    if (file) {
+      formData.append('file', file) // Attach the file as a Blob
+    } else {
+      throw new Error('File is null and cannot be uploaded.')
+    }
+    try {
+      const upload = await axios.post(
+        `${import.meta.env.VITE_API_URL}/nft/upload`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        },
+      )
+      setAvatar(upload.data.url)
+      setLoading(false)
+    } catch (error) {
+      console.log(error)
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="rounded-xl bg-neutral-800 px-10 py-5 mt-5 border-[0.5px] border-gray-400">
       <h1 className="text-3xl font-semibold text-[#FFF700] text-center">
         Setup your Profile
       </h1>
-      <div className="flex justify-center mt-5">
-        <div className="rounded-full w-30 h-30 bg-gray-600"></div>
+      <div className="flex justify-center mt-5 relative">
+        {!preview && (
+          <button
+            className="rounded-full w-30 h-30 bg-gray-600 cursor-pointer flex items-center justify-center"
+            onClick={createInput}
+          >
+            <FaPlus className="text-4xl text-gray-300" />
+          </button>
+        )}
+        {loading ? (
+          <div className="rounded-full w-30 h-30 bg-gray-900"></div>
+        ) : (
+          ''
+        )}
+        {preview && (
+          <div className="rounded-full w-30 h-30 relative">
+            <img
+              src={preview as string}
+              className="rounded-full w-30 h-30 bg-gray-600 absolute"
+            />
+            <button
+              className="rounded-full w-30 h-30 bg-black opacity-0 hover:opacity-75 cursor-pointer flex items-center justify-center absolute z-10"
+              onClick={() => {
+                setPreview(null)
+              }}
+            >
+              <FaTrash className="text-4xl text-gray-300" />
+            </button>
+          </div>
+        )}
       </div>
       <div className="mt-5 space-y-3 text-sm">
         <p className="font-semibold">bnb address</p>
@@ -1876,14 +2164,27 @@ const SetupModal = ({
           >
             Back
           </button>
-          <button
-            className="p-3 bg-[#FFF700] w-full rounded-lg text-black font-semibold cursor-pointer"
-            onClick={() => {
-              setNext((prev) => prev + 1)
-            }}
-          >
-            Next
-          </button>
+          {file && !confirmed ? (
+            <button
+              className="p-3 bg-[#FFF700] w-full rounded-lg text-black font-semibold cursor-pointer"
+              onClick={async () => {
+                await uploadImage()
+                setConfirmed(true)
+              }}
+            >
+              Confirm Image
+            </button>
+          ) : (
+            <button
+              className="p-3 bg-[#FFF700] w-full rounded-lg text-black font-semibold cursor-pointer"
+              onClick={() => {
+                setNext((prev) => prev + 1)
+                buildCommitData()
+              }}
+            >
+              Next
+            </button>
+          )}
         </div>
       </div>
     </div>

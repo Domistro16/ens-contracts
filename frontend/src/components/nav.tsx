@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAccount, useReadContract } from 'wagmi'
-import { IdentificationIcon, MenuIcon } from "@heroicons/react/outline";
-import { CustomConnect } from './connectButton';
-import {constants} from '../constant'
-import LogInButton from './loginButton';
+import { IdentificationIcon, MenuIcon } from '@heroicons/react/outline'
+import { CustomConnect } from './connectButton'
+import { constants } from '../constant'
+import LogInButton from './loginButton'
+import SignIn from './Login'
 
 const abi = [
   {
@@ -42,7 +43,7 @@ export default function Nav() {
   const [showBox, setShowBox] = useState(false)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const boxRef = useRef<HTMLDivElement | null>(null)
-  const {isDisconnected, isConnected, address} = useAccount();
+  const { isDisconnected, isConnected, address } = useAccount()
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -61,7 +62,7 @@ export default function Nav() {
   }, [showBox])
 
   useEffect(() => {
-    if (search.length < 3) {
+    if (search.length < 2) {
       setAvailable('Too Short')
     } else if (isPending) {
       setAvailable('Loading…')
@@ -112,18 +113,20 @@ export default function Nav() {
           {/* Search Results Popup */}
           <div
             ref={boxRef}
-            className={`absolute left-1/2 transform -translate-x-1/2 mt-2 w-80 md:w-96 bg-gray-800 border border-gray-700 rounded-xl shadow-lg text-left z-10 transform origin-top
+            className={`absolute left-1/2 transform -translate-x-1/2 mt-2 w-60 md:w-70 lg:w-96 bg-gray-800 border border-gray-700 rounded-xl shadow-lg text-left z-10 transform origin-top
               transition-transform duration-300 ease-out
               overflow-hidden ${showBox ? 'scale-y-100' : 'scale-y-0'}`}
           >
             <ul className="divide-y divide-gray-700">
               <li
-                className="px-6 py-3 hover:bg-gray-700 rounded-xl cursor-pointer flex justify-between"
+                className="px-6 py-3  hover:bg-gray-700 rounded-xl cursor-pointer flex items-center justify-between"
                 onClick={route}
               >
-                <div>{`${search != '' ? search + '.creator' : ''}`}</div>{' '}
+                <div className="text-[17px]">{`${
+                  search != '' ? search + '.creator' : ''
+                }`}</div>{' '}
                 {available != '' ? (
-                  <div className="text-[13px] bg-green-800 text-green-300 p-1 rounded-full">
+                  <div className="text-[10px] bg-green-800 text-green-300 p-1 rounded-full">
                     {available}
                   </div>
                 ) : (
@@ -134,7 +137,7 @@ export default function Nav() {
           </div>
         </div>
       </div>
-
+      <SignIn />
       <div className="flex items-center space-x-6">
         {!isDisconnected && isConnected && address && (
           <div
@@ -146,11 +149,11 @@ export default function Nav() {
           </div>
         )}
         <MenuIcon className="h-5 w-5 text-gray-400 font-bold" />
-        {isConnected ? 
-       ( <CustomConnect />) : (
-        <LogInButton />
-       )
-}
+        {isConnected ? (
+          <CustomConnect />
+        ) : (
+          <LogInButton setLoggedIn={null} />
+        )}
       </div>
     </header>
   )

@@ -1,10 +1,46 @@
+import { BigNumberish } from "ethers"
+
 export const constants = {
-  Controller: '0xf3f80539300db138288874a9b54d4444e949be45' as `0x${string}`,
-  Registry: '0xC33387F371067b1Bdc48E694bf30EDB8deF7d4A0' as `0x${string}`,
+  Controller: '0xDf310Ea5f3cfdBaee15fa8B40386fCd3502a7B72' as `0x${string}`,
+  Registry: '0xCA20aEFf55F5f7d1dB4c7BCeA91BE69a70704c76' as `0x${string}`,
   ReverseRegistrar:
-    '0x078E09a9584c3Ec7DF706db42685D4eedf456FC9' as `0x${string}`,
-  BaseRegistrar: '0xB4C95f28F762E7B42dCd6E108BB8C7fCf90Cb413' as `0x${string}`,
-  NameWrapper: '0x501CB529399486684f94c6f59F1b1617202DDE18' as `0x${string}`,
-  BulkRenewal: '0xa4072dE9FDdDfd40DAcf774649AeB54092F23a8d' as `0x${string}`,
-  PublicResolver: '0xde42088a31e387ce3af993ae684d2089ef860ef3' as `0x${string}`,
+    '0x61a47Ca35Daa7289c38a3aFCC1C9a0BCb00524Bb' as `0x${string}`,
+  BaseRegistrar: '0x74321b65Ba60db5c9eF80D7de02f7051Df2C02B7' as `0x${string}`,
+  NameWrapper: '0x6C066a755F954d53F701BCF6d691Cfc2e820Bc62' as `0x${string}`,
+  BulkRenewal: '0x05d53F51f9Ec2A02985051a6336D1A1D4Fc4E887' as `0x${string}`,
+  PublicResolver: '0x40fEA4A9D9dc09b61480a424fAD2f96F1433Acfc' as `0x${string}`,
+}
+
+export interface Params {
+  /** The name to register */
+  name: string
+
+  /** Owner address (20-byte hex) */
+  owner: `0x${string}`
+
+  /** Registration duration in seconds (uint256) */
+  duration: BigNumberish
+
+  /** Secret commitment (32-byte hex) */
+  secret: string
+
+  /** Resolver contract address */
+  resolver: string
+
+  /** Array of ABI-encoded data blobs */
+  data: string[]
+
+  /** Whether to set up a reverse record */
+  reverseRecord: boolean
+
+  /** Owner-controlled fuses bitmap (fits in uint16) */
+  ownerControlledFuses: number
+}
+
+export interface TokenParams {
+  /** Token symbol or identifier */
+  token: string
+
+  /** Token contract address */
+  tokenAddress: string
 }
