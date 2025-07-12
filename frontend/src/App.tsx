@@ -4,6 +4,7 @@ import Register from './components/register'
 import Resolve from './components/resolve'
 import Names from './components/names'
 import { useWeb3Auth } from '@web3auth/modal/react'
+import { useAccount } from 'wagmi'
 
 function App() {
   const { status } = useWeb3Auth()
@@ -81,6 +82,7 @@ function App() {
   }, [askedSync, gotSession, isInitializing, isConnected, status])
 
  */
+
   return (
     <>
       {/*  <iframe

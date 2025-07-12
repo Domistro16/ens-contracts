@@ -418,13 +418,6 @@ contract ETHRegistrarController is
             tokenParams.token,
             lifetime
         );
-        require(
-            IERC20(tokenParams.tokenAddress).allowance(
-                msg.sender,
-                address(this)
-            ) >= price.base + price.premium,
-            "Insufficient ERC20 allowance"
-        );
         if (
             IERC20(tokenParams.tokenAddress).balanceOf(msg.sender) <
             price.base + price.premium

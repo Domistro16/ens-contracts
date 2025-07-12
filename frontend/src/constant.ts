@@ -1,14 +1,14 @@
 import { BigNumberish } from "ethers"
 
 export const constants = {
-  Controller: '0xDf310Ea5f3cfdBaee15fa8B40386fCd3502a7B72' as `0x${string}`,
-  Registry: '0xCA20aEFf55F5f7d1dB4c7BCeA91BE69a70704c76' as `0x${string}`,
+  Controller: '0xB85759dd66E5554bf4Fc0e19cc71eC11e0f3FE2E' as `0x${string}`,
+  Registry: '0x8390D472587cCAe988dD06Ccd456Ac70CcF39038' as `0x${string}`,
   ReverseRegistrar:
-    '0x61a47Ca35Daa7289c38a3aFCC1C9a0BCb00524Bb' as `0x${string}`,
-  BaseRegistrar: '0x74321b65Ba60db5c9eF80D7de02f7051Df2C02B7' as `0x${string}`,
-  NameWrapper: '0x6C066a755F954d53F701BCF6d691Cfc2e820Bc62' as `0x${string}`,
-  BulkRenewal: '0x05d53F51f9Ec2A02985051a6336D1A1D4Fc4E887' as `0x${string}`,
-  PublicResolver: '0x40fEA4A9D9dc09b61480a424fAD2f96F1433Acfc' as `0x${string}`,
+    '0x2E5ba310fDa0aD5dfA4CC5656FAEDDd4CC4c162b' as `0x${string}`,
+  BaseRegistrar: '0x0393da9525982Be4C8b9812f8D2A877796fCA90b' as `0x${string}`,
+  NameWrapper: '0x399c16D8156E1145912c106DD811702440242B93' as `0x${string}`,
+  BulkRenewal: '0xB3aad8586b4796960060d0FaCBA8e001Ec7ecB7d' as `0x${string}`,
+  PublicResolver: '0xe3b0181a7c7F5fA0dE6894062Ae2f15bFb41E283' as `0x${string}`,
 }
 
 export interface Params {

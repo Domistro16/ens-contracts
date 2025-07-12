@@ -12,8 +12,9 @@ import {
   encodeAbiParameters,
   keccak256,
   toBytes,
+  parseEther,
 } from 'viem'
-import { useParams, useNavigate } from 'react-router'
+import { useParams, useNavigate, useSearchParams } from 'react-router'
 import Countdown from 'react-countdown'
 import Modal from 'react-modal'
 import { buildTextRecords } from '../hooks/setText'
@@ -37,7 +38,7 @@ type RegisterParams = {
   lifetime: boolean
   referree: string
 }
-
+/* 
 const Referral = [
   {
     inputs: [
@@ -78,7 +79,7 @@ const Referral = [
     type: 'function',
   },
 ]
-
+ */
 const ERC20_ABI = [
   {
     constant: false,
@@ -540,11 +541,13 @@ const Register = () => {
   const [token, setToken] = useState<`0x${string}`>('0x')
   const { data: commithash, writeContractAsync } = useWriteContract()
   const { writeContractAsync: approve } = useWriteContract()
+  const [searchParams] = useSearchParams()
+  const referree = searchParams.get('referree')
 
   useEffect(() => {
-      if(!myName){
-        setIsPrimary(true);
-      }
+    if (!myName) {
+      setIsPrimary(true)
+    }
   }, [myName, isPrimary])
 
   const {
@@ -591,23 +594,6 @@ const Register = () => {
     functionName: 'rentPrice',
     args: [label as string, seconds, lifetime],
   })
-  const { data: earn } = useReadContract({
-    address: '0x87431136A97Fb514F35f5eDfB49f737735027FFf', // Replace with actual contract address
-    abi: Referral as any, // Replace with actual ABI
-    functionName: 'totalNativeEarnings',
-    args: [address as `0x${string}`],
-  })
-
-  console.log('earnings', earn)
-
-  const { data: referrals } = useReadContract({
-    address: '0x87431136A97Fb514F35f5eDfB49f737735027FFf', // Replace with actual contract address
-    abi: Referral as any, // Replace with actual ABI
-    functionName: 'totalReferrals',
-    args: [address as `0x${string}`],
-  })
-
-  console.log('referrals', referrals)
   const { data: usd1TokenData, isPending: tokenLoading } = useReadContract({
     address: constants.Controller,
     abi: Controller as any, // Replace with actual ABI
@@ -888,24 +874,25 @@ const Register = () => {
     setIsLoading(true)
     const resolver = constants.PublicResolver
     try {
-      let value: Number
+      let value = 0n
       const { base, premium } = latest as { base: bigint; premium: bigint }
 
       if (token == '0xFa60D973F7642B748046464e165A65B7323b0DEE') {
         const { base, premium } = (cakeTokenData as any) || {
-          base: 0,
-          premium: 0,
+          base: 0n,
+          premium: 0n,
         }
-        value = Number(base) + Number(premium) // Convert to readable
+        value = base + premium // Convert to readable
       } else {
         const { base, premium } = (usd1TokenData as any) || {
-          base: 0,
-          premium: 0,
+          base: 0n,
+          premium: 0n,
         }
-        value = Number(base) + Number(premium) // Convert to readable
+        value = base + premium // Convert to readable
       }
       const totalAmount = value
       console.log(totalAmount)
+      console.log(constants.Controller)
       const controller = new ethers.Contract(
         constants.Controller,
         Controller,
@@ -923,7 +910,7 @@ const Register = () => {
             isPrimary,
             0,
             lifetime,
-            '',
+            referree || '',
             { value: base + premium },
           )
           console.log('Static call successful') // Debugging line
@@ -945,7 +932,7 @@ const Register = () => {
             isPrimary,
             0,
             lifetime,
-            '',
+            referree || '',
           ],
           value: base + premium,
         })
@@ -957,10 +944,13 @@ const Register = () => {
           address: token,
           abi: ERC20_ABI,
           functionName: 'approve',
-          args: [constants.Controller, totalAmount],
+          args: [constants.Controller, totalAmount + parseEther('1')],
         })
-        await new Promise((r) => setTimeout(r, 2000))
+        /*   const publicClient = usePublicClient()
+        await publicClient.waitForTransactionReceipt({ hash: ap })
+ */
 
+        await new Promise((r) => setTimeout(r, 2000))
         const tokenContract = new ethers.Contract(token, ERC20_ABI, signer)
         try {
           const allowance = await tokenContract.allowance(
@@ -986,12 +976,14 @@ const Register = () => {
           token: 'cake',
           tokenAddress: token as `0x${string}`,
         }
+
+        console.log(constants.Controller)
         try {
           await controller.callStatic.registerWithToken(
             params,
             tokenParams,
             lifetime,
-            '',
+            referree || '',
           )
         } catch (e: any) {
           console.error('Revert error name:', e.errorName)
@@ -1002,7 +994,7 @@ const Register = () => {
           address: constants.Controller,
           abi: Controller,
           functionName: 'registerWithToken',
-          args: [params, tokenParams, lifetime, ''],
+          args: [params, tokenParams, lifetime, referree || ''],
         })
         setMessage('Registration Successful')
         setIsOpen(false)
@@ -1038,7 +1030,7 @@ const Register = () => {
     reverseRecord: isPrimary,
     ownerControlledFuses: 0,
     lifetime: lifetime,
-    referree: 'desmond',
+    referree: referree || '',
   }
   const [card, setCard] = useState(false)
   return (

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAccount, useReadContract } from 'wagmi'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { CustomConnect } from './connectButton'
 import { MobileNav } from './mobilenav'
 import { IdentificationIcon, MenuIcon } from '@heroicons/react/outline'
@@ -36,6 +36,8 @@ export default function Home() {
   const [available, setAvailable] = useState('')
   const [search, setSearch] = useState('')
   const [loggedIn, setLoggedIn] = useState(false)
+  const [searchParams] = useSearchParams()
+  const referree = searchParams.get('referree')
   const { data, isPending } = useReadContract({
     address: constants.Controller,
     functionName: 'available',
@@ -94,7 +96,11 @@ export default function Home() {
 
   const route = () => {
     if (available == 'Available') {
-      navigate(`/register/${search}`)
+      if (referree) {
+        navigate(`/register/${search}/?referree=${referree}`)
+      } else {
+        navigate(`/register/${search}/`)
+      }
     } else if (available == 'Registered') {
       navigate(`/resolve/${search}`)
     }
@@ -122,7 +128,11 @@ export default function Home() {
           <MenuIcon className="h-5 w-5 text-gray-400 font-bold" />
           <div className="hidden md:flex">
             {' '}
-            {isConnected ? <CustomConnect /> : <LogInButton setLoggedIn={setLoggedIn}/>}
+            {isConnected ? (
+              <CustomConnect />
+            ) : (
+              <LogInButton setLoggedIn={setLoggedIn} />
+            )}
           </div>
         </div>
       </header>

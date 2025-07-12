@@ -12,6 +12,7 @@ import { privateKeyToAccount } from 'viem/accounts'
 import type { Chain, Address } from 'viem'
 import { bscTestnet } from 'viem/chains'
 import ControllerArtifact from '../artifacts/contracts/ethregistrar/ETHRegistrarController.sol/ETHRegistrarController.json'
+import Referral from '../artifacts/contracts/ethregistrar/ReferralController.sol/ReferralController.json'
 import Namewrapper from '../artifacts/contracts/wrapper/NameWrapper.sol/NameWrapper.json'
 import Registry from '../artifacts/contracts/registry/ENSRegistry.sol/ENSRegistry.json'
 import ReverseRegistrar from '../artifacts/contracts/reverseRegistrar/ReverseRegistrar.sol/ReverseRegistrar.json'
@@ -32,16 +33,36 @@ const publicClient = createPublicClient({
   chain: bscTestnet,
   transport: http(),
 })
-let reverseRegistrar: Address = '0x078E09a9584c3Ec7DF706db42685D4eedf456FC9'
-let registrar: Address = '0xB4C95f28F762E7B42dCd6E108BB8C7fCf90Cb413'
-let nameWrapper: Address = '0x501CB529399486684f94c6f59F1b1617202DDE18'
-let registry: Address = '0xC33387F371067b1Bdc48E694bf30EDB8deF7d4A0'
-let tokenOracle: Address = '0xbb58eb875d8bdcef0f3dc7cd229e1f5fdba57cd2'
+let reverseRegistrar: Address = '0x61a47Ca35Daa7289c38a3aFCC1C9a0BCb00524Bb'
+let registrar: Address = '0x74321b65Ba60db5c9eF80D7de02f7051Df2C02B7'
+let nameWrapper: Address = '0x6C066a755F954d53F701BCF6d691Cfc2e820Bc62'
+let registry: Address = '0xCA20aEFf55F5f7d1dB4c7BCeA91BE69a70704c76'
+let tokenOracle: Address = '0xAA285143CBCCe0E1f39bFa3667115CcbFC5d15e9'
+const tokenAddresses: `0x${string}`[] = [
+  '0xFa60D973F7642B748046464e165A65B7323b0DEE',
+  '0x64544969ed7EBf5f083679233325356EbE738930',
+]
+
 // 4) Deploy the ENSRegistrarPaymaster contract
 async function main() {
   console.log('deploying')
   const { viem, network } = hre
   const { deployer, owner } = await viem.getNamedClients()
+
+  const refHash = await client.deployContract({
+    abi: Referral.abi,
+    bytecode: Referral.bytecode as `0x${string}`,
+    args: [],
+  })
+
+  const receipt2 = await publicClient.waitForTransactionReceipt({
+    hash: refHash,
+  })
+  if (!receipt2.contractAddress) {
+    throw new Error('No contractAddress found in receipt2')
+  }
+  console.log('🏠 Referral Contract deployed at:', receipt2.contractAddress)
+  console.log('Tx hash:', refHash)
 
   const txHash = await client.deployContract({
     abi: ControllerArtifact.abi,
@@ -54,6 +75,8 @@ async function main() {
       reverseRegistrar,
       nameWrapper,
       registry,
+      owner.address,
+      receipt2.contractAddress,
     ],
   })
   const receipt = await publicClient.waitForTransactionReceipt({
@@ -66,6 +89,37 @@ async function main() {
   console.log('Tx hash:', txHash)
 
   if (network.name === 'mainnet') return
+
+  const refhash = await client.writeContract({
+    abi: Referral.abi,
+    functionName: 'addController',
+    address: receipt2.contractAddress,
+    args: [receipt.contractAddress],
+  })
+
+  for (const tokenAddress of tokenAddresses) {
+    const hash = await client.writeContract({
+      abi: ControllerArtifact.abi,
+      functionName: 'setToken',
+      address: receipt.contractAddress,
+      args: [tokenAddress],
+    })
+    console.log(`Adding ${tokenAddress} to ETHRegistrarController`)
+    await publicClient.waitForTransactionReceipt({
+      hash,
+    })
+  }
+
+   const hash = await client.writeContract({
+     abi: ControllerArtifact.abi,
+     functionName: 'setBackend',
+     address: receipt.contractAddress,
+     args: [owner.address],
+   })
+   console.log(`Adding ${owner.address} to ETHRegistrarController`)
+   await publicClient.waitForTransactionReceipt({
+     hash,
+   })
 
   const nameWrapperSetControllerHash = await client.writeContract({
     abi: Namewrapper.abi as any,
@@ -86,7 +140,7 @@ async function main() {
     `Adding ETHRegistrarController as a controller of ReverseRegistrar (tx: ${reverseRegistrarSetControllerHash})...`,
   )
 
- /*  const setRecordHash = await client.writeContract({
+  /*  const setRecordHash = await client.writeContract({
     functionName: 'setRecord',
     abi: Registry.abi,
     address: registry,
