@@ -1,11 +1,9 @@
 import { useAccount } from 'wagmi'
-import Nav from './nav'
 import { useAllOwnedNames } from '../hooks/getAllNames'
 import { useEffect, useMemo, useState } from 'react'
 import { WrappedBadge } from './badge'
 import { Avatar } from './useAvatar'
 import { useNavigate } from 'react-router-dom'
-import { MobileNav } from './mobilenav'
 export default function Names() {
   useEffect(() => {
     document.title = `My Names`
@@ -44,7 +42,6 @@ export default function Names() {
   console.log(domains)
   return (
     <div>
-      <Nav />
       <div className="min-h-screen text-white space-y-5 p-3 mx-auto md:px-30 md:mt-10 lg:px-60">
         <h1 className="text-4xl font-bold">Names</h1>
 
@@ -126,7 +123,7 @@ export default function Names() {
               {pageDomains.map((domain, idx) => {
                 // derive a friendly expiry/status message + color
                 const nowSec = Date.now() / 1000
-                const secondsLeft = domain.expiryDate - nowSec
+                const secondsLeft = domain.expiryDate - nowSec - 259200
                 let statusText: string
                 let statusClass: string
 
@@ -243,7 +240,6 @@ export default function Names() {
           </div>
         </div>
       </div>
-      <MobileNav />
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { BigNumberish } from "ethers"
+import { BigNumberish } from 'ethers'
 
 export const constants = {
   Controller: '0xB85759dd66E5554bf4Fc0e19cc71eC11e0f3FE2E' as `0x${string}`,
@@ -9,6 +9,7 @@ export const constants = {
   NameWrapper: '0x399c16D8156E1145912c106DD811702440242B93' as `0x${string}`,
   BulkRenewal: '0xB3aad8586b4796960060d0FaCBA8e001Ec7ecB7d' as `0x${string}`,
   PublicResolver: '0xe3b0181a7c7F5fA0dE6894062Ae2f15bFb41E283' as `0x${string}`,
+  Referral: '0xf5F507D2a48B62082e3440B185f9e10a47156554' as `0x${string}`,
 }
 
 export interface Params {

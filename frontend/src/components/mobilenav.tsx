@@ -3,7 +3,13 @@ import { useAccount } from 'wagmi'
 import { IdentificationIcon, SearchIcon } from '@heroicons/react/outline' // or any icon you like
 import { useNavigate } from 'react-router-dom'
 import LogInButton from './loginButton'
-export const MobileNav = () => {
+export const MobileNav = ({
+  setLoggedIn,
+  loggedIn
+}: {
+  setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
+  loggedIn: boolean
+}) => {
   const { isConnected } = useAccount()
   const navigate = useNavigate()
 
@@ -15,7 +21,6 @@ export const MobileNav = () => {
         bg-neutral-800/75 backdrop-blur-sm
         px-4 py-2 rounded-full
         shadow-lg
-        z-50
         max-w-max
         whitespace-nowrap
         justify-center
@@ -40,7 +45,11 @@ export const MobileNav = () => {
       )}
 
       {/* Your custom connect button */}
-      {isConnected ? <CustomConnect /> : <LogInButton setLoggedIn={null} />}
+      {isConnected ? (
+        <CustomConnect />
+      ) : (
+        <LogInButton setLoggedIn={setLoggedIn} loggedIn={loggedIn}/>
+      )}
     </div>
   )
 }

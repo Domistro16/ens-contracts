@@ -1,7 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
-import Nav from './nav'
 import { useNavigate, useParams } from 'react-router-dom'
-import { keccak256, namehash, toBytes } from 'viem'
+import { keccak256, namehash, toBytes, zeroAddress } from 'viem'
 import { useReadContract } from 'wagmi'
 import { useTextRecords } from '../hooks/getTextRecords'
 import { useENSName } from '../hooks/getPrimaryName'
@@ -12,7 +11,6 @@ import Renew from './renew'
 import Unwrap from './unwrap'
 import ChangeResolver from './changeResolver'
 import Wrap from './wrap'
-import { MobileNav } from './mobilenav'
 import { FastForwardIcon } from '@heroicons/react/solid'
 import { Avatar } from './useAvatar'
 import { RiTelegramFill } from 'react-icons/ri'
@@ -23,7 +21,48 @@ import { IoLogoWhatsapp } from 'react-icons/io'
 import { FaSnapchatGhost, FaGithub } from 'react-icons/fa'
 import { SiBnbchain } from 'react-icons/si'
 import { constants } from '../constant'
-import SignIn from './Login'
+import ReferralProgress from './Refferal'
+
+const Referral = [
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: 'referrer',
+        type: 'address',
+      },
+    ],
+    name: 'totalNativeEarnings',
+    outputs: [
+      {
+        internalType: 'uint256',
+        name: '',
+        type: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: 'referrer',
+        type: 'address',
+      },
+    ],
+    name: 'totalReferrals',
+    outputs: [
+      {
+        internalType: 'uint256',
+        name: '',
+        type: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+]
 
 const resolveAbi = [
   {
@@ -275,7 +314,7 @@ const Resolve = () => {
 
   const node = namehash(`${label}.creator`)
   const id = keccak256(label as any)
- 
+
   const { data: available, isLoading: availableLoading } = useReadContract({
     address: constants.Controller,
     abi: availableAbi,
@@ -294,6 +333,12 @@ const Resolve = () => {
     functionName: 'getData',
     address: constants.NameWrapper,
     args: [node],
+  })
+  const { data: referrals } = useReadContract({
+    abi: Referral,
+    functionName: 'totalReferrals',
+    address: constants.Referral,
+    args: [walletAddress],
   })
   const { data: expires, isLoading: expiryLoading } = useReadContract({
     abi: expiresAbi,
@@ -422,6 +467,9 @@ const Resolve = () => {
     return undefined // optional for clarity
   }, [data])
 
+  const { name: primaryName } = useENSName({
+    owner: (walletAddress as `0x${string}`) || zeroAddress,
+  })
   const { name: wrappedOwnerName } = useENSName({
     owner: wrappedOwner as `0x${string}`,
   })
@@ -583,8 +631,7 @@ const Resolve = () => {
 
   return (
     <div>
-      <Nav />
-      <div className="flex flex-col mx-auto p-2 mb-5 md:px-30 lg:px-60 md:mt-5">
+      <div className="flex flex-col mx-auto p-2 mb-5 md:px-30 mt-15 lg:px-60 md:mt-15">
         <div className="">
           <h2 className="font-bold text-2xl text-white">
             {label as string}.creator
@@ -663,9 +710,16 @@ const Resolve = () => {
                   </button>
                 </div>
               </div>
+              {primaryName == `${label}.creator` ? (
+                <ReferralProgress
+                  referrals={(Number(referrals) as number) ?? 0}
+                />
+              ) : (
+                ''
+              )}
 
               {/* Metadata Card */}
-              <div className="bg-neutral-800 rounded-xl p-4 md:p-6 mt-6 space-y-3 border-[0.5px] border-neutral-500">
+              <div className="bg-neutral-800 rounded-xl p-4 md:p-6 mt-3 space-y-3 border-[0.5px] border-neutral-500">
                 {accounts.length > 0 ? (
                   <div>
                     <div className="font-semibold text-gray-300 ml-1">
@@ -1136,8 +1190,6 @@ const Resolve = () => {
           )}
         </div>
       </div>
-      <MobileNav />
-      <SignIn />
     </div>
   )
 }

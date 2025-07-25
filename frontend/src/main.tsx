@@ -1,37 +1,45 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
-import '@rainbow-me/rainbowkit/styles.css'
 import App from './App.tsx'
 import './index.css'
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
-import {
-  ApolloClient,
-  InMemoryCache,
-  ApolloProvider,
-  HttpLink,
-} from '@apollo/client'
-import {
-  Web3AuthProvider,
-  type Web3AuthContextConfig,
-} from '@web3auth/modal/react'
-import { WagmiProvider } from '@web3auth/modal/react/wagmi'
-import { web3AuthOptions } from '../web3auth.ts'
+import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/client'
+import { type Web3AuthContextConfig } from '@web3auth/modal/react'
+import { web3AuthOptions } from './web3auth.ts'
+import Fallback from './Fallback.tsx'
 
+// Initialize Apollo Client
 export const client = new ApolloClient({
   link: new HttpLink({
-    uri: 'https://api.studio.thegraph.com/query/110610/creator/v2',
+    uri: 'https://api.studio.thegraph.com/query/112443/creator-subgraph/v0.0.1',
   }),
   cache: new InMemoryCache(),
 })
 
+const ApolloProvider = React.lazy(() =>
+  import('@apollo/client').then((mod) => ({
+    default: mod.ApolloProvider,
+  })),
+)
+
+const Web3AuthProvider = React.lazy(() =>
+  import('@web3auth/modal/react').then((mod) => ({
+    default: mod.Web3AuthProvider,
+  })),
+)
+const WagmiProvider = React.lazy(() =>
+  import('@web3auth/modal/react/wagmi').then((mod) => ({
+    default: mod.WagmiProvider,
+  })),
+)
+
 function BootStrap() {
   const queryClient = new QueryClient()
   const web3authContextConfig: Web3AuthContextConfig = {
-    web3AuthOptions: web3AuthOptions,
+    web3AuthOptions: web3AuthOptions as any,
   }
- /*  const [synced, setSynced] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
   useEffect(() => {
@@ -43,7 +51,6 @@ function BootStrap() {
         Object.entries(msg.payload).forEach(([k, v]) => {
           if (typeof v === 'string') localStorage.setItem(k, v)
         })
-        setSynced(true) // <— now we know storage is ready
       }
     }
     window.addEventListener('message', onMessage)
@@ -51,6 +58,7 @@ function BootStrap() {
     const iframe = iframeRef.current
     if (iframe) {
       iframe.onload = () => {
+        console.log(iframe)
         iframe.contentWindow?.postMessage(
           JSON.stringify({ type: 'GET_SESSION' }),
           'https://auth.level3labs.fun',
@@ -61,30 +69,30 @@ function BootStrap() {
     return () => window.removeEventListener('message', onMessage)
   }, [])
 
-  if (!synced) {
-    return (
+  return (
+    <>
       <iframe
         ref={iframeRef}
-        src="https://auth.level3labs.fun/"
+        src="https://auth.level3labs.fun"
         style={{ display: 'none' }}
         title="session-sync"
       />
-    )
-  } */
-  return (
-    <Web3AuthProvider config={web3authContextConfig}>
-      <QueryClientProvider client={queryClient}>
-        <WagmiProvider>
-          <RainbowKitProvider>
-            <BrowserRouter>
-              <ApolloProvider client={client}>
-                <App />
-              </ApolloProvider>
-            </BrowserRouter>
-          </RainbowKitProvider>
-        </WagmiProvider>
-      </QueryClientProvider>
-    </Web3AuthProvider>
+      <React.Suspense fallback={<Fallback />}>
+        <Web3AuthProvider config={web3authContextConfig}>
+          <QueryClientProvider client={queryClient}>
+            <WagmiProvider>
+              <RainbowKitProvider>
+                <BrowserRouter>
+                  <ApolloProvider client={client}>
+                    <App />
+                  </ApolloProvider>
+                </BrowserRouter>
+              </RainbowKitProvider>
+            </WagmiProvider>
+          </QueryClientProvider>
+        </Web3AuthProvider>
+      </React.Suspense>
+    </>
   )
 }
 

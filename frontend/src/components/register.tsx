@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef, useMemo } from 'react'
-import Nav from './nav'
 import DatePicker from 'react-datepicker'
 import { Check } from 'lucide-react'
 import { intervalToDuration, startOfDay } from 'date-fns'
@@ -13,20 +12,22 @@ import {
   keccak256,
   toBytes,
   parseEther,
+  zeroAddress,
 } from 'viem'
 import { useParams, useNavigate, useSearchParams } from 'react-router'
 import Countdown from 'react-countdown'
 import Modal from 'react-modal'
 import { buildTextRecords } from '../hooks/setText'
 import { useEstimateENSFees, useEthersSigner } from '../hooks/gasEstimation'
-import { MobileNav } from './mobilenav'
 import { ethers } from 'ethers'
 import { constants, Params, TokenParams } from '../constant'
 import UserForm from './userForm'
-import SignIn from './Login'
 import axios from 'axios'
 import { FaPlus, FaTrash } from 'react-icons/fa6'
 import { useENSName } from '../hooks/getPrimaryName'
+import LogInButton from './loginButton'
+import SignIn from './Login'
+import { MobileNav } from './mobilenav'
 
 type RegisterParams = {
   domain: string
@@ -132,76 +133,6 @@ const ERC20_ABI = [
     type: 'function',
   },
 ]
-/* const Registrar = [
-  {
-    inputs: [
-      {
-        internalType: 'string',
-        name: 'name',
-        type: 'string',
-      },
-      {
-        internalType: 'address',
-        name: 'owner',
-        type: 'address',
-      },
-      {
-        internalType: 'uint256',
-        name: 'duration',
-        type: 'uint256',
-      },
-      {
-        internalType: 'bytes32',
-        name: 'secret',
-        type: 'bytes32',
-      },
-      {
-        internalType: 'address',
-        name: 'resolver',
-        type: 'address',
-      },
-      {
-        internalType: 'bytes[]',
-        name: 'data',
-        type: 'bytes[]',
-      },
-      {
-        internalType: 'bool',
-        name: 'reverseRecord',
-        type: 'bool',
-      },
-      {
-        internalType: 'uint16',
-        name: 'fuses',
-        type: 'uint16',
-      },
-      {
-        internalType: 'address',
-        name: 'token',
-        type: 'address',
-      },
-      {
-        internalType: 'uint256',
-        name: 'amountIn',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: 'minBnbOut',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint24',
-        name: 'poolFee',
-        type: 'uint24',
-      },
-    ],
-    name: 'registerWithToken',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-] */
 const Controller = [
   {
     inputs: [
@@ -529,12 +460,12 @@ const Register = () => {
   const [bnb, setBnb] = useState(true)
   const now = useMemo(() => new Date(), [])
 
-  const { address } = useAccount()
+  const { address, isDisconnected } = useAccount()
+  const [loggedIn, setLoggedIn] = useState(isDisconnected)
   const { name: myName } = useENSName({ owner: address as `0x${string}` })
   const [isPrimary, setIsPrimary] = useState(myName ? false : true)
 
   const [isLoading, setIsLoading] = useState(false)
-  const [message, setMessage] = useState('')
   const [next, setNext] = useState(0)
   const [isOpen, setIsOpen] = useState(true)
   const [useToken, setUseToken] = useState(false)
@@ -854,7 +785,6 @@ const Register = () => {
         ],
       )
       const commitment = keccak256(encoded)
-      setMessage('Committing Registration')
       await writeContractAsync({
         address: constants.Controller,
         account: address,
@@ -866,7 +796,6 @@ const Register = () => {
       setIsOpen(false)
     } catch (error) {
       console.error('Error during Commit', error)
-      setMessage('Commit Failed')
       setIsLoading(false)
     }
   }
@@ -936,8 +865,6 @@ const Register = () => {
           ],
           value: base + premium,
         })
-
-        setMessage('Registration Successful')
         setIsOpen(false)
       } else {
         await approve({
@@ -996,11 +923,9 @@ const Register = () => {
           functionName: 'registerWithToken',
           args: [params, tokenParams, lifetime, referree || ''],
         })
-        setMessage('Registration Successful')
         setIsOpen(false)
       }
     } catch (error) {
-      setMessage('Registration Failed')
       console.error('Error during Registration', error)
       setIsLoading(false)
     }
@@ -1034,9 +959,8 @@ const Register = () => {
   }
   const [card, setCard] = useState(false)
   return (
-    <div className="mb-15 md:mb-0">
-      <Nav />
-      <div className="flex flex-col mx-auto px-2 md:px-30 lg:px-60 md:mt-5">
+    <div className="mb-25 md:mb-0">
+      <div className="flex flex-col mx-auto px-2 md:px-30 mt-20 lg:px-60 md:mt-15">
         <div className="">
           <h2 className="font-bold text-2xl text-white">{label}.creator</h2>
           {next == 0 ? (
@@ -1175,7 +1099,9 @@ const Register = () => {
                     setLifetime(!lifetime)
                   }}
                 >
-                  Or would you like a lifetime registration?
+                  {!lifetime
+                    ? 'Would you like a lifetime registration?'
+                    : 'Or Pick By Years/Date?'}
                 </span>
               </p>
               <div>
@@ -1209,7 +1135,10 @@ const Register = () => {
                       <div className="flex">
                         {date ? (
                           <div className="text-sm flex font-semibold text-gray-400 grow-1">
-                            {years} year{years > 1 ? 's' : ''} registration
+                            {lifetime
+                              ? 'Lifetime'
+                              : `${years} years ${years > 1 ? 's' : ''}`}{' '}
+                            registration
                           </div>
                         ) : (
                           <div className="text-sm flex font-semibold text-gray-400 grow-1">
@@ -1431,29 +1360,33 @@ const Register = () => {
                   reverse={isPrimary}
                   price={Number(estimateUsd) + Number(price.usd)}
                 /> */}
+                {!isDisconnected ? (
+                  <div className="flex gap-4">
+                    <button
+                      className="px-5 py-3 bg-[#FFF700] text-neutral-900 font-semibold mt-5 rounded-xl cursor-pointer hover:bg-[#B3AE00] transition-all duration-300 flex items-center"
+                      onClick={() => {
+                        setNext(1)
+                        setCard(true)
+                      }}
+                      disabled={isLoading}
+                    >
+                      Pay with Fiat
+                    </button>
 
-                <button
-                  className="px-5 py-3 bg-[#FFF700] text-neutral-900 font-semibold mt-5 rounded-xl cursor-pointer hover:bg-[#B3AE00] transition-all duration-300 flex items-center"
-                  onClick={() => {
-                    setNext(1)
-                    setCard(true)
-                  }}
-                  disabled={isLoading}
-                >
-                  Pay with Fiat
-                </button>
-
-                <button
-                  className="px-5 py-3 bg-[#FFF700] text-neutral-900 font-semibold mt-5 rounded-xl cursor-pointer hover:bg-[#B3AE00] transition-all duration-300 flex items-center"
-                  onClick={() => {
-                    setNext(1)
-                  }}
-                  disabled={isLoading}
-                >
-                  Pay with Wallet
-                </button>
+                    <button
+                      className="px-5 py-3 bg-[#FFF700] text-neutral-900 font-semibold mt-5 rounded-xl cursor-pointer hover:bg-[#B3AE00] transition-all duration-300 flex items-center"
+                      onClick={() => {
+                        setNext(1)
+                      }}
+                      disabled={isLoading}
+                    >
+                      Pay with Wallet
+                    </button>
+                  </div>
+                ) : (
+                  <LogInButton setLoggedIn={setLoggedIn} loggedIn={loggedIn}/>
+                )}
               </div>
-              {isLoading && <RegistrationModal message={message} />}
             </div>
           ) : next == 1 ? (
             <SetupModal
@@ -1794,24 +1727,24 @@ const Register = () => {
                   </span>
                 </h2>
               ) : registerhash ? (
-                <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
-                  <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
-                    <h1 className="text-2xl font-bold mb-2">
+                <div className="min-h-screen flex items-center justify-center bg-neutral-800 p-6">
+                  <div className="bg-neutral-900 rounded-2xl shadow-xl p-8 max-w-md w-full text-center text-white">
+                    <h1 className="text-2xl font-bold mb-2 text-white">
                       Congratulations!
                     </h1>
-                    <p className="text-gray-600 mb-6">
+                    <p className="text-neutral-400 mb-6">
                       You are now the owner of{' '}
-                      <span className="text-blue-500 font-semibold">
+                      <span className="text-blue-400 font-semibold">
                         {label}.creator
                       </span>
                     </p>
 
-                    <div className="bg-gradient-to-r from-indigo-400 to-blue-400 rounded-2xl p-10 mb-6 flex flex-col items-center">
+                    <div className="bg-gradient-to-r from-indigo-600 to-blue-500 rounded-2xl p-10 mb-6 flex flex-col items-center">
                       {/* Replace with your actual logo */}
-                      <div className="bg-white rounded-full p-3 mb-4">
+                      <div className="bg-neutral-900 rounded-full p-3 mb-4">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
-                          className="h-8 w-8 text-indigo-500"
+                          className="h-8 w-8 text-white"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -1824,30 +1757,30 @@ const Register = () => {
                           />
                         </svg>
                       </div>
-                      <p className="text-white font-semibold text-lg">
-                        {`${label}.creator`}
-                      </p>
+                      <p className="text-white font-semibold text-lg">{`${label}.creator`}</p>
                     </div>
 
-                    <div className="bg-gray-100 rounded-xl p-4 mb-6 text-sm text-left space-y-3">
+                    <div className="bg-neutral-800 rounded-xl p-4 mb-6 text-sm text-left space-y-3">
                       <div className="flex justify-between">
-                        <span className="text-gray-500">{durationString}</span>
-                        <span className="font-medium">
+                        <span className="text-neutral-400">
+                          {durationString}
+                        </span>
+                        <span className="font-medium text-white">
                           {price.bnb} BNB{' '}
-                          <span className="text-gray-400">{`($${price.usd})`}</span>
+                          <span className="text-neutral-500">{`($${price.usd})`}</span>
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-500">Name expires</span>
+                        <span className="text-neutral-400">Name expires</span>
                         <div className="flex flex-col items-end">
-                          <span className="font-medium">
+                          <span className="font-medium text-white">
                             {dateText?.toLocaleDateString('en-US', {
                               month: 'long',
                               day: 'numeric',
                               year: 'numeric',
                             })}
                           </span>
-                          <button className="text-blue-500 text-xs hover:underline mt-1">
+                          <button className="text-blue-400 text-xs hover:underline mt-1">
                             Set reminder
                           </button>
                         </div>
@@ -1855,10 +1788,16 @@ const Register = () => {
                     </div>
 
                     <div className="flex gap-4">
-                      <button className="bg-white border border-blue-500 text-blue-500 font-semibold py-2 px-4 rounded-lg hover:bg-blue-50">
+                      <button
+                        onClick={() => navigate(`/`)}
+                        className="bg-neutral-800 border border-blue-400 text-blue-400 font-semibold py-2 px-4 rounded-lg hover:bg-neutral-700"
+                      >
                         Register another
                       </button>
-                      <button className="bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-600">
+                      <button
+                        onClick={() => navigate(`/resolve/${label}`)}
+                        className="bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-600"
+                      >
                         View name
                       </button>
                     </div>
@@ -1873,22 +1812,16 @@ const Register = () => {
           )}
         </div>
       </div>
-      <SignIn />
-      <MobileNav />
-    </div>
-  )
-}
-
-type Props = {
-  message: string
-}
-const RegistrationModal = ({ message }: Props) => {
-  return (
-    <div className="fixed inset-0 h-full w-full bg-black/50 flex justify-center items-center z-50">
-      <div className="rounded-xl bg-white w-140 h-100 flex flex-col justify-center items-center">
-        <div className="w-12 h-12 border-4 border-t-transparent border-black rounded-full animate-spin mb-4"></div>
-        <div className="text-black">{message}</div>
-      </div>
+      {loggedIn && (
+        <div>
+          <SignIn loggedIn={loggedIn} setLoggedIn={setLoggedIn} />
+        </div>
+      )}
+      {!loggedIn ? (
+        <MobileNav setLoggedIn={setLoggedIn} loggedIn={loggedIn} />
+      ) : (
+        ''
+      )}
     </div>
   )
 }
@@ -2024,7 +1957,7 @@ const SetupModal = ({
       <div className="mt-5 space-y-3 text-sm">
         <p className="font-semibold">bnb address</p>
         <input
-          value={owner}
+          value={owner ? owner : zeroAddress}
           onChange={handleChange}
           placeholder="0x"
           className="w-full mb-5 p-3 bg-neutral-700 rounded-lg focus:outline-none"

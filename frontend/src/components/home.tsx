@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
-import { useAccount, useReadContract } from 'wagmi'
+import { useReadContract } from 'wagmi'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { CustomConnect } from './connectButton'
-import { MobileNav } from './mobilenav'
-import { IdentificationIcon, MenuIcon } from '@heroicons/react/outline'
 import { constants } from '../constant'
-import LogInButton from './loginButton'
-import SignIn from './Login'
+import { FaSearch } from 'react-icons/fa'
+import { FaXmark } from 'react-icons/fa6'
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from '@/components/ui/carousel'
 
 const abi = [
   {
@@ -32,11 +34,12 @@ const abi = [
 
 export default function Home() {
   const navigate = useNavigate()
-  const { isDisconnected, address, isConnected } = useAccount()
   const [available, setAvailable] = useState('')
   const [search, setSearch] = useState('')
-  const [loggedIn, setLoggedIn] = useState(false)
+  const [recents, setRecents] = useState<string[]>([])
   const [searchParams] = useSearchParams()
+  const [open, setOpen] = useState(false)
+
   const referree = searchParams.get('referree')
   const { data, isPending } = useReadContract({
     address: constants.Controller,
@@ -45,14 +48,38 @@ export default function Home() {
     args: [search],
   })
 
+  useEffect(() => {
+    localStorage.setItem('Referree', referree as string)
+  }, [referree])
+  useEffect(() => {
+    const recent = JSON.parse(localStorage.getItem('Recent') as string)
+    if (recent?.length > 0) {
+      setRecents(recent)
+    }
+  }, [])
   const [showBox, setShowBox] = useState(false)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const boxRef = useRef<HTMLDivElement | null>(null)
+  const modalRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     document.title = `Creator Domains - Get a Domain name with a creator identity`
   }, [])
-
+  const setRecent = (search: string) => {
+    const recent = JSON.parse(localStorage.getItem('Recent') as string)
+    if (recent == null) {
+      localStorage.setItem('Recent', JSON.stringify([search]))
+    } else {
+      recent.push(search)
+      localStorage.setItem('Recent', JSON.stringify(recent))
+    }
+  }
+  const updateRecent = (search: string) => {
+    const index = recents.indexOf(search)
+    const newArray = recents.filter((_, i) => i !== index)
+    setRecents(newArray)
+    localStorage.setItem('Recent', JSON.stringify(newArray))
+  }
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -86,7 +113,7 @@ export default function Home() {
   }, [search, isPending, data])
   const handleChange = (e: any) => {
     e.preventDefault()
-    setSearch(e.target.value.toLowerCase())
+    setSearch(e.target.value.toLowerCase().trim())
     if (e.target.value.length > 0) {
       setShowBox(true)
     } else {
@@ -97,93 +124,159 @@ export default function Home() {
   const route = () => {
     if (available == 'Available') {
       if (referree) {
+        setRecent(search)
         navigate(`/register/${search}/?referree=${referree}`)
       } else {
+        setRecent(search)
         navigate(`/register/${search}/`)
       }
     } else if (available == 'Registered') {
+      setRecent(search)
       navigate(`/resolve/${search}`)
     }
   }
+
+  const handleClickOutside = (event: MouseEvent) => {
+    if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+      setOpen(false)
+    }
+  }
+
+  useEffect(() => {
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [open])
+
   return (
-    <div className="text-white flex flex-col items-center pb-15 md:pb-0">
-      <iframe
-        src="https://localhost:5174/sync"
-        title="auth-session-sync"
-        style={{ display: 'none' }}
-      />
+    <div className="text-white flex flex-col items-center pb-30 md:pb-0">
       {/* Header */}
-      <header className="w-full flex justify-between items-center px-4 md:px-10 mx-auto">
-        <div className="text-xl font-bold text-[#FFB000]">CreatorNames</div>
-        <div className="flex items-center md:space-x-6">
-          {!isDisconnected && isConnected && address && (
-            <div
-              className="text-gray-400 font-bold hidden md:flex items-center hover:text-white duration-200 cursor-pointer max-w-max gap-1 flex-nowrap"
-              onClick={() => navigate(`/mynames`)}
-            >
-              <IdentificationIcon className="w-7 h-7 flex-shrink-0" />
-              <span className="w-full inline-flex max-w-max"> My Names </span>
-            </div>
-          )}
-          <MenuIcon className="h-5 w-5 text-gray-400 font-bold" />
-          <div className="hidden md:flex">
-            {' '}
-            {isConnected ? (
-              <CustomConnect />
-            ) : (
-              <LogInButton setLoggedIn={setLoggedIn} />
-            )}
-          </div>
-        </div>
-      </header>
 
       {/* Hero Section */}
-      <main className="text-center mt-35 md:mt-30">
+      <main className="text-center mt-20 md:mt-42">
         <h1 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-[#FFF700] to-orange-400 text-transparent bg-clip-text">
-          Your creator username
+          Your .creator username
         </h1>
         <p className="mt-4 text-gray-400 text-md md:text-lg  max-w-xl mx-auto">
-          Your Creator Identity accross all web3 platforms. Get a creator domain
-          name by searching for the name in the search bar below
+          Your digital identity accross all web3 platforms. Search your domain
+          name below and make it yours.
         </p>
 
         {/* Search Bar */}
         <div className="mt-10 relative">
-          <input
-            ref={inputRef}
-            type="text"
-            placeholder="Search for a name"
-            onChange={handleChange}
-            className="w-80 md:w-96 px-6 py-4 text-xl rounded-xl bg-gray-900 font-semibold text-white border border-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <div
+            onClick={() => {
+              setOpen(true)
+            }}
+            className="w-80 md:w-96 pl-6 pr-1 py-1 text-xl text-left flex mx-auto items-center rounded-xl bg-gray-900 font-semibold text-gray-500 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500  cursor-pointer"
+          >
+            <div className="flex grow-1 py-3 "> Search For A Name </div>
+            <div className="flex items-center bg-[#FFB000] p-4 rounded-xl">
+              <FaSearch className="text-black" />
+            </div>
+          </div>
 
           {/* Search Results Popup */}
-          <div
-            ref={boxRef}
-            className={`absolute left-1/2 transform -translate-x-1/2 mt-2 w-80 md:w-96 bg-gray-800 border border-gray-700 rounded-xl shadow-lg text-left z-10 transform origin-top
+          {open && (
+            <div className="bg-black/45 fixed min-h-screen inset-0 flex items-center justify-center p-5 z-10">
+              <div
+                ref={modalRef}
+                className="bg-black/95 h-100 w-200 bg-cover bg-center p-5 rounded-2xl"
+              >
+                <div className="w-full pl-6 py-1 text-xl text-left flex items-center rounded-xl bg-gray-900 font-semibold text-white border border-gray-700 focus:outline-none cursor-pointer">
+                  <input
+                    ref={inputRef}
+                    placeholder="Search For A Name"
+                    onChange={handleChange}
+                    value={search}
+                    className="font-semibold py-3 text-white placeholder-gray-500 flex grow-1 focus:outline-none cursor-pointer"
+                  />
+                  <div className="flex items-center bg-[#FFB000] p-4 mr-1 rounded-xl">
+                    <FaSearch className="text-black" />
+                  </div>
+                </div>
+                <div className="text-left p-5 text-sm md:text-md text-gray-700 flex items-center ">
+                  Recent Searches{' '}
+                  <div className="group cursor-pointer flex">
+                    {recents.map((item, idx) => (
+                      <div className="ml-5 rounded-full bg-[#FFB000] px-5 py-2 text-black flex items-center">
+                        <div
+                          key={idx}
+                          className=""
+                          onClick={() => {
+                            setSearch(item)
+                            setShowBox(true)
+                          }}
+                        >
+                          {item}
+                        </div>
+                        <div className=" group-hover:ml-3 transition-opacity opacity-0 invisible group-hover:visible group-hover:opacity-100 duration-300 flex">
+                          <FaXmark onClick={() => updateRecent(item)} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div
+                  ref={boxRef}
+                  className={`w-full bg-gray-800 border border-gray-700 rounded-xl shadow-lg text-left z-10 transform origin-top
               transition-transform duration-300 ease-out
               overflow-hidden ${showBox ? 'scale-y-100' : 'scale-y-0'}`}
-          >
-            <ul className="divide-y divide-gray-700">
-              <li
-                className="px-6 py-3 hover:bg-gray-700 font-bold rounded-xl cursor-pointer flex justify-between"
-                onClick={route}
-              >
-                <div>{`${search != '' ? search + '.creator' : ''}`}</div>{' '}
-                {available != '' ? (
-                  <div className="text-[13px] bg-green-800 text-green-300 p-1 rounded-full">
-                    {available}
-                  </div>
-                ) : (
-                  ''
-                )}
-              </li>
-            </ul>
-          </div>
+                >
+                  <ul className="divide-y divide-gray-700">
+                    <li
+                      className="px-6 py-3 hover:bg-gray-700 font-bold rounded-xl cursor-pointer flex justify-between"
+                      onClick={route}
+                    >
+                      <div>{`${search != '' ? search + '.creator' : ''}`}</div>{' '}
+                      {available != '' ? (
+                        <div className="text-[13px] bg-green-800 text-green-300 p-1 rounded-full">
+                          {available}
+                        </div>
+                      ) : (
+                        ''
+                      )}
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="hidden lg:flex space-x-50 items-center w-full">
+          <img src="/dns.png" className="h-90 -mt-30" />
+          <img src="/dns2.png" className="h-60 mt-2" />
+          <img src="/dns3.png" className="h-90 -mt-30" />
+        </div>
+        <div className="block lg:hidden mt-10 w-full flex justify-center">
+          <Carousel className="w-[80%] max-w-md">
+            <CarouselContent>
+              <CarouselItem>
+                <img
+                  src="/dns.png"
+                  className="h-[250px] object-contain mx-auto"
+                />
+              </CarouselItem>
+              <CarouselItem>
+                <img
+                  src="/dns2.png"
+                  className="h-[250px] object-contain mx-auto"
+                />
+              </CarouselItem>
+              <CarouselItem>
+                <img
+                  src="/dns3.png"
+                  className="h-[250px] object-contain mx-auto"
+                />
+              </CarouselItem>
+            </CarouselContent>
+          </Carousel>
         </div>
       </main>
-      {loggedIn ? <SignIn /> : ''}
-      <MobileNav />
     </div>
   )
 }

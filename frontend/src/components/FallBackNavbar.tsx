@@ -1,15 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { useAccount, useReadContract } from 'wagmi'
+import { useReadContract } from 'wagmi'
 import { IdentificationIcon } from '@heroicons/react/outline'
-import { CustomConnect } from './connectButton'
 import { constants } from '../constant'
-import LogInButton from './loginButton'
 import { motion } from 'framer-motion'
 import { BookOpen, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import SignIn from './Login'
-import { MobileNav } from './mobilenav'
 
 const abi = [
   {
@@ -38,7 +34,6 @@ export default function Nav() {
   const [available, setAvailable] = useState('')
   const [search, setSearch] = useState('')
   const [isScrolled, setIsScrolled] = useState(false)
-
   const { data, isPending } = useReadContract({
     address: constants.Controller,
     functionName: 'available',
@@ -47,18 +42,10 @@ export default function Nav() {
   })
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const location = useLocation()
-  const [showOnRoot, setShowOnRoot] = useState(false)
 
   const [showBox, setShowBox] = useState(false)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const boxRef = useRef<HTMLDivElement | null>(null)
-  const { isConnected, isDisconnected } = useAccount()
-  const [loggedIn, setLoggedIn] = useState(isDisconnected)
-  useEffect(() => {
-    if(location.pathname !== '/'){
-      setLoggedIn(isDisconnected)
-    }
-  }, [])
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20)
@@ -188,7 +175,7 @@ export default function Nav() {
         <div className="hidden md:flex items-center gap-7">
           <div
             className="text-gray-200 hover:text-yellow-400 font-semibold hidden md:flex items-center duration-200 cursor-pointer max-w-max gap-3 flex-nowrap"
-            onClick={() => navigate(`/mynames`)}
+            onClick={() => navigate(`/`)}
           >
             <IdentificationIcon className="w-7 h-7 flex-shrink-0" />
             <span className="w-full inline-flex max-w-max"> My Names</span>
@@ -206,7 +193,7 @@ export default function Nav() {
             ) : (
               <NavLink
                 key={link.label}
-                to={link.to as string}
+                to={'/'}
                 className={({ isActive }) =>
                   `text-gray-200 hover:text-yellow-400 transition-colors duration-200 font-semibold ${
                     isActive ? activeLinkClasses : ''
@@ -225,18 +212,6 @@ export default function Nav() {
             <BookOpen className="w-4 h-4 mr-2" />
             View Courses
           </a>
-          <div className="hidden md:flex -ml-4">
-            {' '}
-            {isConnected ? (
-              <CustomConnect />
-            ) : (
-              <LogInButton
-                setLoggedIn={setLoggedIn}
-                loggedIn={loggedIn}
-                setShowOnRoot={setShowOnRoot}
-              />
-            )}
-          </div>
         </div>
         <div className="md:hidden">
           <Button
@@ -269,7 +244,7 @@ export default function Nav() {
           <div className="flex flex-col items-center space-y-4">
             <div
               className="font-semibold flex items-center text-gray-200 hover:text-yellow-400 duration-200 cursor-pointer max-w-max gap-3 flex-nowrap"
-              onClick={() => navigate(`/mynames`)}
+              onClick={() => navigate(`/`)}
             >
               <IdentificationIcon className="w-7 h-7 flex-shrink-0" />
               <span className="w-full inline-flex max-w-max"> My Names</span>
@@ -277,7 +252,7 @@ export default function Nav() {
             {navLinks.map((link) => (
               <NavLink
                 key={link.label}
-                to={link.to as string}
+                to={'/'}
                 className={({ isActive }) =>
                   `text-gray-200 hover:text-yellow-400 transition-colors duration-200 font-semibold ${
                     isActive ? activeLinkClasses : ''
@@ -300,16 +275,6 @@ export default function Nav() {
             </a>
           </div>
         </motion.div>
-      )}
-      {loggedIn && (location.pathname !== '/' || showOnRoot) && (
-        <div>
-          <SignIn loggedIn={loggedIn} setLoggedIn={setLoggedIn} />
-        </div>
-      )}
-      {!loggedIn ? (
-        <MobileNav setLoggedIn={setLoggedIn} loggedIn={loggedIn} />
-      ) : (
-        ''
       )}
     </motion.nav>
   )

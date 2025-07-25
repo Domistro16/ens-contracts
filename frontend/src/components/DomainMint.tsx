@@ -5,6 +5,7 @@ import {
   FlutterwaveConfig,
   FlutterWaveResponse,
 } from 'flutterwave-react-v3/dist/types'
+import { useNavigate } from 'react-router-dom'
 
 type RegisterParams = {
   domain: string
@@ -16,7 +17,7 @@ type RegisterParams = {
   lifetime: boolean
   referree: string
 }
-  
+
 type Props = {
   registerparams: RegisterParams
   userEmail: string
@@ -28,12 +29,12 @@ export const DomainMint: React.FC<Props> = ({
   registerparams,
   userEmail,
   currency,
-  walletAddress
+  walletAddress,
 }) => {
   const [loading, setLoading] = useState(true)
   const [intent, setIntent] = useState<PaymentIntent | null>(null)
   const [error, setError] = useState<string | null>(null)
-
+  const navigate = useNavigate()
   const duration = registerparams.duration
 
   useEffect(() => {
@@ -95,6 +96,7 @@ export const DomainMint: React.FC<Props> = ({
         alert('Payment not completed.')
       }
       closePaymentModal()
+      navigate('/')
       // optionally: show a toast that “Payment submitted — awaiting mint”
     },
     onClose: () => {
@@ -102,5 +104,10 @@ export const DomainMint: React.FC<Props> = ({
     },
   }
 
-  return <FlutterWaveButton {...fwConfig} className='bg-[#FFB000] p-2 rounded-xl font-semibold cursor-pointer'/>
+  return (
+    <FlutterWaveButton
+      {...fwConfig}
+      className="bg-[#FFB000] p-2 rounded-xl font-semibold cursor-pointer"
+    />
+  )
 }

@@ -36,7 +36,7 @@ export function WalletModal({
       if (iframe.contentWindow) {
         iframe.contentWindow.postMessage(
           JSON.stringify({ type: 'CLEAR_SESSION' }),
-          'http://localhost:5174',
+          'https://auth.level3labs.fun',
         )
       }
     }
@@ -47,7 +47,7 @@ export function WalletModal({
     <>
       <iframe
         ref={authFrameRef}
-        src="http://localhost:5174/sync"
+        src="https://auth.level3labs.fun/"
         style={{ display: 'none' }}
         title="auth-sync"
       />

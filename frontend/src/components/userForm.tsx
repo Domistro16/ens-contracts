@@ -40,7 +40,7 @@ const currencies = [
 
 export default function UserForm({ address, registerParams }: UserFormProps) {
   const [formData, setFormData] = useState<FormData>({
-    userEmail: 'desmondesih@gmail.com',
+    userEmail: '',
     currency: 'NGN',
     walletAddress: address,
   })
@@ -76,6 +76,7 @@ export default function UserForm({ address, registerParams }: UserFormProps) {
               type="email"
               value={formData.userEmail}
               onChange={handleChange}
+              placeholder="mariagarcia@gmail.com"
               className="border rounded p-2 border-black focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
             />
           </div>
@@ -94,7 +95,7 @@ export default function UserForm({ address, registerParams }: UserFormProps) {
                 <option key={c.country} value={c.currency}>
                   {c.country} ({c.currency})
                 </option>
-))}
+              ))}
             </select>
           </div>
           <div className="flex justify-end mt-4">
