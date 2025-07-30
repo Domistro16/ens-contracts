@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { getDefaultConfig } from '@rainbow-me/rainbowkit'
 import { bscTestnet } from 'wagmi/chains'
 import { WagmiProvider } from 'wagmi'
+import { MobileNav } from './components/mobilenavcopy'
 import FallBackNavbar from './components/FallBackNavbar'
 
 function FallBack() {
@@ -24,6 +25,7 @@ function FallBack() {
           <RainbowKitProvider>
             <BrowserRouter>
               <FallBackNavbar />
+              <MobileNav />
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/register/:label" element={<Register />} />

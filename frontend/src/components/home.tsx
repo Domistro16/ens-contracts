@@ -70,6 +70,9 @@ export default function Home() {
     if (recent == null) {
       localStorage.setItem('Recent', JSON.stringify([search]))
     } else {
+      if (recent.includes(search)) {
+        return
+      }
       recent.push(search)
       localStorage.setItem('Recent', JSON.stringify(recent))
     }
@@ -184,25 +187,29 @@ export default function Home() {
             <div className="bg-black/45 fixed min-h-screen inset-0 flex items-center justify-center p-5 z-10">
               <div
                 ref={modalRef}
-                className="bg-black/95 h-100 w-200 bg-cover bg-center p-5 rounded-2xl"
+                className="bg-black/95 h-100 w-[100%] md:w-200 p-5 rounded-2xl"
               >
-                <div className="w-full pl-6 py-1 text-xl text-left flex items-center rounded-xl bg-gray-900 font-semibold text-white border border-gray-700 focus:outline-none cursor-pointer">
+                <div className="pl-6 py-1 text-xl w-[100%] text-left flex items-center rounded-xl bg-gray-900 font-semibold text-white border border-gray-700 focus:outline-none cursor-pointer">
                   <input
                     ref={inputRef}
                     placeholder="Search For A Name"
                     onChange={handleChange}
                     value={search}
-                    className="font-semibold py-3 text-white placeholder-gray-500 flex grow-1 focus:outline-none cursor-pointer"
+                    className="font-semibold py-3 text-white w-full placeholder-gray-500 flex grow-1 focus:outline-none cursor-pointer"
                   />
-                  <div className="flex items-center bg-[#FFB000] p-4 mr-1 rounded-xl">
+                  <button className="flex items-center bg-[#FFB000] p-4 rounded-xl" onClick={route}>
                     <FaSearch className="text-black" />
-                  </div>
+                  </button>
                 </div>
-                <div className="text-left p-5 text-sm md:text-md text-gray-700 flex items-center ">
-                  Recent Searches{' '}
-                  <div className="group cursor-pointer flex">
+                <div className="text-left mt-5 text-sm text-gray-700 flex md:items-center">
+                  Recents
+                  <div className="cursor-pointer flex flex-wrap ml-2 gap-3">
                     {recents.map((item, idx) => (
-                      <div className="ml-5 rounded-full bg-[#FFB000] px-5 py-2 text-black flex items-center">
+                      <div
+                        className={`group ${
+                          idx > 0 ? 'md:mt-0' : ''
+                        } rounded-full bg-[#FFB000] px-5 py-2 text-black flex items-center text-[12px] md:text-md hover:bg-[#FFB000]/80 transition-all duration-300 cursor-pointer`}
+                      >
                         <div
                           key={idx}
                           className=""
@@ -213,7 +220,7 @@ export default function Home() {
                         >
                           {item}
                         </div>
-                        <div className=" group-hover:ml-3 transition-opacity opacity-0 invisible group-hover:visible group-hover:opacity-100 duration-300 flex">
+                        <div className="group-hover:ml-3 transition-opacity opacity-0 invisible group-hover:visible group-hover:opacity-100 duration-300 flex">
                           <FaXmark onClick={() => updateRecent(item)} />
                         </div>
                       </div>
@@ -223,7 +230,7 @@ export default function Home() {
 
                 <div
                   ref={boxRef}
-                  className={`w-full bg-gray-800 border border-gray-700 rounded-xl shadow-lg text-left z-10 transform origin-top
+                  className={`w-full mt-2 bg-gray-800 border border-gray-700 rounded-xl shadow-lg text-left z-10 transform origin-top
               transition-transform duration-300 ease-out
               overflow-hidden ${showBox ? 'scale-y-100' : 'scale-y-0'}`}
                 >

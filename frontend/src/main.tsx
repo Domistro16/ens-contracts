@@ -1,22 +1,17 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App.tsx'
 import './index.css'
-import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
-import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/client'
+import { getDefaultConfig, RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { type Web3AuthContextConfig } from '@web3auth/modal/react'
 import { web3AuthOptions } from './web3auth.ts'
 import Fallback from './Fallback.tsx'
+import { bscTestnet } from 'wagmi/chains'
+import type { ApolloClient } from '@apollo/client'
 
 // Initialize Apollo Client
-export const client = new ApolloClient({
-  link: new HttpLink({
-    uri: 'https://api.studio.thegraph.com/query/112443/creator-subgraph/v0.0.1',
-  }),
-  cache: new InMemoryCache(),
-})
 
 const ApolloProvider = React.lazy(() =>
   import('@apollo/client').then((mod) => ({
@@ -29,17 +24,35 @@ const Web3AuthProvider = React.lazy(() =>
     default: mod.Web3AuthProvider,
   })),
 )
+
 const WagmiProvider = React.lazy(() =>
   import('@web3auth/modal/react/wagmi').then((mod) => ({
     default: mod.WagmiProvider,
   })),
 )
 
+async function createApolloClient() {
+  const { ApolloClient, HttpLink, InMemoryCache } = await import(
+    '@apollo/client'
+  )
+
+  return new ApolloClient({
+    link: new HttpLink({
+      uri: 'https://api.studio.thegraph.com/query/112443/creator-subgraph/v0.0.1',
+    }),
+    cache: new InMemoryCache(),
+  })
+}
 function BootStrap() {
   const queryClient = new QueryClient()
   const web3authContextConfig: Web3AuthContextConfig = {
     web3AuthOptions: web3AuthOptions as any,
   }
+  const config = getDefaultConfig({
+    appName: 'Level3Labs',
+    projectId: 'YOUR_PROJECT_ID',
+    chains: [bscTestnet],
+  })
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
   useEffect(() => {
@@ -69,6 +82,12 @@ function BootStrap() {
     return () => window.removeEventListener('message', onMessage)
   }, [])
 
+  const [client, setClient] = useState<ApolloClient<any> | null>(null)
+
+  useEffect(() => {
+    createApolloClient().then(setClient)
+  }, [])
+
   return (
     <>
       <iframe
@@ -80,12 +99,14 @@ function BootStrap() {
       <React.Suspense fallback={<Fallback />}>
         <Web3AuthProvider config={web3authContextConfig}>
           <QueryClientProvider client={queryClient}>
-            <WagmiProvider>
+            <WagmiProvider config={config}>
               <RainbowKitProvider>
                 <BrowserRouter>
-                  <ApolloProvider client={client}>
-                    <App />
-                  </ApolloProvider>
+                  {client && (
+                    <ApolloProvider client={client}>
+                      <App />
+                    </ApolloProvider>
+                  )}
                 </BrowserRouter>
               </RainbowKitProvider>
             </WagmiProvider>

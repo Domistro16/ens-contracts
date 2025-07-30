@@ -306,8 +306,8 @@ export default function Nav() {
           <SignIn loggedIn={loggedIn} setLoggedIn={setLoggedIn} />
         </div>
       )}
-      {!loggedIn ? (
-        <MobileNav setLoggedIn={setLoggedIn} loggedIn={loggedIn} />
+      {loggedIn ? (
+        <MobileNav  />
       ) : (
         ''
       )}

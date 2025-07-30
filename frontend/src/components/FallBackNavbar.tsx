@@ -212,6 +212,12 @@ export default function Nav() {
             <BookOpen className="w-4 h-4 mr-2" />
             View Courses
           </a>
+          <button
+            className="bg-blue-800 p-8 py-[8px] font-bold rounded-full hover:scale-105 duration-200 cursor-pointer"
+            type="button"
+          >
+            <div className="w-6 h-6 border-4 border-yellow-300 border-t-yellow-500 rounded-full animate-spin" />
+          </button>
         </div>
         <div className="md:hidden">
           <Button

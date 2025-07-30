@@ -6,6 +6,7 @@ import Names from './components/names'
 import { useWeb3Auth } from '@web3auth/modal/react'
 import { useEffect } from 'react'
 import Nav from './components/nav'
+import { MobileNav } from './components/mobilenav'
 
 function App() {
   const { status } = useWeb3Auth()
@@ -62,13 +63,14 @@ function App() {
 
   return (
     <>
-    <Nav />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/register/:label" element={<Register />} />
-          <Route path="/resolve/:label" element={<Resolve />} />
-          <Route path="/mynames" element={<Names />} />
-        </Routes>
+      <Nav />
+      <MobileNav />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/register/:label" element={<Register />} />
+        <Route path="/resolve/:label" element={<Resolve />} />
+        <Route path="/mynames" element={<Names />} />
+      </Routes>
     </>
   )
 }

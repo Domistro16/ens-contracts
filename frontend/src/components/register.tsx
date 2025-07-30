@@ -27,7 +27,6 @@ import { FaPlus, FaTrash } from 'react-icons/fa6'
 import { useENSName } from '../hooks/getPrimaryName'
 import LogInButton from './loginButton'
 import SignIn from './Login'
-import { MobileNav } from './mobilenav'
 
 type RegisterParams = {
   domain: string
@@ -518,7 +517,6 @@ const Register = () => {
   const [wait, setWait] = useState(60)
   const [done, setDone] = useState(false)
   const [lifetime, setLifetime] = useState(false)
-
   const { data: latest, isPending: loading } = useReadContract({
     address: constants.Controller, // Replace with actual contract address
     abi: Controller as any, // Replace with actual ABI
@@ -1816,11 +1814,6 @@ const Register = () => {
         <div>
           <SignIn loggedIn={loggedIn} setLoggedIn={setLoggedIn} />
         </div>
-      )}
-      {!loggedIn ? (
-        <MobileNav setLoggedIn={setLoggedIn} loggedIn={loggedIn} />
-      ) : (
-        ''
       )}
     </div>
   )

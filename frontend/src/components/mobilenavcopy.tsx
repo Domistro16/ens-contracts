@@ -1,15 +1,9 @@
-import { CustomConnect } from './connectButton'
 import { useAccount } from 'wagmi'
 import { IdentificationIcon, SearchIcon } from '@heroicons/react/outline' // or any icon you like
 import { useNavigate } from 'react-router-dom'
-import LogInButton from './loginButton'
-import SignIn from './Login'
-import { useState } from 'react'
 export const MobileNav = () => {
   const { isConnected } = useAccount()
   const navigate = useNavigate()
-  const [loggedIn, setLoggedIn] = useState(!isConnected)
-  const [showOnRoot, setShowOnRoot] = useState(false)
   return (
     <div>
       <div
@@ -44,21 +38,13 @@ export const MobileNav = () => {
 
         {/* Your custom connect button */}
 
-        {isConnected ? (
-          <CustomConnect />
-        ) : (
-          <LogInButton
-            setLoggedIn={setLoggedIn}
-            loggedIn={loggedIn}
-            setShowOnRoot={setShowOnRoot}
-          />
-        )}
+        <button
+          className="bg-blue-800 p-8 py-[8px] font-bold rounded-full hover:scale-105 duration-200 cursor-pointer"
+          type="button"
+        >
+          <div className="w-6 h-6 border-4 border-yellow-300 border-t-yellow-500 rounded-full animate-spin" />
+        </button>
       </div>
-      {loggedIn && (location.pathname !== '/' || showOnRoot) && (
-        <div>
-          <SignIn loggedIn={loggedIn} setLoggedIn={setLoggedIn} />
-        </div>
-      )}
     </div>
   )
 }

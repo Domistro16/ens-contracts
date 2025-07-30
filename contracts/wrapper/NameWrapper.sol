@@ -46,7 +46,7 @@ contract NameWrapper is
     mapping(bytes32 => bytes) public names;
     string public constant name = "NameWrapper";
 
-    uint64 private constant GRACE_PERIOD = 90 days;
+    uint64 private constant GRACE_PERIOD = 30 days;
     bytes32 private constant CRE8OR_NODE =
         0x4f2c0fc83d175c423d55ddf2fef3b9b38af479fac3adb42afb02778397a27454;
 
@@ -82,7 +82,7 @@ contract NameWrapper is
             MAX_EXPIRY
         );
         names[ROOT_NODE] = "\x00";
-        names[CRE8OR_NODE] = "\x06cre8or\x00";
+        names[CRE8OR_NODE] = "\x07creator\x00";
     }
 
     function supportsInterface(

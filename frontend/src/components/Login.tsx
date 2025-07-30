@@ -1,5 +1,5 @@
 import { FaDiscord, FaFacebookF, FaGoogle, FaXTwitter } from 'react-icons/fa6'
-import { useWeb3AuthConnect } from '@web3auth/modal/react'
+import { useWeb3Auth, useWeb3AuthConnect } from '@web3auth/modal/react'
 import { WALLET_CONNECTORS, AUTH_CONNECTION } from '@web3auth/modal'
 import React, { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
@@ -17,6 +17,7 @@ export default function SignIn({
   const [available, setAvailable] = useState(false)
   const modalRef = useRef<HTMLDivElement>(null)
   const location = useLocation()
+  const { status } = useWeb3Auth()
 
   const handleClickOutside = (event: MouseEvent) => {
     console.log('b')
@@ -81,7 +82,11 @@ export default function SignIn({
       authConnection: AUTH_CONNECTION.DISCORD,
     })
   }
-  const loginWithFacebook = () => {}
+  const loginWithFacebook = () => {
+    connectTo(WALLET_CONNECTORS.AUTH, {
+      authConnection: AUTH_CONNECTION.FACEBOOK,
+    })
+  }
 
   const socialButtons = [
     {
@@ -99,6 +104,9 @@ export default function SignIn({
   ]
 
   console.log(error)
+  if (status === 'connecting' || status === 'not_ready') {
+    return ''
+  }
   return (
     <div>
       <iframe
@@ -115,7 +123,7 @@ export default function SignIn({
         {/* Modal container */}
         <div
           ref={modalRef}
-          className="w-11/12 max-w-6xl h-[74%] md:h-[90%] opacity-85 bg-[url('/bg.png')] bg-black rounded-2xl shadow-lg overflow-auto md:overflow-hidden flex flex-col md:flex-row mx-auto pb-20"
+          className="w-11/12 max-w-6xl h-[74%] md:h-[90%] opacity-85 bg-[url('/bg.png')] rounded-2xl shadow-lg overflow-auto md:overflow-hidden flex flex-col md:flex-row mx-auto pb-20 border-[0.5px] border-[#FFB000]"
         >
           {/* Left Column */}
           <div className="w-full md:w-1/2 border-b md:border-b-0 md:border-r border-white/10 p-6 md:p-10 flex flex-col">
@@ -196,7 +204,7 @@ export default function SignIn({
             >
               Connect Wallet
             </button>
-            <span className="inline-block bg-white/10 rounded-full px-4 py-1 text-sm mb-4">
+            <span className="inline-block bg-white/10 rounded-full px-4 py-1 text-sm mb-4 mt-4">
               Suggested
             </span>
             <h2 className="text-lg md:text-xl font-semibold mb-2">
