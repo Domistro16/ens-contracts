@@ -203,16 +203,17 @@ contract ReferralController is Ownable {
         }
     }
 
-    function withdrawAllNativeEarnings(uint256 batch) external onlyOwner {
-        for (uint256 i = 0; i < batch; ) {
+    function withdrawAllNativeEarnings(uint256 batch, uint256 start) external onlyOwner {
+        for (uint256 i = start; i < batch; ) {
             bytes32 code = referralCodes[batch];
             if (block.timestamp < expirydates[code]) {
                 address referrer = referrees[code];
-                uint256 earnings = nativeEarnings[referrer];
+                uint256 earnings = snapshotNativeEarnings[referrer];
                 if (earnings > 0) {
                     (bool ok, ) = payable(referrer).call{value: earnings}("");
                     require(ok, "Payment failed");
                     nativeEarnings[referrer] = 0;
+                    snapshotNativeEarnings[referrer] = 0;
                 }
             }
             unchecked {
@@ -230,20 +231,23 @@ contract ReferralController is Ownable {
 
     function withdrawAllTokenEarnings(
         address[] memory tokenAddresses,
-        uint256 batch
+        uint256 batch,
+        uint256 start
     ) external onlyOwner {
         uint256 tokenLength = tokenAddresses.length;
         for (uint256 j = 0; j < tokenLength; ) {
             address tokenAddress = tokenAddresses[j];
-            for (uint256 i = 0; i < batch; ) {
+            for (uint256 i = start; i < batch;) {
                 bytes32 code = referralCodes[i];
                 if (block.timestamp < expirydates[code]) {
                     address referrer = referrees[code];
-                    uint256 earnings = tokenEarnings[referrer][tokenAddress];
+                    uint256 earnings = snapshotTokenEarnings[referrer][
+                        tokenAddress
+                    ];
                     require(earnings > 0, "No earnings to withdraw");
                     if (earnings > 0) {
-                        // Assuming the token follows ERC20 standard
                         IERC20(tokenAddress).safeTransfer(referrer, earnings);
+                        snapshotTokenEarnings[referrer][tokenAddress] = 0;
                         tokenEarnings[referrer][tokenAddress] = 0;
                     }
                 }
@@ -277,6 +281,7 @@ contract ReferralController is Ownable {
     function getCodes() external view returns (uint256) {
         return referralCodes.length;
     }
+
     function updateReferralCode(
         bytes32 code,
         uint256 newExpiry
@@ -321,9 +326,7 @@ contract ReferralController is Ownable {
         return address(this).balance;
     }
 
-    function tokenBalance(
-        address tokenAddress
-    ) public view returns (uint256) {
+    function tokenBalance(address tokenAddress) public view returns (uint256) {
         return IERC20(tokenAddress).balanceOf(address(this));
     }
 
@@ -353,6 +356,6 @@ contract ReferralController is Ownable {
     }
 
     function getSnapshotEarnings() public view returns (uint256) {
-        return snapshotUntrackedEarnings;
+        return (snapshotUntrackedEarnings);
     }
 }

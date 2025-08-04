@@ -49,7 +49,7 @@ export default function Home() {
   })
 
   useEffect(() => {
-    localStorage.setItem('Referree', referree as string)
+    localStorage.setItem('Referree', referree || '')
   }, [referree])
   useEffect(() => {
     const recent = JSON.parse(localStorage.getItem('Recent') as string)

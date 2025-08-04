@@ -1,12 +1,11 @@
+import { IProvider } from '@web3auth/modal'
 import { useWeb3Auth } from '@web3auth/modal/react'
 
 export default function LogInButton({
-  setLoggedIn,
-  loggedIn,
+  connect,
   setShowOnRoot,
 }: {
-  setLoggedIn: React.Dispatch<React.SetStateAction<boolean>> | null
-  loggedIn: boolean
+  connect: () => Promise<IProvider | null>
   setShowOnRoot?: React.Dispatch<React.SetStateAction<boolean>>
 }) {
   const { status } = useWeb3Auth()
@@ -26,8 +25,8 @@ export default function LogInButton({
       type="button"
       onClick={
         () => {
-          setLoggedIn && setLoggedIn(!loggedIn)
-          if (location.pathname === '/') {
+          connect();
+          if (location.pathname !== '/') {
             setShowOnRoot && setShowOnRoot(true)
           }
         } /* connect() */

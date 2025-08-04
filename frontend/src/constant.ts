@@ -10,6 +10,7 @@ export const constants = {
   BulkRenewal: '0xB3aad8586b4796960060d0FaCBA8e001Ec7ecB7d' as `0x${string}`,
   PublicResolver: '0xe3b0181a7c7F5fA0dE6894062Ae2f15bFb41E283' as `0x${string}`,
   Referral: '0xf5F507D2a48B62082e3440B185f9e10a47156554' as `0x${string}`,
+  Course: '0x2967A3EDA537630Fb4eb144Fa02f5081457506BE' as `0x${string}`,
 }
 
 export interface Params {

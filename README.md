@@ -122,9 +122,13 @@ The minimum delay and expiry for commitments exist to prevent miners or other us
 
 SimplePriceOracle is a trivial implementation of the pricing oracle for the EthRegistrarController that always returns a fixed price per domain per year, determined by the contract owner.
 
-### StablePriceOracle
+### TokenPriceOracle
 
-StablePriceOracle is a price oracle implementation that allows the contract owner to specify pricing based on the length of a name, and uses a fiat currency oracle to set a fixed price in fiat per name.
+TokenPriceOracle is a price oracle implementation that allows the contract owner to specify pricing based on the length of a name. It uses a fiat currency oracle to set a fixed price per name and checks the equivalent value in the native chain currency (e.g., BNB), CAKE, and USD1.
+
+### ReferralController
+
+The ReferralController contract manages the referral system by allocating a portion of the payment to the referrer after each token mint. It also tracks and calculates the total number of successful referrals made by each address.
 
 ## Resolvers
 
@@ -150,7 +154,7 @@ This repo runs a husky precommit to prettify all contract files to keep them con
 ### How to setup
 
 ```
-git clone https://github.com/ensdomains/ens-contracts
+git clone https://github.com/Level3AI-Hub/ens-contracts
 cd ens-contracts
 bun i
 ```

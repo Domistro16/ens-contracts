@@ -25,8 +25,6 @@ import UserForm from './userForm'
 import axios from 'axios'
 import { FaPlus, FaTrash } from 'react-icons/fa6'
 import { useENSName } from '../hooks/getPrimaryName'
-import LogInButton from './loginButton'
-import SignIn from './Login'
 
 type RegisterParams = {
   domain: string
@@ -460,7 +458,6 @@ const Register = () => {
   const now = useMemo(() => new Date(), [])
 
   const { address, isDisconnected } = useAccount()
-  const [loggedIn, setLoggedIn] = useState(isDisconnected)
   const { name: myName } = useENSName({ owner: address as `0x${string}` })
   const [isPrimary, setIsPrimary] = useState(myName ? false : true)
 
@@ -1382,7 +1379,7 @@ const Register = () => {
                     </button>
                   </div>
                 ) : (
-                  <LogInButton setLoggedIn={setLoggedIn} loggedIn={loggedIn}/>
+                  ''
                 )}
               </div>
             </div>
@@ -1810,11 +1807,6 @@ const Register = () => {
           )}
         </div>
       </div>
-      {loggedIn && (
-        <div>
-          <SignIn loggedIn={loggedIn} setLoggedIn={setLoggedIn} />
-        </div>
-      )}
     </div>
   )
 }

@@ -3,13 +3,27 @@ import { useAccount } from 'wagmi'
 import { IdentificationIcon, SearchIcon } from '@heroicons/react/outline' // or any icon you like
 import { useNavigate } from 'react-router-dom'
 import LogInButton from './loginButton'
-import SignIn from './Login'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useWeb3AuthConnect } from '@web3auth/modal/react'
 export const MobileNav = () => {
   const { isConnected } = useAccount()
   const navigate = useNavigate()
   const [loggedIn, setLoggedIn] = useState(!isConnected)
   const [showOnRoot, setShowOnRoot] = useState(false)
+  const { connect } = useWeb3AuthConnect()
+
+  useEffect(() => {
+    if (location.pathname !== '/') {
+      setLoggedIn(!isConnected)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (loggedIn && (location.pathname !== '/' || showOnRoot)) {
+      connect()
+    }
+  })
+
   return (
     <div>
       <div
@@ -47,18 +61,9 @@ export const MobileNav = () => {
         {isConnected ? (
           <CustomConnect />
         ) : (
-          <LogInButton
-            setLoggedIn={setLoggedIn}
-            loggedIn={loggedIn}
-            setShowOnRoot={setShowOnRoot}
-          />
+          <LogInButton connect={connect} setShowOnRoot={setShowOnRoot} />
         )}
       </div>
-      {loggedIn && (location.pathname !== '/' || showOnRoot) && (
-        <div>
-          <SignIn loggedIn={loggedIn} setLoggedIn={setLoggedIn} />
-        </div>
-      )}
     </div>
   )
 }

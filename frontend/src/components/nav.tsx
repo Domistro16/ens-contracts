@@ -8,8 +8,7 @@ import LogInButton from './loginButton'
 import { motion } from 'framer-motion'
 import { BookOpen, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import SignIn from './Login'
-import { MobileNav } from './mobilenav'
+import { useWeb3AuthConnect } from '@web3auth/modal/react'
 
 const abi = [
   {
@@ -54,8 +53,9 @@ export default function Nav() {
   const boxRef = useRef<HTMLDivElement | null>(null)
   const { isConnected, isDisconnected } = useAccount()
   const [loggedIn, setLoggedIn] = useState(isDisconnected)
+  const { connect } = useWeb3AuthConnect()
   useEffect(() => {
-    if(location.pathname !== '/'){
+    if (location.pathname !== '/') {
       setLoggedIn(isDisconnected)
     }
   }, [])
@@ -72,6 +72,12 @@ export default function Nav() {
   ]
 
   const activeLinkClasses = 'text-yellow-400 font-semibold'
+
+  useEffect(() => {
+    if (loggedIn && (location.pathname !== '/' || showOnRoot)) {
+      connect()
+    }
+  })
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -231,8 +237,7 @@ export default function Nav() {
               <CustomConnect />
             ) : (
               <LogInButton
-                setLoggedIn={setLoggedIn}
-                loggedIn={loggedIn}
+                connect={connect}
                 setShowOnRoot={setShowOnRoot}
               />
             )}
@@ -300,16 +305,6 @@ export default function Nav() {
             </a>
           </div>
         </motion.div>
-      )}
-      {loggedIn && (location.pathname !== '/' || showOnRoot) && (
-        <div>
-          <SignIn loggedIn={loggedIn} setLoggedIn={setLoggedIn} />
-        </div>
-      )}
-      {loggedIn ? (
-        <MobileNav  />
-      ) : (
-        ''
       )}
     </motion.nav>
   )

@@ -22,6 +22,7 @@ import { FaSnapchatGhost, FaGithub } from 'react-icons/fa'
 import { SiBnbchain } from 'react-icons/si'
 import { constants } from '../constant'
 import ReferralProgress from './Refferal'
+import { CourseProgress } from './CourseProgress'
 
 const Referral = [
   {
@@ -518,7 +519,6 @@ const Resolve = () => {
     CANNOT_TRANSFER: 1 << 2, // 4
     CANNOT_SET_RESOLVER: 1 << 3, // 8
     CANNOT_SET_TTL: 1 << 4, // 16
-    CANNOT_CREATE_SUBDOMAIN: 1 << 5, // 32
     CANNOT_APPROVE: 1 << 6, // 64
   } as const
 
@@ -531,7 +531,6 @@ const Resolve = () => {
     canTransfer: !(mask & FUSES.CANNOT_TRANSFER),
     canSetResolver: !(mask & FUSES.CANNOT_SET_RESOLVER),
     canSetTTL: !(mask & FUSES.CANNOT_SET_TTL),
-    canCreateSubdomain: !(mask & FUSES.CANNOT_CREATE_SUBDOMAIN),
     canApprove: !(mask & FUSES.CANNOT_APPROVE),
   }
 
@@ -566,12 +565,6 @@ const Resolve = () => {
       label: 'Set TTL',
       description: 'Change the time-to-live for DNS caches',
       allowed: perms.canSetTTL,
-    },
-    {
-      key: 'createSubdomain',
-      label: 'Create subdomain',
-      description: 'Generate a new subdomain under this name',
-      allowed: perms.canCreateSubdomain,
     },
     {
       key: 'burnFuses',
@@ -631,7 +624,7 @@ const Resolve = () => {
 
   return (
     <div>
-      <div className="flex flex-col mx-auto p-2 mb-5 md:px-30 mt-15 lg:px-60 md:mt-15">
+      <div className="flex flex-col mx-auto p-2 mb-20 md:mb-5 md:px-30 mt-15 lg:px-60 md:mt-15">
         <div className="">
           <h2 className="font-bold text-2xl text-white">
             {label as string}.creator
@@ -692,7 +685,7 @@ const Resolve = () => {
                   className="w-15 h-15 md:w-24 md:h-24 mr-2 "
                 />
                 <div className="ml-1 md:ml-5 flex items-center w-[80%]">
-                  <div className="text-[12px] md:text-2xl font-bold grow-1">
+                  <div className="text-xl md:text-2xl font-bold grow-1">
                     {label}.creator
                     {texts
                       .filter((k) => k.key == 'description')
@@ -711,9 +704,12 @@ const Resolve = () => {
                 </div>
               </div>
               {primaryName == `${label}.creator` ? (
+                <div>
                 <ReferralProgress
                   referrals={(Number(referrals) as number) ?? 0}
                 />
+                <CourseProgress />
+                </div>
               ) : (
                 ''
               )}
