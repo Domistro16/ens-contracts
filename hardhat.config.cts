@@ -183,6 +183,16 @@ const config = {
       },
     ],
   },
+  etherscan: {
+    // Your API key for Etherscan
+    // Obtain one at https://etherscan.io/
+    apiKey: 'HQSWZD76WZNUSSICASNV9UKT38511WIAVZ',
+  },
+  sourcify: {
+    // Disabled by default
+    // Doesn't need an API key
+    enabled: true,
+  },
 } satisfies HardhatUserConfig
 
-export default config;
+export default config

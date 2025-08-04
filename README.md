@@ -1,6 +1,11 @@
-# ENS
+# dns-contracts
 
-[![Build Status](https://travis-ci.org/ensdomains/ens-contracts.svg?branch=master)](https://travis-ci.org/ensdomains/ens-contracts)
+A decentralized naming system on BNB Chain, inspired by ENS, with dynamic token pricing in native currency, CAKE, and USD1, plus a built-in referral system that rewards users for successful mints.
+
+# Live Link
+- [dns.level3labs.fun](https://dns.level3labs.fun)
+
+# ENS
 
 For documentation of the ENS system, see [docs.ens.domains](https://docs.ens.domains/).
 
@@ -83,12 +88,6 @@ Implementation of the reverse registrar responsible for managing reverse resolut
 ### TestRegistrar
 
 Implementation of the `.test` registrar facilitates easy testing of ENS on the Ethereum test networks. Currently deployed on Ropsten network, it provides functionality to instantly claim a domain for test purposes, which expires 28 days after it was claimed.
-
-## EthRegistrar
-
-Implements an [ENS](https://ens.domains/) registrar intended for the .eth TLD.
-
-These contracts were audited by ConsenSys Diligence; the audit report is available [here](https://github.com/ConsenSys/ens-audit-report-2019-02).
 
 ### BaseRegistrar
 
@@ -223,3 +222,4 @@ Certain changes can be released in isolation via cherry-picking, although ideall
 - Code on `staging` and `main` will always be a subset of what is deployed, as smart contracts cannot be undeployed.
 - Release candidates, `staging` and `main` branch are subject to our bug bounty
 - Releases follow semantic versioning and releases should contain a description of changes with developers being the intended audience
+
