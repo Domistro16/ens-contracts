@@ -77,11 +77,11 @@ const config = {
     },
     testnet: {
       url: `https://bsc-testnet-rpc.publicnode.com`,
-      tags: ['test', 'legacy', 'use_root'],
+      tags: ['test', 'use_root'],
       chainId: 97,
       accounts: real_accounts,
     },
-    mainnet: {
+    bsc: {
       url: `https://bsc-dataseed1.binance.org/`,
       tags: ['legacy', 'use_root'],
       chainId: 56,
@@ -93,13 +93,26 @@ const config = {
       chainId: 245022926,
       allowUnlimitedContractSize: false,
       tags: ['test', 'legacy', 'use_root'],
-      gas: 30000000,
+      gas: 50000000,
     },
     neonmainnet: {
       url: 'https://neon-proxy-mainnet.solana.p2p.org',
       accounts: real_accounts,
       chainId: 245022934,
       allowUnlimitedContractSize: false,
+      tags: ['test', 'legacy', 'use_root'],
+    },
+    plasma: {
+      url: 'https://rpc.plasma.to',
+      tags: ['use_root'],
+      accounts: real_accounts,
+      chainId: 9745,
+    },
+    plasmaTestnet: {
+      url: 'https://testnet-rpc.plasma.to',
+      accounts: real_accounts,
+      chainId: 9746,
+      tags: ['legacy', 'use_root', 'test'],
     },
   },
   mocha: {},
@@ -172,8 +185,8 @@ const config = {
     },
     owner: {
       default: 1,
-      56: '0x04A1ceEBdEB45E055772e1cbAd48bb738E7414Fa',
-      97: '0x2A0D7311fA7e9aC2890CFd8219b2dEf0c206E79B',
+      9745: '0x2A0D7311fA7e9aC2890CFd8219b2dEf0c206E79B',
+      56: '0x2A0D7311fA7e9aC2890CFd8219b2dEf0c206E79B',
     },
   },
   external: {

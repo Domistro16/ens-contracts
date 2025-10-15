@@ -28,6 +28,9 @@ export const CustomConnect = () => {
           account &&
           chain &&
           (!authenticationStatus || authenticationStatus === 'authenticated')
+        if (!connected && location.pathname != '/') {
+          openConnectModal()
+        }
         return (
           <div
             {...(!ready && {
@@ -43,18 +46,22 @@ export const CustomConnect = () => {
               if (!connected) {
                 return (
                   <button
-                    className="bg-blue-800 p-3 py-[8px] font-bold rounded-full hover:scale-105 duration-200 cursor-pointer"
-                    onClick={openConnectModal}
+                    className="bg-[#FFB000] text-black p-8 py-[8px] font-bold rounded-full hover:scale-105 duration-200 cursor-pointer"
                     type="button"
+                    onClick={openConnectModal}
                   >
-                    Connect Wallet
+                    Login
                   </button>
                 )
               }
               if (chain.unsupported) {
                 return (
-                  <button onClick={openChainModal} type="button">
-                    Wrong network
+                  <button
+                    onClick={openChainModal}
+                    type="button"
+                    className="bg-neutral-950 p-4 py-[10px] rounded-full cursor-pointer flex gap-2 items-center hover:scale-105 duration-200 font-bold text-red-500"
+                  >
+                    Wrong network!
                   </button>
                 )
               }
@@ -64,22 +71,24 @@ export const CustomConnect = () => {
                   style={{ display: 'flex', gap: 12 }}
                 >
                   <button
-                    className="md:bg-neutral-800 md:p-3 md:py-[8px] rounded-full cursor-pointer flex gap-2 items-center hover:scale-105 duration-200"
+                    className="bg-neutral-900 p-3 py-[8px] rounded-full cursor-pointer flex gap-2 items-center hover:scale-105 duration-200"
                     onClick={() => {
                       setIsOpen(true)
                     }}
                     type="button"
                   >
                     <Avatar
-                      name={name == '' ? account?.address as string : name as string}
+                      name={
+                        name == ''
+                          ? (account?.address as string)
+                          : (name as string)
+                      }
                       className="w-8 h-8"
                     />
-                    {name  ? (
-                      <div className="hidden md:flex">{name as string}</div>
+                    {name ? (
+                      <div className="">{name as string}</div>
                     ) : (
-                      <div className="hidden md:flex">
-                        {account.displayName}
-                      </div>
+                      <div className="">{account.displayName}</div>
                     )}
                   </button>
 

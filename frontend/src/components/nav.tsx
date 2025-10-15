@@ -1,14 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { useAccount, useReadContract } from 'wagmi'
+import { useReadContract } from 'wagmi'
 import { IdentificationIcon } from '@heroicons/react/outline'
-import { CustomConnect } from './connectButton'
+import { CustomConnect } from '@/components/connectButton'
 import { constants } from '../constant'
-import LogInButton from './loginButton'
 import { motion } from 'framer-motion'
 import { BookOpen, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useWeb3AuthConnect } from '@web3auth/modal/react'
 
 const abi = [
   {
@@ -46,19 +44,11 @@ export default function Nav() {
   })
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const location = useLocation()
-  const [showOnRoot, setShowOnRoot] = useState(false)
 
   const [showBox, setShowBox] = useState(false)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const boxRef = useRef<HTMLDivElement | null>(null)
-  const { isConnected, isDisconnected } = useAccount()
-  const [loggedIn, setLoggedIn] = useState(isDisconnected)
-  const { connect } = useWeb3AuthConnect()
-  useEffect(() => {
-    if (location.pathname !== '/') {
-      setLoggedIn(isDisconnected)
-    }
-  }, [])
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20)
@@ -67,17 +57,15 @@ export default function Nav() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
   const navLinks = [
-    { to: '/coming-soon', label: 'Earn', isExternal: false },
-    { href: '', label: '', isExternal: false },
+    { to: '', label: '', isExternal: false },
+    {
+      href: 'https://safuverse.gitbook.io/safuverse-docs/',
+      label: 'Docs',
+      isExternal: true,
+    },
   ]
 
   const activeLinkClasses = 'text-yellow-400 font-semibold'
-
-  useEffect(() => {
-    if (loggedIn && (location.pathname !== '/' || showOnRoot)) {
-      connect()
-    }
-  })
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -132,7 +120,7 @@ export default function Nav() {
       animate={{ opacity: 1, y: 0 }} // Animation to visible state
       transition={{ duration: 0.7, ease: 'easeOut' }} // Animation transition properties
       // Adjusted background color to the specific hex code #141b33
-      className={`fixed top-4 left-0 right-0 max-w-6xl mx-auto z-50 transition-all duration-300 px-1 sm:pl-6 lg:pl-8
+      className={`fixed top-4 left-0 right-0 max-w-6xl mx-auto z-50 transition-all duration-300 px-4 sm:pl-6 lg:pl-8
                   ${
                     isScrolled || mobileMenuOpen
                       ? 'bg-neutral-950 py-2 shadow-xl'
@@ -142,16 +130,16 @@ export default function Nav() {
                  `}
     >
       <div className="flex justify-between items-center h-13">
-        <img
-          src="/Level3.png"
-          className="text-xl font-bold text-[#FFB000] h-10 hidden lg:block"
-          onClick={() => navigate('/')}
-        />
-        <img
-          src="/small.png"
-          className="text-xl font-bold text-[#FFB000] h-15 lg:hidden block"
-          onClick={() => navigate('/')}
-        />
+        <a href="https://safuverse.com" className="flex items-center gap-1.5">
+          <img
+            src="/Safuverse.png"
+            className="text-xl font-bold text-[#FFB000] h-10 hidden lg:block"
+          />
+          <img
+            src="/small.png"
+            className="text-xl font-bold text-[#FFB000] h-14 lg:hidden block"
+          />
+        </a>
         <div
           className={`ml-5 relative ${
             location.pathname == '/' ? 'hidden' : 'block'
@@ -178,7 +166,7 @@ export default function Nav() {
                 onClick={route}
               >
                 <div className="text-[17px]">{`${
-                  search != '' ? search + '.creator' : ''
+                  search != '' ? search + '.safu' : ''
                 }`}</div>{' '}
                 {available != '' ? (
                   <div className="text-[10px] bg-green-800 text-green-300 p-1 rounded-full">
@@ -193,7 +181,7 @@ export default function Nav() {
         </div>
         <div className="hidden md:flex items-center gap-7">
           <div
-            className="text-gray-200 hover:text-yellow-400 font-semibold hidden md:flex items-center duration-200 cursor-pointer max-w-max gap-3 flex-nowrap"
+            className="text-gray-200 hover:text-yellow-400 font-semibold hidden md:flex items-center duration-200 cursor-pointer max-w-max gap-1 flex-nowrap"
             onClick={() => navigate(`/mynames`)}
           >
             <IdentificationIcon className="w-7 h-7 flex-shrink-0" />
@@ -225,22 +213,15 @@ export default function Nav() {
             ),
           )}
           <a
-            href="https://learn.level3labs.fun/courses/all"
+            href="https://academy.safuverse.com/courses/all"
             className={`text-gray-200 hover:text-yellow-400 transition-colors duration-200 flex items-center -ml-7 font-semibold`}
           >
-            <BookOpen className="w-4 h-4 mr-2" />
+            <BookOpen className="w-4 h-4 mr-1" />
             View Courses
           </a>
           <div className="hidden md:flex -ml-4">
             {' '}
-            {isConnected ? (
-              <CustomConnect />
-            ) : (
-              <LogInButton
-                connect={connect}
-                setShowOnRoot={setShowOnRoot}
-              />
-            )}
+            <CustomConnect />
           </div>
         </div>
         <div className="md:hidden">
@@ -295,7 +276,7 @@ export default function Nav() {
             ))}
             {}
             <a
-              href="https://learn.level3labs.fun/courses/all"
+              href="https://dns.safuverse.com/courses/all"
               className={`text-gray-200 hover:text-yellow-400 transition-colors duration-200 flex items-center font-semibold -mt-3
             `}
             >

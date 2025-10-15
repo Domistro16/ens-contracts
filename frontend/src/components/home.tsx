@@ -37,20 +37,24 @@ export default function Home() {
   const [available, setAvailable] = useState('')
   const [search, setSearch] = useState('')
   const [recents, setRecents] = useState<string[]>([])
-  const [searchParams] = useSearchParams()
   const [open, setOpen] = useState(false)
 
-  const referree = searchParams.get('referree')
   const { data, isPending } = useReadContract({
     address: constants.Controller,
     functionName: 'available',
     abi: abi,
     args: [search],
   })
+  const [searchParams] = useSearchParams()
+
+  const ref = searchParams.get('ref')
 
   useEffect(() => {
-    localStorage.setItem('Referree', referree || '')
-  }, [referree])
+    if (ref) {
+      localStorage.setItem('ref', ref)
+    }
+  }, [ref])
+
   useEffect(() => {
     const recent = JSON.parse(localStorage.getItem('Recent') as string)
     if (recent?.length > 0) {
@@ -63,7 +67,7 @@ export default function Home() {
   const modalRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    document.title = `Creator Domains - Get a Domain name with a creator identity`
+    document.title = `safu Domains - Get a Domain name with a safu identity`
   }, [])
   const setRecent = (search: string) => {
     const recent = JSON.parse(localStorage.getItem('Recent') as string)
@@ -126,13 +130,8 @@ export default function Home() {
 
   const route = () => {
     if (available == 'Available') {
-      if (referree) {
-        setRecent(search)
-        navigate(`/register/${search}/?referree=${referree}`)
-      } else {
-        setRecent(search)
-        navigate(`/register/${search}/`)
-      }
+      setRecent(search)
+      navigate(`/register/${search}/`)
     } else if (available == 'Registered') {
       setRecent(search)
       navigate(`/resolve/${search}`)
@@ -161,7 +160,7 @@ export default function Home() {
       {/* Hero Section */}
       <main className="text-center mt-20 md:mt-42">
         <h1 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-[#FFF700] to-orange-400 text-transparent bg-clip-text">
-          Your .creator username
+          Your .safu username
         </h1>
         <p className="mt-4 text-gray-400 text-md md:text-lg  max-w-xl mx-auto">
           Your digital identity accross all web3 platforms. Search your domain
@@ -197,7 +196,10 @@ export default function Home() {
                     value={search}
                     className="font-semibold py-3 text-white w-full placeholder-gray-500 flex grow-1 focus:outline-none cursor-pointer"
                   />
-                  <button className="flex items-center bg-[#FFB000] p-4 rounded-xl" onClick={route}>
+                  <button
+                    className="flex items-center bg-[#FFB000] p-4 rounded-xl"
+                    onClick={route}
+                  >
                     <FaSearch className="text-black" />
                   </button>
                 </div>
@@ -239,7 +241,7 @@ export default function Home() {
                       className="px-6 py-3 hover:bg-gray-700 font-bold rounded-xl cursor-pointer flex justify-between"
                       onClick={route}
                     >
-                      <div>{`${search != '' ? search + '.creator' : ''}`}</div>{' '}
+                      <div>{`${search != '' ? search + '.safu' : ''}`}</div>{' '}
                       {available != '' ? (
                         <div className="text-[13px] bg-green-800 text-green-300 p-1 rounded-full">
                           {available}
@@ -256,7 +258,7 @@ export default function Home() {
         </div>
         <div className="hidden lg:flex space-x-50 items-center w-full">
           <img src="/dns.png" className="h-90 -mt-30" />
-          <img src="/dns2.png" className="h-60 mt-2" />
+          <img src="/dns2.png" className="h-60 mt-7" />
           <img src="/dns3.png" className="h-90 -mt-30" />
         </div>
         <div className="block lg:hidden mt-10 w-full flex justify-center">

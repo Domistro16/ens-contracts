@@ -3,8 +3,7 @@ import { namehash, encodeFunctionData } from 'viem'
 import { buildTextRecords } from '../hooks/setText'
 import { useWriteContract } from 'wagmi'
 import Modal from 'react-modal'
-import axios from 'axios'
-import { FaPlus, FaTrash } from 'react-icons/fa6'
+import { FaPlus } from 'react-icons/fa6'
 
 interface UpdateProps {
   texts: { key: string; value: string }[]
@@ -72,7 +71,6 @@ const Update = ({
   resolverAddress,
   setIsOpen,
   isOpen,
-  image
 }: UpdateProps) => {
   const [textRecords, setTextRecords] = useState([...texts])
   const {
@@ -82,63 +80,10 @@ const Update = ({
     writeContractAsync: updateContract,
   } = useWriteContract()
 
-  const [address, setOwner] = useState('')
-  const [preview, setPreview] = useState<string | ArrayBuffer | null>(image)
-  const [loading, setLoading] = useState(false)
-  const [file, setFile] = useState<File>() 
-  const [confirmed, setConfirmed] = useState(false)
-  const [avatar, setAvatar] = useState<string>()
-
-  const handleFileChange = (e: Event) => {
-    const input = e.target as HTMLInputElement
-    const file = input.files?.[0]
-    if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader()
-      setFile(file)
-      reader.onload = (event) => {
-        if (event.target) {
-          setPreview(event.target.result)
-        }
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  const createInput = () => {
-    const i = document.createElement('input')
-    i.type = 'file'
-    i.accept = 'image/*' // optional, restrict to images
-    i.onchange = handleFileChange
-    i.click() // ✅ trigger the file picker
-  }
-
-  const uploadImage = async () => {
-    setLoading(true)
-    const formData = new FormData()
-    if (file) {
-      formData.append('file', file) // Attach the file as a Blob
-    } else {
-      throw new Error('File is null and cannot be uploaded.')
-    }
-    try {
-      const upload = await axios.post(
-        `${import.meta.env.VITE_API_URL}/nft/upload`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        },
-      )
-      setAvatar(upload.data.url)
-      setLoading(false)
-    } catch (error) {
-      console.log(error)
-      setLoading(false)
-    }
-  }
+  const [address, setOwner] = useState(owner)
 
   function onRequestClose(): void {
+    setNext(0)
     setIsOpen(false)
   }
 
@@ -147,26 +92,21 @@ const Update = ({
       (r) => r.key.trim() !== '' && r.value.trim() !== '',
     )
 
-    if (avatar !== '') {
-      validTextRecords == validTextRecords.filter((r) => r.key !== 'avatar')
-      validTextRecords.push({
-        key: 'avatar',
-        value: avatar as string,
-      })
-    }
-
     const builtData = buildTextRecords(
       validTextRecords,
-      namehash(`${label as string}.creator`),
+      namehash(`${label as string}.safu`),
     )
     const addrEncoded = encodeFunctionData({
       abi: addrResolver,
       functionName: 'setAddr',
-      args: [namehash(`${label}.creator`), address == '' ? owner : address],
+      args: [
+        namehash(`${label}.safu`),
+        !address ? owner : address,
+      ],
     })
 
     const fullData = [...builtData, addrEncoded]
-    const nodehash = namehash(`${label}.creator`)
+    const nodehash = namehash(`${label}.safu`)
 
     try {
       await updateContract({
@@ -197,45 +137,19 @@ const Update = ({
       overlayClassName="modal-overlay"
     >
       {next == 0 ? (
-        <div className="rounded-xl bg-neutral-800 px-10 py-5 mt-5 border-[0.5px] border-gray-400 h-130 overflow-auto">
+        <div className="rounded-xl bg-neutral-800 px-10  py-5 mt-5 border-[0.5px] border-gray-400 h-[70vh] overflow-auto">
           <h1 className="text-3xl font-semibold text-[#FFF700] text-center">
             Update your Records
           </h1>
           <div className="flex justify-center mt-5 relative">
-            {!preview && !loading && (
-              <button
-                className="rounded-full w-30 h-30 bg-gray-600 cursor-pointer flex items-center justify-center"
-                onClick={createInput}
-              >
-                <FaPlus className="text-4xl text-gray-300" />
-              </button>
-            )}
-            {loading ? (
-              <div className="rounded-full w-30 h-30 bg-gray-900 animate-pulse"></div>
-            ) : (
-              ''
-            )}
-            {preview && !loading && (
-              <div className="rounded-full w-30 h-30 relative">
-                <img
-                  src={preview as string}
-                  className="rounded-full w-30 h-30 bg-gray-600 absolute"
-                />
-                <button
-                  className="rounded-full w-30 h-30 bg-black opacity-0 hover:opacity-75 cursor-pointer flex items-center justify-center absolute z-10"
-                  onClick={() => {
-                    setPreview(null)
-                  }}
-                >
-                  <FaTrash className="text-4xl text-gray-300" />
-                </button>
-              </div>
-            )}
+            <button className="rounded-full w-30 h-30 bg-gray-600 cursor-pointer flex items-center justify-center">
+              <FaPlus className="text-4xl text-gray-300" />
+            </button>
           </div>
           <div className="mt-5 space-y-3 text-sm">
             <p className="font-semibold">bnb address</p>
             <input
-              value={owner}
+              value={address}
               onChange={handleChange}
               placeholder="0x"
               className="w-full mb-5 p-3 bg-neutral-700 rounded-lg focus:outline-none"
@@ -300,30 +214,20 @@ const Update = ({
             >
               Back
             </button>
-            {file && !confirmed ? (
-              <button
-                className="p-3 bg-[#FFF700] w-full rounded-lg text-black font-semibold cursor-pointer"
-                onClick={async () => {
-                  await uploadImage()
-                  setConfirmed(true)
-                }}
-              >
-                Confirm Image
-              </button>
-            ) : (
-              <button
-                className="p-3 bg-[#FFF700] w-full rounded-lg text-black font-semibold cursor-pointer"
-                onClick={() => {
-                  setNext((prev) => prev + 1)
-                }}
-              >
-                Next
-              </button>
-            )}
+
+            <button
+              className="p-3 bg-[#FFF700] w-full rounded-lg text-black font-semibold cursor-pointer"
+              onClick={() => {
+                setNext((prev) => prev + 1)
+                update()
+              }}
+            >
+              Next
+            </button>
           </div>
         </div>
       ) : (
-        <div className="p-8 rounded-2xl bg-white dark:bg-neutral-900 shadow-xl relative w-[450px] mx-auto flex flex-col gap-6">
+        <div className="p-8 rounded-2xl bg-white dark:bg-neutral-900 shadow-xl relative w-[300px] md:w-[450px] mx-auto flex flex-col gap-6">
           <button
             onClick={onRequestClose}
             className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl"
@@ -343,7 +247,7 @@ const Update = ({
             <div className="flex justify-between items-center border border-gray-200 dark:border-gray-700 rounded-lg p-3">
               <div className="text-gray-500 text-sm">Name</div>
               <div className="flex items-center gap-2 font-bold text-black dark:text-white">
-                {`${label}.creator`}
+                {`${label}.safu`}
                 <div className="w-4 h-4 rounded-full bg-gradient-to-r from-pink-400 to-pink-600" />
               </div>
             </div>

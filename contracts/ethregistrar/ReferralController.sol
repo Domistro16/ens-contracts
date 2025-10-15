@@ -22,17 +22,17 @@ contract ReferralController is Ownable {
     mapping(bytes32 => string) public referredBy;
     mapping(address => uint256) public nativeEarnings;
     mapping(address => mapping(address => uint256)) public tokenEarnings;
-
+    mapping(address => string) public codes;
     bytes32[] public referralCodes;
     uint256 public untrackedEarnings;
     uint256 public snapshotUntrackedEarnings;
     mapping(address => uint256) public snapshotNativeEarnings;
-    mapping(address => mapping(address => uint256))
-        public snapshotTokenEarnings;
+    mapping(address => mapping(address => uint256)) public snapshotTokenEarnings;
     uint256 public trackedNativeEarnings;
     mapping(address => uint256) public trackedTokenEarnings;
 
     event ReferralCodeAdded(string indexed code, address indexed referrer);
+    event AddressAdded(bytes32 indexed code, address indexed referrer);
     event WithdrawalDispersed(address indexed);
     modifier onlyControllerOrOwner() {
         require(
@@ -45,6 +45,11 @@ contract ReferralController is Ownable {
     function addController(address controller) external onlyOwner {
         require(controller != address(0), "Invalid controller address");
         controllers[controller] = true;
+    }
+
+    function getCode(address owner) external returns (string memory) {
+        require(owner != address(0), "Invalid Address");
+        return codes[owner];
     }
 
     function settlementRegister(
@@ -76,7 +81,8 @@ contract ReferralController is Ownable {
                 _applyNativeReward(receiver, amount, false);
             }
         } else {
-            payable(Ownable.owner()).transfer(amount);
+            (bool success, ) = payable(Ownable.owner()).call{value: amount}("");
+            require(success, "Payment to owner failed");
         }
     }
 
@@ -128,6 +134,22 @@ contract ReferralController is Ownable {
         referrees[code] = who;
         referralCodes.push(code);
         expirydates[code] = duration;
+        emit AddressAdded(code, who);
+    }
+
+    function setCode(
+        string memory code,
+        address who
+    ) external onlyControllerOrOwner returns (bool) {
+        require(keccak256(bytes(code)) != keccak256(bytes("")), "Invalid referral code");
+        require(who != address(0), "Invalid referree address");
+        if (keccak256(bytes(codes[who])) == keccak256(bytes(""))) {
+            codes[who] = code;
+            emit ReferralCodeAdded(code, who);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     function settlementCard(
@@ -152,7 +174,8 @@ contract ReferralController is Ownable {
             require(receiver != address(0), "Invalid receiver address");
             _applyNativeReward(receiver, amount, false);
         } else {
-            payable(Ownable.owner()).transfer(amount);
+            (bool success, ) = payable(Ownable.owner()).call{value: amount}("");
+            require(success, "Payment to owner failed");
         }
     }
 
@@ -203,7 +226,10 @@ contract ReferralController is Ownable {
         }
     }
 
-    function withdrawAllNativeEarnings(uint256 batch, uint256 start) external onlyOwner {
+    function withdrawAllNativeEarnings(
+        uint256 batch,
+        uint256 start
+    ) external onlyOwner {
         for (uint256 i = start; i < batch; ) {
             bytes32 code = referralCodes[batch];
             if (block.timestamp < expirydates[code]) {
@@ -223,7 +249,8 @@ contract ReferralController is Ownable {
         // Transfer any remaining balance to the owner
         uint256 remainingBalance = address(this).balance;
         if (remainingBalance > 0) {
-            payable(owner()).transfer(remainingBalance);
+            (bool ok, ) = payable(owner()).call{value: remainingBalance}("");
+            require(ok, "Transfer to owner failed");
         }
         // Emit an event for the withdrawal
         emit WithdrawalDispersed(msg.sender);
@@ -237,7 +264,7 @@ contract ReferralController is Ownable {
         uint256 tokenLength = tokenAddresses.length;
         for (uint256 j = 0; j < tokenLength; ) {
             address tokenAddress = tokenAddresses[j];
-            for (uint256 i = start; i < batch;) {
+            for (uint256 i = start; i < batch; ) {
                 bytes32 code = referralCodes[i];
                 if (block.timestamp < expirydates[code]) {
                     address referrer = referrees[code];
@@ -286,8 +313,9 @@ contract ReferralController is Ownable {
         bytes32 code,
         uint256 newExpiry
     ) external onlyControllerOrOwner {
-        require(expirydates[code] > 0, "Referral code does not exist");
-        expirydates[code] = newExpiry;
+        if (expirydates[code] > 0) {
+            expirydates[code] = newExpiry;
+        }
     }
 
     function _rewardPct(uint256 numReferrals) public pure returns (uint256) {
@@ -302,13 +330,21 @@ contract ReferralController is Ownable {
         uint256 amount,
         bool isFiat
     ) private {
-        nativeEarnings[receiver] +=
-            (amount * _rewardPct(referrals[receiver].length)) /
-            100;
+        uint256 pct = 25;
+        if (referrals[receiver].length >= 5) {
+            pct = 30;
+        }
+        if (!isFiat) {
+            nativeEarnings[receiver] += (amount * pct) / 100;
+            (bool success, ) = payable(receiver).call{
+                value: (amount * pct) / 100
+            }("");
+
+            require(success, "Transfer to receiver failed");
+            emit WithdrawalDispersed(receiver);
+        }
         if (isFiat) {
-            untrackedEarnings +=
-                (amount * _rewardPct(referrals[receiver].length)) /
-                100;
+            untrackedEarnings += (amount * pct) / 100;
         }
     }
 
@@ -317,9 +353,13 @@ contract ReferralController is Ownable {
         address token,
         uint256 amount
     ) private {
-        tokenEarnings[receiver][token] +=
-            (amount * _rewardPct(referrals[receiver].length)) /
-            100;
+        uint256 pct = 25;
+        if (referrals[receiver].length >= 5) {
+            pct = 30;
+        }
+        tokenEarnings[receiver][token] += (amount * pct) / 100;
+        IERC20(token).safeTransfer(receiver, (amount * pct) / 100);
+        emit WithdrawalDispersed(receiver);
     }
 
     function balance() public view returns (uint256) {

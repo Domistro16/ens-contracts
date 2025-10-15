@@ -11,129 +11,135 @@ import {
 } from 'viem'
 import crypto from 'crypto'
 import { createPublicClient, http } from 'viem'
-import { bscTestnet } from 'viem/chains'
+import { bscTestnet, plasma } from 'viem/chains'
 import ETHRegistrarController from '../artifacts/contracts/ethregistrar/ETHRegistrarController.sol/ETHRegistrarController.json'
+import { normalize } from 'viem/ens'
 
 async function main() {
   const { viem } = hre
-  const { deployer, owner } = await viem.getNamedClients()
+  const { deployer } = await viem.getNamedClients()
 
   // ─── CONFIGURE THESE ────────────────────────────────────────────────────────
-  const registry = await viem.getContract('ENSRegistry', owner)
-  const controller = await viem.getContract('ETHRegistrarController', owner)
-  const nameWrapper = await viem.getContract('NameWrapper', owner)
-  const resolver = await viem.getContract('PublicResolver', owner)
 
-  const TLD = 'creator'
-  const LABEL = `smokeviem${Date.now()}`
-  const FULL_NAME = `${LABEL}.${TLD}`
-  const DURATION = 31536000n // 1 year in seconds
-  const lifetime = false
-  const data = [
-    encodeFunctionData({
-      abi: resolver.abi,
-      functionName: 'setAddr',
-      args: [namehash(FULL_NAME), owner.address],
-    }),
-  ]
-  console.log(`\n🚀 Starting viem smoke test for ${FULL_NAME}\n`)
+  const registry = await viem.getContract('ENSRegistry', deployer)
+  const controller = await viem.getContract('ETHRegistrarController', deployer)
+  const nameWrapper = await viem.getContract('NameWrapper', deployer)
+  const resolver = await viem.getContract('PublicResolver', deployer)
+  const names = ['Eljaboom', 'Zero']
 
-  // 1) Check availability
-  const availableBefore = await controller.read.available([LABEL])
-  console.log('available before:', availableBefore)
+  for (const name of names) {
+    const TLD = 'safu'
+    const LABEL = normalize(name)
+    const FULL_NAME = `${LABEL}.${TLD}`
+    const DURATION = 31536000000n // 1 year in seconds
+    const lifetime = true
 
-  // 2) Query rent price
-  const priceData = await controller.read.rentPrice([LABEL, DURATION, lifetime])
-  console.log(
-    'rentPrice base/premium:',
-    priceData.base.toString(),
-    priceData.premium.toString(),
-  )
+    console.log(`\n🚀 Starting viem smoke test for ${FULL_NAME}\n`)
 
-  // 3) Make & submit commitment
-  const secret = bytesToHex(crypto.randomBytes(32))
-  const commitment = await controller.read.makeCommitment([
-    LABEL,
-    owner.address,
-    DURATION,
-    secret,
-    resolver.address,
-    data,
-    true,
-    0,
-    lifetime,
-  ])
-  console.log('commitment:', commitment)
+    // 1) Check availability
+    const availableBefore = await controller.read.available([LABEL])
+    console.log('available before:', availableBefore)
 
-  const byted = hexToBytes(commitment)
-  const commitHash = await controller.write.commit([commitment])
-  console.log('commit tx:', commitHash)
-  await viem.waitForTransactionSuccess(commitHash)
-
-  // 4) Wait for minCommitmentAge + buffer
-  const minAge = await controller.read.minCommitmentAge()
-  const waitMs = Number(minAge) * 1000 + 5000
-  console.log(`waiting ${waitMs / 1000}s for commitment age...`)
-  await new Promise((r) => setTimeout(r, waitMs))
-
-  const rpcUrl = 'https://bsc-testnet.public.blastapi.io'
-  const publicClient = createPublicClient({
-    chain: bscTestnet,
-    transport: http(rpcUrl),
-  })
-
-  // 5) Register name
-  const totalCost = priceData.base + priceData.premium
-  const registerHash = await controller.write.register(
-    [
+    // 2) Query rent price
+    const priceData = await controller.read.rentPrice([
       LABEL,
-      owner.address,
+      DURATION,
+      lifetime,
+    ])
+    console.log(
+      'rentPrice base/premium:',
+      priceData.base.toString(),
+      priceData.premium.toString(),
+    )
+
+    // 3) Make & submit commitment
+    const secret = bytesToHex(crypto.randomBytes(32))
+    const commitment = await controller.read.makeCommitment([
+      LABEL,
+      deployer.address,
       DURATION,
       secret,
       resolver.address,
-      data,
-      true,
+      [],
+      false,
       0,
       lifetime,
-      '',
-    ],
-    { value: totalCost },
-  )
-  console.log('⏳ register tx hash:', registerHash)
-  await viem.waitForTransactionSuccess(registerHash)
+    ])
+    console.log('commitment:', commitment)
 
-  console.log('register tx:', registerHash)
-  const registerRec = await viem.waitForTransactionSuccess(registerHash)
+    const byted = hexToBytes(commitment)
+    const commitHash = await controller.write.commit([commitment])
+    console.log('commit tx:', commitHash)
+    await viem.waitForTransactionSuccess(commitHash)
 
-  // 6) Verify event
-  const receipt = await viem.waitForTransactionSuccess(registerHash)
+    // 4) Wait for minCommitmentAge + buffer
+    const minAge = await controller.read.minCommitmentAge()
+    const waitMs = Number(minAge) * 1000 + 5000
+    console.log(`waiting ${waitMs / 1000}s for commitment age...`)
+    await new Promise((r) => setTimeout(r, waitMs))
 
-  // 7) Availability flips
-  console.log('available after:', await controller.read.available([LABEL]))
+    // 5) Register name
+    try {
+      const registerHash = await controller.write.registerWithCard([
+        LABEL,
+        deployer.address,
+        DURATION,
+        secret,
+        resolver.address,
+        [],
+        false,
+        0,
+        lifetime,
+        '',
+      ])
+      console.log('⏳ register tx hash:', registerHash)
 
-  // 8) ENS registry owner
-  const node = namehash(FULL_NAME)
-  console.log('ENS.owner:', await registry.read.owner([node]))
+      await viem.waitForTransactionSuccess(registerHash)
 
-  const CRE8OR_NODE =
-    '0xdb16739af6cfc75c90f34d005d9cd5bf924767f495f495a3ff96537a5bde11e6'
+      console.log('register tx:', registerHash)
+      const registerRec = await viem.waitForTransactionSuccess(registerHash)
 
-  const labelhash = keccak256(toBytes(LABEL))
-  // 2) Label hash
-  const parentBytes = toBytes(CRE8OR_NODE) // Uint8Array of 32 bytes
-  const labelBytes = toBytes(labelhash) // Uint8Array of 32 bytes
+      // 6) Verify event
+      const receipt = await viem.waitForTransactionSuccess(registerHash)
+    } catch (err: any) {
+      console.error('Full error:', err)
+      console.error('cause:', err.cause)
+      // If viem decoded the revert reason:
+      console.error(
+        'revert reason:',
+        err.cause?.shortMessage ?? err.cause?.message,
+      )
+      // raw revert data (hex)
+      console.error('revert data:', err.cause?.data)
+    }
 
-  // 2) Allocate and copy
-  const packed = new Uint8Array(parentBytes.length + labelBytes.length)
-  packed.set(parentBytes, 0)
-  packed.set(labelBytes, parentBytes.length)
+    // 7) Availability flips
+    console.log('available after:', await controller.read.available([LABEL]))
 
-  const id = keccak256(packed)
-  const wrapperData = await nameWrapper.read.getData([BigInt(id)])
-  console.log('NameWrapper.getData owner:', wrapperData[0])
+    // 8) ENS registry owner
+    const node = namehash(FULL_NAME)
+    console.log('ENS.owner:', await registry.read.owner([node]))
 
-  // 10) Resolver resolution
-  console.log('resolver.addr:', await resolver.read.addr([node]))
+    const CRE8OR_NODE =
+      '0xf92e9539a836c60f519caef3f817b823139813f56a7a19c9621f7b47f35b340d'
+
+    const labelhash = keccak256(toBytes(LABEL))
+    // 2) Label hash
+    const parentBytes = toBytes(CRE8OR_NODE) // Uint8Array of 32 bytes
+    const labelBytes = toBytes(labelhash) // Uint8Array of 32 bytes
+
+    // 2) Allocate and copy
+    const packed = new Uint8Array(parentBytes.length + labelBytes.length)
+    packed.set(parentBytes, 0)
+    packed.set(labelBytes, parentBytes.length)
+
+    const id = keccak256(packed)
+    const wrapperData = await nameWrapper.read.getData([BigInt(id)])
+    console.log('NameWrapper.getData owner:', wrapperData[0])
+
+    // 10) Resolver resolution
+    console.log('resolver.addr:', await resolver.read.addr([node]))
+  }
 
   console.log('\n🎉 viem smoke test complete!')
 }

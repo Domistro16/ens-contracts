@@ -58,7 +58,6 @@ export default function UserForm({ address, registerParams }: UserFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log(formData)
   }
 
   return (

@@ -14,17 +14,18 @@ import {
   parseEther,
   zeroAddress,
 } from 'viem'
-import { useParams, useNavigate, useSearchParams } from 'react-router'
+import { useParams, useNavigate } from 'react-router'
 import Countdown from 'react-countdown'
 import Modal from 'react-modal'
 import { buildTextRecords } from '../hooks/setText'
 import { useEstimateENSFees, useEthersSigner } from '../hooks/gasEstimation'
 import { ethers } from 'ethers'
-import { constants, Params, TokenParams } from '../constant'
+import { constants, Params } from '../constant'
 import UserForm from './userForm'
-import axios from 'axios'
-import { FaPlus, FaTrash } from 'react-icons/fa6'
+import { FaPlus } from 'react-icons/fa6'
 import { useENSName } from '../hooks/getPrimaryName'
+import { normalize } from 'viem/ens'
+// import { Input } from './ui/input'
 
 type RegisterParams = {
   domain: string
@@ -36,6 +37,7 @@ type RegisterParams = {
   lifetime: boolean
   referree: string
 }
+
 /* 
 const Referral = [
   {
@@ -181,21 +183,9 @@ const Controller = [
         type: 'tuple',
       },
       {
-        components: [
-          {
-            internalType: 'string',
-            name: 'token',
-            type: 'string',
-          },
-          {
-            internalType: 'address',
-            name: 'tokenAddress',
-            type: 'address',
-          },
-        ],
-        internalType: 'struct IETHRegistrarController.TokenParams',
-        name: 'tokenParams',
-        type: 'tuple',
+        internalType: 'address',
+        name: 'tokenAddress',
+        type: 'address',
       },
       {
         internalType: 'bool',
@@ -209,6 +199,64 @@ const Controller = [
       },
     ],
     name: 'registerWithToken',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'string',
+        name: 'name',
+        type: 'string',
+      },
+      {
+        internalType: 'address',
+        name: 'owner',
+        type: 'address',
+      },
+      {
+        internalType: 'uint256',
+        name: 'duration',
+        type: 'uint256',
+      },
+      {
+        internalType: 'bytes32',
+        name: 'secret',
+        type: 'bytes32',
+      },
+      {
+        internalType: 'address',
+        name: 'resolver',
+        type: 'address',
+      },
+      {
+        internalType: 'bytes[]',
+        name: 'data',
+        type: 'bytes[]',
+      },
+      {
+        internalType: 'bool',
+        name: 'reverseRecord',
+        type: 'bool',
+      },
+      {
+        internalType: 'uint16',
+        name: 'ownerControlledFuses',
+        type: 'uint16',
+      },
+      {
+        internalType: 'bool',
+        name: 'lifetime',
+        type: 'bool',
+      },
+      {
+        internalType: 'string',
+        name: 'referree',
+        type: 'string',
+      },
+    ],
+    name: 'registerWithCard',
     outputs: [],
     stateMutability: 'nonpayable',
     type: 'function',
@@ -468,8 +516,6 @@ const Register = () => {
   const [token, setToken] = useState<`0x${string}`>('0x')
   const { data: commithash, writeContractAsync } = useWriteContract()
   const { writeContractAsync: approve } = useWriteContract()
-  const [searchParams] = useSearchParams()
-  const referree = searchParams.get('referree')
 
   useEffect(() => {
     if (!myName) {
@@ -513,7 +559,9 @@ const Register = () => {
   const [avatar, setAvatar] = useState('')
   const [wait, setWait] = useState(60)
   const [done, setDone] = useState(false)
+  const [referrer, setReferrer] = useState('')
   const [lifetime, setLifetime] = useState(false)
+
   const { data: latest, isPending: loading } = useReadContract({
     address: constants.Controller, // Replace with actual contract address
     abi: Controller as any, // Replace with actual ABI
@@ -546,8 +594,14 @@ const Register = () => {
 
   const [estimateBnb, setEstimateBnb] = useState('')
   const [estimateUsd, setEstimateUsd] = useState('')
+
   useEffect(() => {
-    console.log(fees?.fee.totalEth)
+    const ref = localStorage.getItem('000000000x000000x00000x0x0000000')
+    if (ref) {
+      setReferrer(normalize(ref))
+    }
+  }, [label])
+  useEffect(() => {
     const bnb = Number(fees?.fee.totalEth).toFixed(4)
     setEstimateBnb(bnb as string)
 
@@ -558,7 +612,6 @@ const Register = () => {
 
   const price = useMemo(() => {
     // Safe access to nested values
-    console.log(usd1TokenData)
     let usd1priceInBNB = 0
     let cakepriceInBNB = 0
     if (!tokenLoading) {
@@ -670,7 +723,7 @@ const Register = () => {
     }
   }, [input])
   useEffect(() => {
-    document.title = `Register – ${label}.creator`
+    document.title = `Register – ${label}.safu`
   }, [label])
 
   useEffect(() => {
@@ -712,7 +765,6 @@ const Register = () => {
   const [newRecords, setNewRecords] = useState<
     { key: string; value: string }[]
   >([])
-  console.log(useToken)
 
   const buildCommitData = () => {
     const textRecords = [
@@ -732,20 +784,16 @@ const Register = () => {
       (r) => r.key.trim() !== '' && r.value.trim() !== '',
     )
 
-    console.log(validTextRecords)
-
     const builtData = buildTextRecords(
       validTextRecords,
-      namehash(`${label as string}.creator`),
+      namehash(`${label as string}.safu`),
     )
-    console.log(owner)
     const addrEncoded = encodeFunctionData({
       abi: addrResolver,
       functionName: 'setAddr',
-      args: [namehash(`${label}.creator`), owner],
+      args: [namehash(`${label}.safu`), owner],
     })
     const fullData = [...builtData, addrEncoded]
-    console.log(fullData)
     setCommitData(fullData)
   }
   const commit = async () => {
@@ -799,9 +847,9 @@ const Register = () => {
     const resolver = constants.PublicResolver
     try {
       let value = 0n
-      const { base, premium } = latest as { base: bigint; premium: bigint }
+      // const { base, premium } = latest as { base: bigint; premium: bigint }
 
-      if (token == '0xFa60D973F7642B748046464e165A65B7323b0DEE') {
+      if (token == '0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82') {
         const { base, premium } = (cakeTokenData as any) || {
           base: 0n,
           premium: 0n,
@@ -815,8 +863,6 @@ const Register = () => {
         value = base + premium // Convert to readable
       }
       const totalAmount = value
-      console.log(totalAmount)
-      console.log(constants.Controller)
       const controller = new ethers.Contract(
         constants.Controller,
         Controller,
@@ -824,7 +870,7 @@ const Register = () => {
       )
       if (!useToken) {
         try {
-          await controller.callStatic.register(
+          await controller.callStatic.registerWithCard(
             label,
             address,
             BigInt(seconds),
@@ -834,10 +880,8 @@ const Register = () => {
             isPrimary,
             0,
             lifetime,
-            referree || '',
-            { value: base + premium },
+            referrer || '',
           )
-          console.log('Static call successful') // Debugging line
         } catch (e: any) {
           console.error('Revert error name:', e.errorName)
           console.error('Revert reason   :', e.data)
@@ -845,7 +889,7 @@ const Register = () => {
         await registerContract({
           address: constants.Controller,
           abi: Controller,
-          functionName: 'register',
+          functionName: 'registerWithCard',
           args: [
             label,
             address,
@@ -856,9 +900,8 @@ const Register = () => {
             isPrimary,
             0,
             lifetime,
-            referree || '',
+            referrer || '',
           ],
-          value: base + premium,
         })
         setIsOpen(false)
       } else {
@@ -873,13 +916,7 @@ const Register = () => {
  */
 
         await new Promise((r) => setTimeout(r, 2000))
-        const tokenContract = new ethers.Contract(token, ERC20_ABI, signer)
         try {
-          const allowance = await tokenContract.allowance(
-            address as `0x${string}`,
-            constants.Controller,
-          )
-          console.log(allowance)
         } catch (e: any) {
           console.error('Error checking allowance:', e)
         }
@@ -894,18 +931,13 @@ const Register = () => {
           reverseRecord: isPrimary,
           ownerControlledFuses: 0,
         }
-        const tokenParams: TokenParams = {
-          token: 'cake',
-          tokenAddress: token as `0x${string}`,
-        }
 
-        console.log(constants.Controller)
         try {
           await controller.callStatic.registerWithToken(
             params,
-            tokenParams,
+            token,
             lifetime,
-            referree || '',
+            referrer || '',
           )
         } catch (e: any) {
           console.error('Revert error name:', e.errorName)
@@ -916,7 +948,7 @@ const Register = () => {
           address: constants.Controller,
           abi: Controller,
           functionName: 'registerWithToken',
-          args: [params, tokenParams, lifetime, referree || ''],
+          args: [params, token, lifetime, referrer || ''],
         })
         setIsOpen(false)
       }
@@ -936,7 +968,6 @@ const Register = () => {
   useEffect(() => {
     if (available === false) {
       navigate('/')
-      console.log(available)
     } else if (available === true) {
       setNext(0)
     }
@@ -950,19 +981,19 @@ const Register = () => {
     reverseRecord: isPrimary,
     ownerControlledFuses: 0,
     lifetime: lifetime,
-    referree: referree || '',
+    referree: referrer || '',
   }
-  const [card, setCard] = useState(false)
+  const card = false
   return (
     <div className="mb-25 md:mb-0">
       <div className="flex flex-col mx-auto px-2 md:px-30 mt-20 lg:px-60 md:mt-15">
         <div className="">
-          <h2 className="font-bold text-2xl text-white">{label}.creator</h2>
+          <h2 className="font-bold text-2xl text-white">{label}.safu</h2>
           {next == 0 ? (
             <div className="rounded-xl bg-neutral-800 px-5 md:px-10 py-5 mt-5 border-[0.5px] border-gray-400">
               <h1 className="text-lg font-semibold text-white">
                 {' '}
-                Register {label}.creator{' '}
+                Register {label}.safu{' '}
               </h1>
               {date ? (
                 <div className="rounded-full py-4 px-4  border-[0.5px] border-gray-400 mt-5 flex items-center relative">
@@ -1292,6 +1323,22 @@ const Register = () => {
                     />
                   </button>
                 </div>
+                <div className="mt-5">
+                  <h1 className="text-lg font-semibold">Referrer</h1>
+                  {/* <Input
+                    value={referrer}
+                    placeholder="The primary name of the referrer (Optional)"
+                    className="mt-2 py-2 placeholder:text-gray-400 max-w-2/3 w-3/4"
+                    type="text"
+                    onChange={(e) => {
+                      if (e.target.value.endsWith('.safu')) {
+                        setReferrer(e.target.value.slice(0, -4).toLowerCase())
+                      } else {
+                        setReferrer(e.target.value.toLowerCase())
+                      }
+                    }}
+                  /> */}
+                </div>
                 <div className="flex mt-5 items-center">
                   <div>
                     <h1 className="text-lg font-semibold">
@@ -1302,12 +1349,12 @@ const Register = () => {
                   <button
                     onClick={() => {
                       setUseToken(!useToken)
-                      setToken('0xFa60D973F7642B748046464e165A65B7323b0DEE')
+                      setToken('0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82')
                     }}
                     className={`flex items-center justify-center w-10 h-10
                      rounded-full transition-colors duration-300 border-6 border-gray-200 ${
                        useToken &&
-                       token == '0xFa60D973F7642B748046464e165A65B7323b0DEE'
+                       token == '0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82'
                          ? 'bg-black'
                          : 'bg-gray-300'
                      }`}
@@ -1315,7 +1362,7 @@ const Register = () => {
                     <Check
                       className={`w-5 h-5 text-white transition-opacity duration-200  ${
                         useToken &&
-                        token == '0xFa60D973F7642B748046464e165A65B7323b0DEE'
+                        token == '0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82'
                           ? 'opacity-100'
                           : 'opacity-0'
                       }`}
@@ -1332,16 +1379,22 @@ const Register = () => {
                   <button
                     onClick={() => {
                       setUseToken(!useToken)
-                      setToken('0xa')
+                      setToken('0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d')
                     }}
                     className={`flex items-center justify-center w-10 h-10
                      rounded-full transition-colors duration-300 border-6 border-gray-200 ${
-                       useToken && token == '0xa' ? 'bg-black' : 'bg-gray-300'
+                       useToken &&
+                       token == '0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d'
+                         ? 'bg-black'
+                         : 'bg-gray-300'
                      }`}
                   >
                     <Check
                       className={`w-5 h-5 text-white transition-opacity duration-200  ${
-                        useToken && token == '0xa' ? 'opacity-100' : 'opacity-0'
+                        useToken &&
+                        token == '0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d'
+                          ? 'opacity-100'
+                          : 'opacity-0'
                       }`}
                     />
                   </button>
@@ -1361,21 +1414,10 @@ const Register = () => {
                       className="px-5 py-3 bg-[#FFF700] text-neutral-900 font-semibold mt-5 rounded-xl cursor-pointer hover:bg-[#B3AE00] transition-all duration-300 flex items-center"
                       onClick={() => {
                         setNext(1)
-                        setCard(true)
                       }}
                       disabled={isLoading}
                     >
-                      Pay with Fiat
-                    </button>
-
-                    <button
-                      className="px-5 py-3 bg-[#FFF700] text-neutral-900 font-semibold mt-5 rounded-xl cursor-pointer hover:bg-[#B3AE00] transition-all duration-300 flex items-center"
-                      onClick={() => {
-                        setNext(1)
-                      }}
-                      disabled={isLoading}
-                    >
-                      Pay with Wallet
+                      Continue
                     </button>
                   </div>
                 ) : (
@@ -1687,7 +1729,7 @@ const Register = () => {
               <ConfirmDetailsModal
                 isOpen={isOpen}
                 onRequestClose={() => setNext((prev) => prev - 1)}
-                name={`${label}.creator` || ''}
+                name={`${label}.safu` || ''}
                 action="Start timer"
                 info="Start timer to register name"
               />
@@ -1699,7 +1741,7 @@ const Register = () => {
               <RegisterDetailsModal
                 isOpen={isOpen}
                 onRequestClose={() => setNext((prev) => prev - 1)}
-                name={`${label}.creator` || ''}
+                name={`${label}.safu` || ''}
                 action="Register name"
                 duration={durationString}
               />
@@ -1730,7 +1772,7 @@ const Register = () => {
                     <p className="text-neutral-400 mb-6">
                       You are now the owner of{' '}
                       <span className="text-blue-400 font-semibold">
-                        {label}.creator
+                        {label}.safu
                       </span>
                     </p>
 
@@ -1752,7 +1794,7 @@ const Register = () => {
                           />
                         </svg>
                       </div>
-                      <p className="text-white font-semibold text-lg">{`${label}.creator`}</p>
+                      <p className="text-white font-semibold text-lg">{`${label}.safu`}</p>
                     </div>
 
                     <div className="bg-neutral-800 rounded-xl p-4 mb-6 text-sm text-left space-y-3">
@@ -1848,60 +1890,7 @@ const SetupModal = ({
     e.preventDefault()
     setOwner(e.target.value as `0x${string}`)
   }
-  const [preview, setPreview] = useState<string | ArrayBuffer | null>(null)
   const [more, setMore] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [file, setFile] = useState<File>()
-  const [confirmed, setConfirmed] = useState(false)
-
-  const handleFileChange = (e: Event) => {
-    const input = e.target as HTMLInputElement
-    const file = input.files?.[0]
-    if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader()
-      setFile(file)
-      reader.onload = (event) => {
-        if (event.target) {
-          setPreview(event.target.result)
-        }
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  const createInput = () => {
-    const i = document.createElement('input')
-    i.type = 'file'
-    i.accept = 'image/*' // optional, restrict to images
-    i.onchange = handleFileChange
-    i.click() // ✅ trigger the file picker
-  }
-
-  const uploadImage = async () => {
-    setLoading(true)
-    const formData = new FormData()
-    if (file) {
-      formData.append('file', file) // Attach the file as a Blob
-    } else {
-      throw new Error('File is null and cannot be uploaded.')
-    }
-    try {
-      const upload = await axios.post(
-        `${import.meta.env.VITE_API_URL}/nft/upload`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        },
-      )
-      setAvatar(upload.data.url)
-      setLoading(false)
-    } catch (error) {
-      console.log(error)
-      setLoading(false)
-    }
-  }
 
   return (
     <div className="rounded-xl bg-neutral-800 px-10 py-5 mt-5 border-[0.5px] border-gray-400">
@@ -1909,35 +1898,9 @@ const SetupModal = ({
         Setup your Profile
       </h1>
       <div className="flex justify-center mt-5 relative">
-        {!preview && (
-          <button
-            className="rounded-full w-30 h-30 bg-gray-600 cursor-pointer flex items-center justify-center"
-            onClick={createInput}
-          >
-            <FaPlus className="text-4xl text-gray-300" />
-          </button>
-        )}
-        {loading ? (
-          <div className="rounded-full w-30 h-30 bg-gray-900"></div>
-        ) : (
-          ''
-        )}
-        {preview && (
-          <div className="rounded-full w-30 h-30 relative">
-            <img
-              src={preview as string}
-              className="rounded-full w-30 h-30 bg-gray-600 absolute"
-            />
-            <button
-              className="rounded-full w-30 h-30 bg-black opacity-0 hover:opacity-75 cursor-pointer flex items-center justify-center absolute z-10"
-              onClick={() => {
-                setPreview(null)
-              }}
-            >
-              <FaTrash className="text-4xl text-gray-300" />
-            </button>
-          </div>
-        )}
+        <button className="rounded-full w-30 h-30 bg-gray-600 cursor-pointer flex items-center justify-center">
+          <FaPlus className="text-4xl text-gray-300" />
+        </button>
       </div>
       <div className="mt-5 space-y-3 text-sm">
         <p className="font-semibold">bnb address</p>
@@ -1960,6 +1923,14 @@ const SetupModal = ({
         </button>
         {more && (
           <div className="mt-10">
+            <input
+              onChange={(e) => {
+                e.preventDefault()
+                setAvatar(e.target.value as string)
+              }}
+              className="w-full mb-10 p-3 bg-neutral-700 rounded-lg focus:outline-none"
+              placeholder="A link to your avatar image"
+            />
             <textarea
               onChange={(e) => {
                 e.preventDefault()
@@ -2074,27 +2045,16 @@ const SetupModal = ({
           >
             Back
           </button>
-          {file && !confirmed ? (
-            <button
-              className="p-3 bg-[#FFF700] w-full rounded-lg text-black font-semibold cursor-pointer"
-              onClick={async () => {
-                await uploadImage()
-                setConfirmed(true)
-              }}
-            >
-              Confirm Image
-            </button>
-          ) : (
-            <button
-              className="p-3 bg-[#FFF700] w-full rounded-lg text-black font-semibold cursor-pointer"
-              onClick={() => {
-                setNext((prev) => prev + 1)
-                buildCommitData()
-              }}
-            >
-              Next
-            </button>
-          )}
+
+          <button
+            className="p-3 bg-[#FFF700] w-full rounded-lg text-black font-semibold cursor-pointer"
+            onClick={() => {
+              setNext((prev) => prev + 1)
+              buildCommitData()
+            }}
+          >
+            Next
+          </button>
         </div>
       </div>
     </div>

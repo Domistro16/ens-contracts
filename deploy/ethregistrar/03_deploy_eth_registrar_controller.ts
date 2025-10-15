@@ -8,9 +8,15 @@ const func: DeployFunction = async function (hre) {
   const { deployer, owner } = await viem.getNamedClients()
 
   const registry = await viem.getContract('ENSRegistry', owner)
-  const tokenAddresses: `0x${string}`[] = [
-    '0xFa60D973F7642B748046464e165A65B7323b0DEE',
-    '0x64544969ed7EBf5f083679233325356EbE738930',
+  const tokenAddresses: any[] = [
+    {
+      token: 'cake',
+      tokenAddress: '0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82',
+    },
+    {
+      token: 'usd1',
+      tokenAddress: '0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d',
+    },
   ]
 
   const registrar = await viem.getContract('BaseRegistrarImplementation', owner)
@@ -28,7 +34,6 @@ const func: DeployFunction = async function (hre) {
     reverseRegistrar.address,
     nameWrapper.address,
     registry.address,
-    owner.address,
     referralDeployment.address,
   ])
   if (!controllerDeployment.newlyDeployed) return
@@ -45,9 +50,9 @@ const func: DeployFunction = async function (hre) {
     await viem.waitForTransactionSuccess(hash)
   }
 
-  for (const tokenAddress of tokenAddresses) {
-    const hash = await controller.write.setToken([tokenAddress])
-    console.log(`Adding ${tokenAddress} to ETHRegistrarController`)
+  for (const token of tokenAddresses) {
+    const hash = await controller.write.setToken([token, token.tokenAddress])
+    console.log(`Adding ${token} to ETHRegistrarController`)
     await viem.waitForTransactionSuccess(hash)
   }
 
@@ -83,22 +88,22 @@ const func: DeployFunction = async function (hre) {
   const artifact = await deployments.getArtifact('IETHRegistrarController')
   const interfaceId = createInterfaceId(artifact.abi)
 
-  const resolver = await registry.read.resolver([namehash('creator')])
+  const resolver = await registry.read.resolver([namehash('safu')])
   if (resolver === zeroAddress) {
     console.log(
-      `No resolver set for .creator; not setting interface ${interfaceId} for creator Registrar Controller`,
+      `No resolver set for .safu; not setting interface ${interfaceId} for safu Registrar Controller`,
     )
     return
   }
 
   const ethOwnedResolver = await viem.getContract('OwnedResolver')
   const setInterfaceHash = await ethOwnedResolver.write.setInterface([
-    namehash('creator'),
+    namehash('safu'),
     interfaceId,
     controller.address,
   ])
   console.log(
-    `Setting ETHRegistrarController interface ID ${interfaceId} on .creator resolver (tx: ${setInterfaceHash})...`,
+    `Setting ETHRegistrarController interface ID ${interfaceId} on .safu resolver (tx: ${setInterfaceHash})...`,
   )
   await viem.waitForTransactionSuccess(setInterfaceHash)
 }

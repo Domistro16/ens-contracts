@@ -62,7 +62,7 @@ contract TokenPriceOracle is ExponentialPremiumPriceOracle {
              return
             IPriceOracle.Price({
                 base: attoUSDToUSD1(basePrice),
-                premium: attoUSDToCake(_premium(name, expires, duration))
+                premium: attoUSDToUSD1(_premium(name, expires, duration))
             });
         }
        

@@ -26,6 +26,14 @@ const func: DeployFunction = async function (hre) {
   // Only attempt to make controller etc changes directly on testnets
   if (network.name === 'mainnet') return
 
+  const setControllerHash = await reverseRegistrar.write.setController(
+    [owner.address, true],
+    { account: owner.account },
+  )
+  console.log(
+    `Setting owner as controller on backend (tx: ${setControllerHash})...`,
+  )
+
   const root = await viem.getContract('Root')
 
   const setReverseOwnerHash = await root.write.setSubnodeOwner(

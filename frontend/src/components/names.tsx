@@ -10,7 +10,6 @@ export default function Names() {
   }, [])
   const { address } = useAccount()
   const navigate = useNavigate()
-  console.log(address)
   const { domains } = useAllOwnedNames(address?.toLowerCase() as string)
   const [sortBy, setSortBy] = useState<'name' | 'expiry'>('name')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
@@ -39,7 +38,6 @@ export default function Names() {
     return sortedDomains.slice(start, start + perPage)
   }, [sortedDomains, page, perPage])
 
-  console.log(domains)
   return (
     <div>
       <div className="min-h-screen text-white space-y-5 p-3 mx-auto md:px-30 md:mt-10 lg:px-60">
@@ -148,9 +146,7 @@ export default function Names() {
                     key={domain.name + idx}
                     className="flex items-center justify-between py-4 md:px-4 hover:bg-neutral-700 rounded-md transition-colors cursor-pointer"
                     onClick={() => {
-                      navigate(
-                        `/resolve/${domain.name.replace(/\.creator$/, '')}`,
-                      )
+                      navigate(`/resolve/${domain.name.replace(/\.safu$/, '')}`)
                     }}
                   >
                     <div className="flex items-center space-x-4">

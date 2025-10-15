@@ -21,8 +21,8 @@ import { IoLogoWhatsapp } from 'react-icons/io'
 import { FaSnapchatGhost, FaGithub } from 'react-icons/fa'
 import { SiBnbchain } from 'react-icons/si'
 import { constants } from '../constant'
-import ReferralProgress from './Refferal'
-import { CourseProgress } from './CourseProgress'
+import ReferralProgress from '@/components/Refferal'
+import DomainImage from './DomainImage'
 
 const Referral = [
   {
@@ -313,7 +313,7 @@ const Resolve = () => {
     'com.tiktok',
   ]
 
-  const node = namehash(`${label}.creator`)
+  const node = namehash(`${label}.safu`)
   const id = keccak256(label as any)
 
   const { data: available, isLoading: availableLoading } = useReadContract({
@@ -328,7 +328,6 @@ const Resolve = () => {
     address: constants.NameWrapper,
     args: [node],
   })
-  console.log(wrapped)
   const { data, isLoading: wLoading } = useReadContract({
     abi: getData,
     functionName: 'getData',
@@ -389,23 +388,22 @@ const Resolve = () => {
   })
   const { records: others, isLoading: othersLoading } = useTextRecords({
     resolverAddress: resolver,
-    name: `${label}.creator`,
+    name: `${label}.safu`,
     keys: otherKeys,
   })
   const { records: accounts, isLoading: accountsLoading } = useTextRecords({
     resolverAddress: resolver,
-    name: `${label}.creator`,
+    name: `${label}.safu`,
     keys: accountKeys,
   })
   const { records: texts, isLoading: textsLoading } = useTextRecords({
     resolverAddress: resolver,
-    name: `${label}.creator`,
+    name: `${label}.safu`,
     keys: textKeys,
   })
-
   const navigate = useNavigate()
   useEffect(() => {
-    document.title = `${label}.creator`
+    document.title = `${label}.safu`
   }, [label])
   useEffect(() => {
     if (label != undefined && label.includes('.')) {
@@ -415,13 +413,11 @@ const Resolve = () => {
   useEffect(() => {
     if (available === true) {
       navigate('/register/' + label)
-      console.log(available)
     } else if (available === false) {
       setNext(0)
     }
   }, [available, navigate])
   useEffect(() => {
-    console.log(expires)
     if (expires && gexpires) {
       const tsSeconds = Number(expires)
       const date = new Date(tsSeconds * 1000)
@@ -627,7 +623,7 @@ const Resolve = () => {
       <div className="flex flex-col mx-auto p-2 mb-20 md:mb-5 md:px-30 mt-15 lg:px-60 md:mt-15">
         <div className="">
           <h2 className="font-bold text-2xl text-white">
-            {label as string}.creator
+            {label as string}.safu
           </h2>
 
           {/* Tabs */}
@@ -681,12 +677,12 @@ const Resolve = () => {
             <div>
               <div className="rounded-xl bg-neutral-800 p-3 md:px-10 md:py-5 mt-5 border-[0.5px] border-gray-500 relative flex items-center">
                 <Avatar
-                  name={`${label}.creator`}
+                  name={`${label}.safu`}
                   className="w-15 h-15 md:w-24 md:h-24 mr-2 "
                 />
                 <div className="ml-1 md:ml-5 flex items-center w-[80%]">
                   <div className="text-xl md:text-2xl font-bold grow-1">
-                    {label}.creator
+                    {label}.safu
                     {texts
                       .filter((k) => k.key == 'description')
                       .map((item) => (
@@ -703,12 +699,11 @@ const Resolve = () => {
                   </button>
                 </div>
               </div>
-              {primaryName == `${label}.creator` ? (
+              {primaryName == `${label}.safu` ? (
                 <div>
-                <ReferralProgress
-                  referrals={(Number(referrals) as number) ?? 0}
-                />
-                <CourseProgress />
+                  <ReferralProgress
+                    referrals={(Number(referrals) as number) ?? 0}
+                  />
                 </div>
               ) : (
                 ''
@@ -844,7 +839,7 @@ const Resolve = () => {
                       <span className="text-gray-400 mr-1 font-bold">
                         parent
                       </span>{' '}
-                      creator
+                      safu
                     </div>
                   </div>
                 ) : (
@@ -871,7 +866,7 @@ const Resolve = () => {
                       <span className="text-gray-400 mr-1 font-bold">
                         parent
                       </span>{' '}
-                      creator
+                      safu
                     </div>
                   </div>
                 )}
@@ -1088,11 +1083,12 @@ const Resolve = () => {
                 <div className="p-3 flex justify-between">
                   <h1 className="text-2xl font-bold">Token</h1>
                   <a
-                    href={`https://testnet.bscscan.com/nft/${
+                    href={`https://bscscan.com/nft/${
                       wrapped == true
-                        ? '0x501CB529399486684f94c6f59F1b1617202DDE18/' +
+                        ? constants.NameWrapper +
+                          '/' +
                           BigInt(node).toString(10)
-                        : '0xb4c95f28f762e7b42dcd6e108bb8c7fcf90cb413' +
+                        : constants.BaseRegistrar +
                           '/' +
                           BigInt(keccak256(toBytes(label as string))).toString(
                             10,
@@ -1109,20 +1105,32 @@ const Resolve = () => {
                     BscScan
                   </a>
                 </div>
-                <div className="mt-5">
-                  <div className="bg-gray-900 px-3 py-3 mt-2 text-sm md:text-sm rounded-full flex items-center justify-between">
-                    <div className="text-gray-400 mr-1 w-30 text-sm">hex</div>
-                    <div className="break-all max-w-43 md:max-w-130  md:text-sm">
-                      {node}
+                <div className=" flex flex-col md:flex-row gap-4">
+                  <div className="flex-col">
+                    <div className="mt-5">
+                      <div className="bg-gray-900 px-3 py-3 mt-2 text-sm md:text-sm rounded-full flex items-center justify-between">
+                        <div className="text-gray-400 mr-1 w-30 text-sm">
+                          hex
+                        </div>
+                        <div className="break-all max-w-43 md:max-w-130  md:text-sm">
+                          {node}
+                        </div>
+                      </div>
+                      <div className="bg-gray-900 px-3 py-3 mt-2 text-sm md:text-sm rounded-full flex items-center justify-between">
+                        <div className="text-gray-400 mr-1 w-30 text-sm">
+                          decimal
+                        </div>
+                        <div className="break-all max-w-43 md:max-w-130">
+                          {BigInt(node).toString(10)}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="bg-gray-900 px-3 py-3 mt-2 text-sm md:text-sm rounded-full flex items-center justify-between">
-                    <div className="text-gray-400 mr-1 w-30 text-sm">
-                      decimal
-                    </div>
-                    <div className="break-all max-w-43 md:max-w-130">
-                      {BigInt(node).toString(10)}
-                    </div>
+                  <div className="flex md:pt-5 justify-center">
+                    <DomainImage
+                      className="h-60 md:h-50 md:w-70"
+                      domain={`${label}.safu`}
+                    />
                   </div>
                 </div>
               </section>

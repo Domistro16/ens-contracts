@@ -1,34 +1,16 @@
-import { CustomConnect } from './connectButton'
+import { CustomConnect } from '@/components/connectButton'
 import { useAccount } from 'wagmi'
 import { IdentificationIcon, SearchIcon } from '@heroicons/react/outline' // or any icon you like
 import { useNavigate } from 'react-router-dom'
-import LogInButton from './loginButton'
-import { useEffect, useState } from 'react'
-import { useWeb3AuthConnect } from '@web3auth/modal/react'
 export const MobileNav = () => {
+  
   const { isConnected } = useAccount()
   const navigate = useNavigate()
-  const [loggedIn, setLoggedIn] = useState(!isConnected)
-  const [showOnRoot, setShowOnRoot] = useState(false)
-  const { connect } = useWeb3AuthConnect()
-
-  useEffect(() => {
-    if (location.pathname !== '/') {
-      setLoggedIn(!isConnected)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (loggedIn && (location.pathname !== '/' || showOnRoot)) {
-      connect()
-    }
-  })
-
   return (
     <div>
       <div
         className="md:hidden
-        fixed bottom-5 left-1/2 transform -translate-x-1/2
+        fixed bottom-5 left-1/2 z-10 transform -translate-x-1/2
         inline-flex items-center space-x-4
         bg-neutral-800/75 backdrop-blur-sm
         px-4 py-2 rounded-full
@@ -56,13 +38,7 @@ export const MobileNav = () => {
           />
         )}
 
-        {/* Your custom connect button */}
-
-        {isConnected ? (
           <CustomConnect />
-        ) : (
-          <LogInButton connect={connect} setShowOnRoot={setShowOnRoot} />
-        )}
       </div>
     </div>
   )

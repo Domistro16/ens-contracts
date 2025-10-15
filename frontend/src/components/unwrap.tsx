@@ -48,6 +48,7 @@ const Unwrap = ({ label, setIsOpen, isOpen }: UpdateProps) => {
   } = useWriteContract()
 
   function onRequestClose(): void {
+    setNext(0)
     setIsOpen(false)
   }
 
@@ -79,9 +80,9 @@ const Unwrap = ({ label, setIsOpen, isOpen }: UpdateProps) => {
       overlayClassName="modal-overlay"
     >
       {next == 0 ? (
-        <div className="rounded-xl bg-neutral-800 px-10 py-5 mt-5 border-[0.5px] border-gray-400 h-130 overflow-auto">
+        <div className="rounded-xl bg-neutral-800 px-10 py-5 mt-5 border-[0.5px] border-gray-400 h-[60vh] overflow-auto">
           <h1 className="text-3xl font-semibold text-[#FFF700] text-center">
-            Unwrap {label}.creator
+            Unwrap {label}.safu
           </h1>
           <div className="flex justify-center mt-5">
             <div className="rounded-full w-30 h-30 bg-gray-600"></div>
@@ -134,7 +135,7 @@ const Unwrap = ({ label, setIsOpen, isOpen }: UpdateProps) => {
           </div>
         </div>
       ) : (
-        <div className="p-8 rounded-2xl bg-white dark:bg-neutral-900 shadow-xl relative w-[450px] mx-auto flex flex-col gap-6">
+        <div className="p-8 rounded-2xl bg-white dark:bg-neutral-900 shadow-xl relative w-[300px] md:w-[450px] mx-auto flex flex-col gap-6">
           <button
             onClick={onRequestClose}
             className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl"
@@ -154,7 +155,7 @@ const Unwrap = ({ label, setIsOpen, isOpen }: UpdateProps) => {
             <div className="flex justify-between items-center border border-gray-200 dark:border-gray-700 rounded-lg p-3">
               <div className="text-gray-500 text-sm">Name</div>
               <div className="flex items-center gap-2 font-bold text-black dark:text-white">
-                {`${label}.creator`}
+                {`${label}.safu`}
                 <div className="w-4 h-4 rounded-full bg-gradient-to-r from-pink-400 to-pink-600" />
               </div>
             </div>

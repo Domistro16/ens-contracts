@@ -3,6 +3,7 @@
 A decentralized naming system on BNB Chain, inspired by ENS, with dynamic token pricing in native currency, CAKE, and USD1, plus a built-in referral system that rewards users for successful mints.
 
 # Live Link
+
 - [dns.level3labs.fun](https://dns.level3labs.fun)
 
 # ENS
@@ -13,37 +14,38 @@ For documentation of the ENS system, see [docs.ens.domains](https://docs.ens.dom
 
 Before deploying these contracts to setup your own domain name service, You must configure a few details tailored to the TLD you want to deploy.
 
-First of all, ALL instances of '.creator' in the contracts and deploy scripts must be replaced with your own TLD. For example:
+First of all, ALL instances of '.safu' in the contracts and deploy scripts must be replaced with your own TLD. For example:
 
 ```solidity
 function _setReverseRecord(
-        string memory name,
-        address resolver,
-        address owner
-    ) internal {
-        reverseRegistrar.setNameForAddr(
-            msg.sender,
-            owner,
-            resolver,
-            string.concat(name, ".creator")
-        );
-    }
+  string memory name,
+  address resolver,
+  address owner
+) internal {
+  reverseRegistrar.setNameForAddr(
+    msg.sender,
+    owner,
+    resolver,
+    string.concat(name, '.safu')
+  );
+}
 ```
+
 in ETHRegistrarController.sol should be replaced with:
 
 ```solidity
 function _setReverseRecord(
-        string memory name,
-        address resolver,
-        address owner
-    ) internal {
-        reverseRegistrar.setNameForAddr(
-            msg.sender,
-            owner,
-            resolver,
-            string.concat(name, ".<YOUR_TLD>")
-        );
-    }
+  string memory name,
+  address resolver,
+  address owner
+) internal {
+  reverseRegistrar.setNameForAddr(
+    msg.sender,
+    owner,
+    resolver,
+    string.concat(name, '.<YOUR_TLD>')
+  );
+}
 ```
 
 AND
@@ -55,7 +57,7 @@ AND
     bytes32 private constant CRE8OR_LABELHASH =
         0x0d1f301a4d55e328cfe2f78743e489a98cedaf66d744b3ab1bb877ff82930b0b;
 
-    names[CRE8OR_NODE] = "\x07creator\x00";
+    names[CRE8OR_NODE] = "\x07pns\x00";
 ```
 
 in Your NameWrapper Contract should be replaced with:
@@ -66,16 +68,18 @@ in Your NameWrapper Contract should be replaced with:
 
     bytes32 private constant CRE8OR_LABELHASH =
         Keccak256(YourTLD);
-    
+
      names[CRE8OR_NODE] = "\xN<YOUR_TLD>\x00";
 ```
 
-Note: In 
-```solidity 
+Note: In
 
-names[CRE8OR_NODE] = "\xN<YOUR_TLD>\x00"; 
+```solidity
+
+names[CRE8OR_NODE] = "\xN<YOUR_TLD>\x00";
 
 ```
+
 'xN' is the number of characters your TLD has. For example, "\x03bnb\x00".
 
 ## Testing
@@ -85,7 +89,6 @@ After deployment of all contracts, to test if the minting process works run:
 ```bash
 npx hardhat run scripts/ens-test.ts --network <network-name>
 ```
-
 
 ## Contracts
 
@@ -250,4 +253,3 @@ Certain changes can be released in isolation via cherry-picking, although ideall
 - Code on `staging` and `main` will always be a subset of what is deployed, as smart contracts cannot be undeployed.
 - Release candidates, `staging` and `main` branch are subject to our bug bounty
 - Releases follow semantic versioning and releases should contain a description of changes with developers being the intended audience
-

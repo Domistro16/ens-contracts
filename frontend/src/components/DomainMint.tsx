@@ -79,7 +79,7 @@ export const DomainMint: React.FC<Props> = ({
       walletAddress,
     },
     customizations: {
-      title: `Mint “${registerparams.domain}.creator”`,
+      title: `Mint “${registerparams.domain}.safu”`,
       description: `${registerparams.duration} registration`,
       logo: 'https://our-site.com/logo.png',
     },
@@ -89,7 +89,6 @@ export const DomainMint: React.FC<Props> = ({
     ...config,
     text: `Pay ${intent.currency} ${intent.amount} to Mint`,
     callback: async (response: FlutterWaveResponse) => {
-      console.log('flutterwave response:', response)
       if (response.status === 'completed') {
         alert('Payment submitted! Waiting for blockchain mint…')
       } else {

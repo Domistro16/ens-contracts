@@ -15,7 +15,7 @@ contract BaseRegistrarImplementation is ERC721, IBaseRegistrar, Ownable {
     // A map of addresses that are authorised to register and renew names.
     mapping(address => bool) public controllers;
     uint256 public constant GRACE_PERIOD = 30 days;
-    uint256 public constant LIFETIME = type(uint256).max;
+    uint256 public constant LIFETIME = 31536000000;
     bytes4 private constant INTERFACE_META_ID =
         bytes4(keccak256("supportsInterface(bytes4)"));
     bytes4 private constant ERC721_ID =
@@ -113,7 +113,7 @@ contract BaseRegistrarImplementation is ERC721, IBaseRegistrar, Ownable {
         uint256 id,
         address owner,
         uint256 duration
-    ) external override virtual returns (uint256) {
+    ) external virtual override returns (uint256) {
         return _register(id, owner, duration, true);
     }
 
@@ -141,8 +141,7 @@ contract BaseRegistrarImplementation is ERC721, IBaseRegistrar, Ownable {
                 block.timestamp + GRACE_PERIOD
         ); // Prevent future overflow
 
-
-         uint256 expiration;
+        uint256 expiration;
 
         if (duration == 31536000000) {
             // Lifetime registration
@@ -170,14 +169,20 @@ contract BaseRegistrarImplementation is ERC721, IBaseRegistrar, Ownable {
     function renew(
         uint256 id,
         uint256 duration
-    ) external override virtual live onlyController returns (uint256) {
+    ) external virtual override live onlyController returns (uint256) {
         require(expiries[id] + GRACE_PERIOD >= block.timestamp); // Name must be registered here or in grace period
         require(expiries[id] != LIFETIME, "Lifetime names cannot be renewed");
         require(
             expiries[id] + duration + GRACE_PERIOD > duration + GRACE_PERIOD
         ); // Prevent future overflow
-
-        expiries[id] += duration;
+        if (duration == 31536000000) {
+            // Lifetime registration
+            expiries[id] = LIFETIME;
+            emit NameRenewed(id, expiries[id]);
+            return expiries[id];
+        } else {
+            expiries[id] += duration;
+        }
         emit NameRenewed(id, expiries[id]);
         return expiries[id];
     }
@@ -200,5 +205,4 @@ contract BaseRegistrarImplementation is ERC721, IBaseRegistrar, Ownable {
     function _exists(uint256 tokenId) internal view override returns (bool) {
         return super._exists(tokenId);
     }
-
 }

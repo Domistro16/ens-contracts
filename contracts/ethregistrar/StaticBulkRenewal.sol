@@ -93,7 +93,7 @@ contract StaticBulkRenewal is IBulkRenewal {
                 lifetime
             );
             uint256 totalPrice = price.base + price.premium;
-            controller.renewTokens(names[i], duration, token, tokenAddress, lifetime);
+            controller.renewTokens(names[i], duration, tokenAddress, lifetime);
             unchecked {
                 ++i;
                 total += totalPrice;

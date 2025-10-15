@@ -1,12 +1,10 @@
 import ReactModal from 'react-modal'
 import { XIcon, DuplicateIcon, LogoutIcon } from '@heroicons/react/outline'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { Avatar } from './useAvatar'
 import { useAccount } from 'wagmi'
 import { useDisconnect } from 'wagmi'
-import { useRef } from 'react'
-import { useWeb3AuthDisconnect } from '@web3auth/modal/react'
-
+import { ArrowUpRightFromSquare } from 'lucide-react'
 ReactModal.setAppElement('#root') // accessibility
 
 interface WalletModalProps {
@@ -25,32 +23,12 @@ export function WalletModal({
   const short = (addr: string) => addr.slice(0, 4) + '…' + addr.slice(-4)
   const navigate = useNavigate()
   const { address: fullAddress } = useAccount()
-  console.log(fullAddress)
   const { disconnect } = useDisconnect()
-  const authFrameRef = useRef<HTMLIFrameElement>(null)
-  const iframe = authFrameRef.current
-  const { disconnect: disconnectWeb3 } = useWeb3AuthDisconnect()
   const disconnectWithSession = () => {
-    if (iframe) {
-      console.log(iframe)
-      if (iframe.contentWindow) {
-        iframe.contentWindow.postMessage(
-          JSON.stringify({ type: 'CLEAR_SESSION' }),
-          'https://auth.level3labs.fun',
-        )
-      }
-    }
-    disconnectWeb3()
     disconnect()
   }
   return (
     <>
-      <iframe
-        ref={authFrameRef}
-        src="https://auth.level3labs.fun/"
-        style={{ display: 'none' }}
-        title="auth-sync"
-      />
       <ReactModal
         isOpen={isOpen}
         onRequestClose={onRequestClose}
@@ -63,16 +41,17 @@ export function WalletModal({
         className={`
     relative
     w-full max-w-115
-    bg-white rounded-2xl p-6 mx-4
+    bg-[#1a1b1f] rounded-2xl p-6 mx-4
     outline-none shadow-xl
     transform transition-transform duration-300 ease-out
+    text-white
    ${isOpen ? 'translate-y-0' : 'translate-y-[100vh]'}
   `}
       >
         {/* Close */}
         <button
           onClick={onRequestClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer"
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-300 cursor-pointer"
         >
           <XIcon className="h-6 w-6" />
         </button>
@@ -87,37 +66,40 @@ export function WalletModal({
 
         {/* Address */}
         {name ? (
-          <h3 className="mt-4 text-center text-xl font-bold text-gray-900">
+          <h3 className="mt-4 text-center text-xl font-bold text-gray-300">
             {name}
           </h3>
         ) : (
-          <h3 className="mt-4 text-center text-xl font-bold text-gray-900">
+          <h3 className="mt-4 text-center text-xl font-bold text-gray-300">
             {short(fullAddress as string)}
           </h3>
         )}
 
         {/* Balance */}
-        <p className="mt-1 text-center text-sm font-semibold text-gray-500">
+        <p className="mt-1 text-center text-sm font-semibold text-gray-100">
           {balance}
         </p>
 
         {/* Buttons */}
-        <div className="mt-6 flex justify-center gap-4 mx-auto">
+        <div className="mt-6 flex flex-wrap justify-center gap-4 mx-auto">
           <button
-            onClick={() => navigator.clipboard.writeText(fullAddress as string)}
-            className="flex w-full flex-col items-center justify-center rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 cursor-pointer hover:scale-105 duration-200"
+            onClick={() => {
+              navigator.clipboard.writeText(fullAddress as string)
+              alert('Address Copied')
+            }}
+            className="flex w-full flex-col items-center justify-center rounded-lg bg-gray-800 px-4 py-2 text-sm font-medium text-gray-200 hover:bg-gray-700 cursor-pointer hover:scale-105 duration-200"
           >
-            <DuplicateIcon className="h-5 w-5 text-gray-500" />
+            <DuplicateIcon className="h-5 w-5 text-gray-200" />
             <div>Copy Address</div>
           </button>
           {name != '' ? (
             <button
               onClick={() =>
-                navigate(`/resolve/${name.replace(/\.creator$/, '')}`)
+                navigate(`/resolve/${name.replace(/\.safu$/, '')}`)
               }
-              className="flex w-full flex-col items-center justify-center rounded-lg bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-200 cursor-pointer hover:scale-105 duration-200"
+              className="flex w-full flex-col items-center justify-center rounded-lg bg-gray-800 px-4 py-2 text-sm font-semibold text-gray-200 hover:bg-gray-700 cursor-pointer hover:scale-105 duration-200"
             >
-              <DuplicateIcon className=" h-5 w-5 text-gray-500" />
+              <ArrowUpRightFromSquare className=" h-5 w-5 text-gray-100" />
               <div>View Profile</div>
             </button>
           ) : (
@@ -127,9 +109,9 @@ export function WalletModal({
             onClick={() => {
               disconnectWithSession()
             }}
-            className="flex w-full flex-col items-center justify-center rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 cursor-pointer hover:scale-105 duration-200"
+            className="flex w-full flex-col items-center justify-center rounded-lg bg-gray-800 px-4 py-2 text-sm font-medium text-gray-200 hover:bg-gray-700 cursor-pointer hover:scale-105 duration-200"
           >
-            <LogoutIcon className=" h-5 w-5 text-gray-500" />
+            <LogoutIcon className=" h-5 w-5 text-gray-100" />
             <div>Disconnect</div>
           </button>
         </div>

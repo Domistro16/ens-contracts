@@ -62,7 +62,6 @@ export function Avatar({ name, className }: { name: string, className?: string})
     args: [node, 'avatar'],
   })
 
-    console.log(data)
 
     const getCID = () => {
       if (typeof data != 'string') return;

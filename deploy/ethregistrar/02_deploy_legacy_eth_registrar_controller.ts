@@ -1,3 +1,4 @@
+import { network } from 'hardhat'
 import type { DeployFunction } from 'hardhat-deploy/types.js'
 import type { Address } from 'viem'
 
@@ -7,6 +8,9 @@ const func: DeployFunction = async function (hre) {
 
   const { owner } = await viem.getNamedClients()
 
+  if (network.tags.legacy == true) {
+    return
+  }
   const registrar = await viem.getContract('BaseRegistrarImplementation') // as owner
   const priceOracle = await viem.getContract('TokenPriceOracle')
   const reverseRegistrar = await viem.getContract('ReverseRegistrar') // as owner

@@ -12,9 +12,7 @@ const func: DeployFunction = async function (hre) {
       client: owner,
       artifact: await deployments.getArtifact('ENSRegistry')
     })
-
     const legacyRegistry = await viem.getContract('LegacyENSRegistry', owner)
-
     const setRootHash = await legacyRegistry.write.setOwner(
       [zeroHash, owner.address],
       {

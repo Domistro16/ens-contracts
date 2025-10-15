@@ -41,7 +41,10 @@ interface IBaseRegistrar is IERC721 {
         uint256 duration
     ) external returns (uint256);
 
-    function renew(uint256 id, uint256 duration) external returns (uint256);
+    function renew(
+        uint256 id,
+        uint256 duration
+    ) external returns (uint256);
 
     /**
      * @dev Reclaim ownership of a name in ENS, if you own it in the registrar.

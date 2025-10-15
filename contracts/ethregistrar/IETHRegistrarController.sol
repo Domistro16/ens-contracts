@@ -63,7 +63,7 @@ interface IETHRegistrarController {
 
     function registerWithToken(
         RegisterParams memory registerParams,
-        TokenParams memory tokenParams,
+        address tokenAddress,
         bool lifetime,
         string memory referree
     ) external;
@@ -73,7 +73,6 @@ interface IETHRegistrarController {
     function renewTokens(
         string calldata name,
         uint256 duration,
-        string memory token,
         address tokenAddress,
         bool lifetime
     ) external;
