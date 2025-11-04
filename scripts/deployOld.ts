@@ -1,16 +1,12 @@
 import { network } from 'hardhat'
-import type { DeployFunction } from 'hardhat-deploy/types.js'
+import hre from 'hardhat'
 import type { Address } from 'viem'
-
-const func: DeployFunction = async function (hre) {
+async function main() {
   const { deployments, viem } = hre
   const { run } = deployments
 
   const { owner } = await viem.getNamedClients()
 
-  if (network.tags.legacy !== true) {
-    return
-  }
   const registrar = await viem.getContract('BaseRegistrarImplementation') // as owner
   const priceOracle = await viem.getContract('TokenPriceOracle')
   const reverseRegistrar = await viem.getContract('ReverseRegistrar') // as owner
@@ -55,14 +51,4 @@ const func: DeployFunction = async function (hre) {
   return true
 }
 
-func.id = 'legacy-controller'
-func.tags = ['LegacyETHRegistrarController']
-func.dependencies = [
-  'registry',
-  'wrapper',
-  'LegacyPublicResolver',
-  'TokenPriceOracle',
-  'ReverseRegistrar',
-]
-
-export default func
+main().then(() => process.exit(0))

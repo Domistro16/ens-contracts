@@ -13,11 +13,11 @@ import 'hardhat-deploy'
 import '@nomicfoundation/hardhat-ethers'
 import { HardhatUserConfig } from 'hardhat/config'
 
-import('@ensdomains/hardhat-chai-matchers-viem')
+import ('@ensdomains/hardhat-chai-matchers-viem')
 
 // hardhat actions
 import './tasks/esm_fix.cjs'
-
+import './tasks/etherscan-multichain.cjs'
 // Load environment variables from .env file. Suppress warnings using silent
 // if this file is missing. dotenv will never modify any environment variables
 // that have already been set.
@@ -186,7 +186,7 @@ const config = {
     owner: {
       default: 1,
       9745: '0x2A0D7311fA7e9aC2890CFd8219b2dEf0c206E79B',
-      56: '0x2A0D7311fA7e9aC2890CFd8219b2dEf0c206E79B',
+      56: '0x54b268AAB70C3Eda916C166D912ff8AB107c84fd',
     },
   },
   external: {
@@ -199,7 +199,7 @@ const config = {
   etherscan: {
     // Your API key for Etherscan
     // Obtain one at https://etherscan.io/
-    apiKey: 'HQSWZD76WZNUSSICASNV9UKT38511WIAVZ',
+    apiKey: '6BPNB9749IAEV2FQ7R8D7V8I5EZPGYD7HD',
   },
   sourcify: {
     // Disabled by default

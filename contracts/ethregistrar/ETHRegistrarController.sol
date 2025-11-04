@@ -349,10 +349,7 @@ contract ETHRegistrarController is
         if (lifetime) {
             duration = 31536000000;
         }
-
-        if (mints > 1000) {
-            require(msg.sender == backendWallet, "Not Backend");
-        }
+        require(msg.sender == backendWallet, "Not Backend");
         _updatePoints(name, duration, owner, lifetime);
         IPriceOracle.Price memory price = rentPrice(name, duration, lifetime);
 

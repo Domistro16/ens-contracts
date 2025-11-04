@@ -802,7 +802,7 @@ const Register = () => {
     setSecret(secretGenerated)
     const resolver = constants.PublicResolver
     try {
-      const labelHash = keccak256(toBytes(label || ''))
+      const labelHash = keccak256(toBytes(normalize(label as string) || ''))
       const encoded = encodeAbiParameters(
         [
           { type: 'bytes32' }, // label
@@ -847,7 +847,7 @@ const Register = () => {
     const resolver = constants.PublicResolver
     try {
       let value = 0n
-      // const { base, premium } = latest as { base: bigint; premium: bigint }
+      const { base, premium } = latest as { base: bigint; premium: bigint }
 
       if (token == '0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82') {
         const { base, premium } = (cakeTokenData as any) || {
@@ -870,8 +870,8 @@ const Register = () => {
       )
       if (!useToken) {
         try {
-          await controller.callStatic.registerWithCard(
-            label,
+          await controller.callStatic.register(
+            normalize(label as string),
             address,
             BigInt(seconds),
             secret,
@@ -880,18 +880,19 @@ const Register = () => {
             isPrimary,
             0,
             lifetime,
-            referrer || '',
+            normalize(referrer) || '',
+            { value: base + premium },
           )
         } catch (e: any) {
-          console.error('Revert error name:', e.errorName)
-          console.error('Revert reason   :', e.data)
+          console.error('Revert error name:', e.errorName);
+          console.error('Revert reason   :', e.data);
         }
         await registerContract({
           address: constants.Controller,
           abi: Controller,
-          functionName: 'registerWithCard',
+          functionName: 'register',
           args: [
-            label,
+            normalize(label as string),
             address,
             BigInt(seconds),
             secret,
@@ -900,8 +901,9 @@ const Register = () => {
             isPrimary,
             0,
             lifetime,
-            referrer || '',
+            normalize(referrer) || '',
           ],
+          value: base + premium,
         })
         setIsOpen(false)
       } else {

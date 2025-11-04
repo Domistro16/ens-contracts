@@ -21,7 +21,7 @@
     "./artifacts/**/*.d.ts",
     "tasks/hardhat-deploy-viem.cts",
     "tasks/deploy-test.cts"
-  ],
+, "tasks/etherscan-multichain.cts"  ],
   "ts-node": {
     "experimentalResolver": true,
     "experimentalSpecifierResolution": "node",

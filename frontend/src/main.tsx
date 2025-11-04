@@ -59,7 +59,7 @@ async function createApolloClient() {
 
   return new ApolloClient({
     link: new HttpLink({
-      uri: 'https://api.studio.thegraph.com/query/112443/ens-subgraph/v0.0.1',
+      uri: 'https://api.studio.thegraph.com',
     }),
     cache: new InMemoryCache(),
   })
