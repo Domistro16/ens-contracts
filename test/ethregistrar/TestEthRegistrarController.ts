@@ -78,6 +78,10 @@ async function fixture() {
     dummyOracle.address,
     [0n, 0n, 4n, 2n, 1n],
   ])
+  const referralController = await hre.viem.deployContract(
+    'ReferralController',
+    [],
+  )
   const ethRegistrarController = await hre.viem.deployContract(
     'ETHRegistrarController',
     [
@@ -88,6 +92,7 @@ async function fixture() {
       reverseRegistrar.address,
       nameWrapper.address,
       ensRegistry.address,
+      referralController.address,
     ],
   )
 
@@ -125,6 +130,7 @@ async function fixture() {
     nameWrapper,
     dummyOracle,
     priceOracle,
+    referralController,
     ethRegistrarController,
     publicResolver,
     callData,
@@ -573,6 +579,7 @@ describe('ETHRegistrarController', () => {
     const { base: price } = await ethRegistrarController.read.rentPrice([
       'newname',
       duration,
+      false,
     ])
 
     await ethRegistrarController.write.renew(['newname', duration], {
@@ -624,6 +631,7 @@ describe('ETHRegistrarController', () => {
     const { base: price } = await ethRegistrarController.read.rentPrice([
       'newname',
       duration,
+      false,
     ])
 
     await ethRegistrarController.write.renew(['newname', duration], {
@@ -672,6 +680,7 @@ describe('ETHRegistrarController', () => {
     const { base: price } = await ethRegistrarController.read.rentPrice([
       label,
       duration,
+      false,
     ])
     await ethRegistrarController.write.renew([label, duration], {
       value: price,

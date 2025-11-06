@@ -52,6 +52,10 @@ async function fixture() {
     dummyOracle.address,
     [0n, 0n, 4n, 2n, 1n],
   ])
+  const referralController = await hre.viem.deployContract(
+    'ReferralController',
+    [],
+  )
   const controller = await hre.viem.deployContract('ETHRegistrarController', [
     baseRegistrar.address,
     priceOracle.address,
@@ -60,6 +64,7 @@ async function fixture() {
     zeroAddress,
     nameWrapper.address,
     ensRegistry.address,
+    referralController.address,
   ])
 
   await baseRegistrar.write.addController([controller.address])
@@ -99,7 +104,7 @@ describe('StaticBulkRenewal', () => {
     const { bulkRenewal } = await loadFixture(fixture)
 
     await expect(
-      bulkRenewal.read.rentPrice([['test1', 'test2'], 86400n]),
+      bulkRenewal.read.rentPrice([['test1', 'test2'], 86400n, false]),
     ).resolves.toEqual(86400n * 2n)
   })
 
@@ -107,7 +112,7 @@ describe('StaticBulkRenewal', () => {
     const { bulkRenewal } = await loadFixture(fixture)
 
     await expect(bulkRenewal)
-      .write('renewAll', [['foobar'], 86400n])
+      .write('renewAll', [['foobar'], 86400n, false])
       .toBeRevertedWithoutReason()
   })
 
@@ -117,7 +122,7 @@ describe('StaticBulkRenewal', () => {
 
     const oldExpiry = await baseRegistrar.read.nameExpires([toLabelId('test2')])
 
-    await bulkRenewal.write.renewAll([['test1', 'test2'], 86400n], {
+    await bulkRenewal.write.renewAll([['test1', 'test2'], 86400n, false], {
       value: 86400n * 2n,
     })
 
